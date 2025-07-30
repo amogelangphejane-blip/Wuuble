@@ -13,7 +13,9 @@ import {
   SkipForward, 
   Flag,
   Users,
-  Wifi
+  Wifi,
+  Monitor,
+  MonitorOff
 } from 'lucide-react';
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
@@ -21,6 +23,7 @@ type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 export const VideoChat = () => {
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [isSearching, setIsSearching] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(1247);
@@ -162,6 +165,72 @@ export const VideoChat = () => {
     }
   };
 
+  const toggleScreenShare = async () => {
+    try {
+      if (isScreenSharing) {
+        // Stop screen sharing, switch back to camera
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: isVideoEnabled,
+          audio: isAudioEnabled
+        });
+        
+        localStreamRef.current = stream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+        setIsScreenSharing(false);
+        
+        toast({
+          title: "Screen Sharing Stopped",
+          description: "Switched back to camera feed.",
+        });
+      } else {
+        // Start screen sharing
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true
+        });
+        
+        // Stop current stream
+        if (localStreamRef.current) {
+          localStreamRef.current.getTracks().forEach(track => track.stop());
+        }
+        
+        localStreamRef.current = stream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+        setIsScreenSharing(true);
+        
+        // Listen for screen share end (user clicks stop sharing in browser)
+        stream.getVideoTracks()[0].addEventListener('ended', () => {
+          setIsScreenSharing(false);
+          // Switch back to camera
+          navigator.mediaDevices.getUserMedia({
+            video: isVideoEnabled,
+            audio: isAudioEnabled
+          }).then(newStream => {
+            localStreamRef.current = newStream;
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = newStream;
+            }
+          });
+        });
+        
+        toast({
+          title: "Screen Sharing Started",
+          description: "Your screen is now being shared with visitors.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Screen Share Failed",
+        description: "Unable to access screen sharing. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-bg flex flex-col">
       {/* Header */}
@@ -211,7 +280,9 @@ export const VideoChat = () => {
                 </div>
               )}
               <div className="absolute top-4 left-4">
-                <Badge variant="secondary">You</Badge>
+                <Badge variant="secondary">
+                  {isScreenSharing ? "Your Screen" : "You"}
+                </Badge>
               </div>
             </div>
           </Card>
@@ -274,6 +345,16 @@ export const VideoChat = () => {
                 className="transition-smooth"
               >
                 {isAudioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+              </Button>
+
+              {/* Screen Share Toggle */}
+              <Button
+                variant={isScreenSharing ? "default" : "secondary"}
+                size="lg"
+                onClick={toggleScreenShare}
+                className="transition-smooth"
+              >
+                {isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
               </Button>
 
               {/* Main Call Control */}
