@@ -28,6 +28,7 @@ export const VideoChat = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(1247);
   const [partnerConnected, setPartnerConnected] = useState(false);
+  const [cameraPermission, setCameraPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -35,29 +36,50 @@ export const VideoChat = () => {
   
   const { toast } = useToast();
 
-  // Initialize local video stream
+  // Request camera access function
+  const requestCameraAccess = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: isVideoEnabled,
+        audio: isAudioEnabled
+      });
+      
+      localStreamRef.current = stream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+      setCameraPermission('granted');
+      
+      toast({
+        title: "Camera Access Granted",
+        description: "You can now start video chatting!",
+      });
+    } catch (error) {
+      setCameraPermission('denied');
+      toast({
+        title: "Camera Access Denied",
+        description: "Please allow camera and microphone access to start video chat.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Initialize camera access check
   useEffect(() => {
-    const initializeLocalVideo = async () => {
+    const checkCameraAccess = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: isVideoEnabled,
-          audio: isAudioEnabled
-        });
-        
-        localStreamRef.current = stream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
+        // Check if permissions are already granted
+        const permissions = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        if (permissions.state === 'granted') {
+          await requestCameraAccess();
         }
       } catch (error) {
-        toast({
-          title: "Camera Access Required",
-          description: "Please allow camera and microphone access to start video chat.",
-          variant: "destructive"
-        });
+        // Fallback: try to request access directly
+        await requestCameraAccess();
       }
     };
 
-    initializeLocalVideo();
+    checkCameraAccess();
 
     return () => {
       if (localStreamRef.current) {
@@ -357,18 +379,31 @@ export const VideoChat = () => {
                 {isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
               </Button>
 
+              {/* Camera Access Button (shown when permission denied) */}
+              {cameraPermission === 'denied' && (
+                <Button
+                  onClick={requestCameraAccess}
+                  variant="default"
+                  size="lg"
+                  className="bg-gradient-primary hover:shadow-glow transition-smooth px-8"
+                >
+                  <Video className="w-5 h-5 mr-2" />
+                  Allow Camera Access
+                </Button>
+              )}
+
               {/* Main Call Control */}
-              {connectionStatus === 'disconnected' ? (
+              {connectionStatus === 'disconnected' && cameraPermission !== 'denied' ? (
                 <Button
                   onClick={handleStartChat}
-                  disabled={isSearching}
+                  disabled={isSearching || cameraPermission !== 'granted'}
                   size="lg"
                   className="bg-gradient-primary hover:shadow-glow transition-smooth px-8"
                 >
                   <Phone className="w-5 h-5 mr-2" />
-                  {isSearching ? 'Connecting...' : 'Start Chat'}
+                  {isSearching ? 'Connecting...' : cameraPermission === 'pending' ? 'Requesting Camera...' : 'Start Chat'}
                 </Button>
-              ) : (
+              ) : connectionStatus !== 'disconnected' ? (
                 <Button
                   onClick={handleEndChat}
                   variant="destructive"
@@ -378,7 +413,7 @@ export const VideoChat = () => {
                   <PhoneOff className="w-5 h-5 mr-2" />
                   End Chat
                 </Button>
-              )}
+              ) : null}
 
               {/* Next Partner */}
               {connectionStatus === 'connected' && (
