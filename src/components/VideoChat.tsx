@@ -172,7 +172,7 @@ export const VideoChat = () => {
               <Video className="w-5 h-5 text-white" />
             </div>
             <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              KindredStreams
+              Pompeii
             </h1>
           </div>
           
