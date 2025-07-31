@@ -117,12 +117,15 @@ export const VideoChat = () => {
   useEffect(() => {
     const checkCameraAccess = async () => {
       try {
+        console.log('VideoChat: Checking camera access...');
         // Check if permissions are already granted
         const permissions = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        console.log('VideoChat: Camera permission state:', permissions.state);
         if (permissions.state === 'granted') {
           await requestCameraAccess();
         }
       } catch (error) {
+        console.log('VideoChat: Permission query failed, trying direct access:', error);
         // Fallback: try to request access directly
         await requestCameraAccess();
       }
