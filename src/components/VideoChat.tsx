@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Video, 
@@ -16,10 +15,7 @@ import {
   Users,
   Wifi,
   Monitor,
-  MonitorOff,
-  Settings,
-  Camera,
-  RotateCcw
+  MonitorOff
 } from 'lucide-react';
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
@@ -33,10 +29,6 @@ export const VideoChat = () => {
   const [onlineUsers, setOnlineUsers] = useState(1247);
   const [partnerConnected, setPartnerConnected] = useState(false);
   const [cameraPermission, setCameraPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
-  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
-  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
-  const [showSettings, setShowSettings] = useState(false);
-  const [videoQuality, setVideoQuality] = useState<'720p' | '480p' | '360p'>('720p');
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -44,60 +36,19 @@ export const VideoChat = () => {
   
   const { toast } = useToast();
 
-  // Get available cameras
-  const getAvailableCameras = async () => {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameras = devices.filter(device => device.kind === 'videoinput');
-      setAvailableCameras(cameras);
-      if (cameras.length > 0 && !selectedCameraId) {
-        setSelectedCameraId(cameras[0].deviceId);
-      }
-    } catch (error) {
-      console.error('Error getting cameras:', error);
-    }
-  };
-
-  // Get video constraints based on quality setting
-  const getVideoConstraints = () => {
-    const qualitySettings = {
-      '720p': { width: 1280, height: 720 },
-      '480p': { width: 854, height: 480 },
-      '360p': { width: 640, height: 360 }
-    };
-
-    return {
-      deviceId: selectedCameraId ? { exact: selectedCameraId } : undefined,
-      ...qualitySettings[videoQuality],
-      frameRate: { ideal: 30 }
-    };
-  };
-
   // Request camera access function
-  const requestCameraAccess = async (deviceId?: string) => {
+  const requestCameraAccess = async () => {
     try {
-      const videoConstraints = deviceId ? 
-        { deviceId: { exact: deviceId }, ...getVideoConstraints() } : 
-        getVideoConstraints();
-
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: isVideoEnabled ? videoConstraints : false,
+        video: isVideoEnabled,
         audio: isAudioEnabled
       });
-      
-      // Stop previous stream if exists
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
-      }
       
       localStreamRef.current = stream;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
       setCameraPermission('granted');
-      
-      // Get available cameras after permission is granted
-      await getAvailableCameras();
       
       toast({
         title: "Camera Access Granted",
@@ -117,15 +68,12 @@ export const VideoChat = () => {
   useEffect(() => {
     const checkCameraAccess = async () => {
       try {
-        console.log('VideoChat: Checking camera access...');
         // Check if permissions are already granted
         const permissions = await navigator.permissions.query({ name: 'camera' as PermissionName });
-        console.log('VideoChat: Camera permission state:', permissions.state);
         if (permissions.state === 'granted') {
           await requestCameraAccess();
         }
       } catch (error) {
-        console.log('VideoChat: Permission query failed, trying direct access:', error);
         // Fallback: try to request access directly
         await requestCameraAccess();
       }
@@ -219,38 +167,13 @@ export const VideoChat = () => {
     });
   };
 
-  const toggleVideo = async () => {
-    const newVideoState = !isVideoEnabled;
-    setIsVideoEnabled(newVideoState);
-    
+  const toggleVideo = () => {
+    setIsVideoEnabled(!isVideoEnabled);
     if (localStreamRef.current) {
       const videoTrack = localStreamRef.current.getVideoTracks()[0];
       if (videoTrack) {
-        videoTrack.enabled = newVideoState;
+        videoTrack.enabled = !isVideoEnabled;
       }
-    } else if (newVideoState && cameraPermission === 'granted') {
-      // Restart camera if it was stopped
-      await requestCameraAccess(selectedCameraId);
-    }
-  };
-
-  // Switch camera function
-  const switchCamera = async (deviceId: string) => {
-    setSelectedCameraId(deviceId);
-    if (cameraPermission === 'granted' && isVideoEnabled) {
-      await requestCameraAccess(deviceId);
-    }
-  };
-
-  // Change video quality
-  const changeVideoQuality = async (quality: '720p' | '480p' | '360p') => {
-    setVideoQuality(quality);
-    if (cameraPermission === 'granted' && isVideoEnabled && !isScreenSharing) {
-      await requestCameraAccess(selectedCameraId);
-      toast({
-        title: "Video Quality Changed",
-        description: `Quality set to ${quality}`,
-      });
     }
   };
 
@@ -422,64 +345,6 @@ export const VideoChat = () => {
           </Card>
         </div>
 
-        {/* Camera Settings */}
-        {showSettings && cameraPermission === 'granted' && (
-          <div className="max-w-2xl mx-auto mt-6">
-            <Card className="bg-card/80 backdrop-blur-sm border-border/50 p-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground flex items-center">
-                  <Settings className="w-5 h-5 mr-2" />
-                  Camera Settings
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Camera Selection */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Camera Device</label>
-                    <Select value={selectedCameraId} onValueChange={switchCamera}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select camera" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableCameras.map((camera) => (
-                          <SelectItem key={camera.deviceId} value={camera.deviceId}>
-                            {camera.label || `Camera ${camera.deviceId.slice(0, 8)}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Video Quality */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Video Quality</label>
-                    <Select value={videoQuality} onValueChange={changeVideoQuality}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="720p">720p (HD)</SelectItem>
-                        <SelectItem value="480p">480p (Standard)</SelectItem>
-                        <SelectItem value="360p">360p (Low Bandwidth)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="flex justify-center pt-2">
-                  <Button
-                    onClick={() => setShowSettings(false)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Done
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-        )}
-
         {/* Controls */}
         <div className="max-w-2xl mx-auto mt-8">
           <Card className="bg-controls-bg border-controls-border p-6 shadow-button">
@@ -514,22 +379,10 @@ export const VideoChat = () => {
                 {isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
               </Button>
 
-              {/* Camera Settings */}
-              {cameraPermission === 'granted' && (
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="transition-smooth"
-                >
-                  <Settings className="w-5 h-5" />
-                </Button>
-              )}
-
               {/* Camera Access Button (shown when permission denied) */}
               {cameraPermission === 'denied' && (
                 <Button
-                  onClick={() => requestCameraAccess()}
+                  onClick={requestCameraAccess}
                   variant="default"
                   size="lg"
                   className="bg-gradient-primary hover:shadow-glow transition-smooth px-8"
