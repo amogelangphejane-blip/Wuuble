@@ -1,7 +1,7 @@
-import { VideoChat } from '@/components/VideoChat';
+import LandingPage from '@/components/LandingPage';
 
 const Index = () => {
-  return <VideoChat />;
+  return <LandingPage />;
 };
 
 export default Index;
