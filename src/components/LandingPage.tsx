@@ -2,6 +2,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Video, Users, Globe, Shield, Zap, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import heroWoman from '@/assets/hero-woman.webp';
+import womanLaptop from '@/assets/woman-laptop.jpg';
+import womanLaptop2 from '@/assets/woman-laptop-2.jpg';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -52,42 +55,59 @@ const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-6 py-20 text-center">
-        <div className="max-w-4xl mx-auto">
-          <div className="inline-flex items-center space-x-2 bg-accent/20 px-4 py-2 rounded-full mb-6">
-            <Globe className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">1,247 people online now</span>
-          </div>
-          
-          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
-            Meet New People
-            <span className="block text-transparent bg-gradient-primary bg-clip-text">
-              Around the World
-            </span>
-          </h1>
-          
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Connect instantly with strangers from across the globe. Share moments, make friends, 
-            and discover new perspectives through random video chat.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={() => navigate('/chat')}
-              size="lg"
-              className="bg-gradient-primary hover:shadow-glow transition-smooth text-lg px-8 py-3"
-            >
-              <Video className="w-5 h-5 mr-2" />
-              Start Video Chat
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="text-lg px-8 py-3"
-            >
-              <Heart className="w-5 h-5 mr-2" />
-              Learn More
-            </Button>
+      <section className="container mx-auto px-6 py-20">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="text-center lg:text-left">
+              <div className="inline-flex items-center space-x-2 bg-accent/20 px-4 py-2 rounded-full mb-6">
+                <Globe className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">1,247 people online now</span>
+              </div>
+              
+              <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
+                Meet New People
+                <span className="block text-transparent bg-gradient-primary bg-clip-text">
+                  Around the World
+                </span>
+              </h1>
+              
+              <p className="text-xl text-muted-foreground mb-8 max-w-2xl">
+                Connect instantly with strangers from across the globe. Share moments, make friends, 
+                and discover new perspectives through random video chat.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Button 
+                  onClick={() => navigate('/chat')}
+                  size="lg"
+                  className="bg-gradient-primary hover:shadow-glow transition-smooth text-lg px-8 py-3"
+                >
+                  <Video className="w-5 h-5 mr-2" />
+                  Start Video Chat
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="text-lg px-8 py-3"
+                >
+                  <Heart className="w-5 h-5 mr-2" />
+                  Learn More
+                </Button>
+              </div>
+            </div>
+            
+            <div className="relative">
+              <div className="relative rounded-2xl overflow-hidden shadow-elegant">
+                <img 
+                  src={heroWoman} 
+                  alt="Beautiful woman enjoying video chat" 
+                  className="w-full h-auto object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent"></div>
+              </div>
+              <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gradient-primary rounded-full opacity-20 blur-2xl"></div>
+              <div className="absolute -top-6 -left-6 w-24 h-24 bg-accent rounded-full opacity-30 blur-xl"></div>
+            </div>
           </div>
         </div>
       </section>
@@ -103,7 +123,7 @@ const LandingPage = () => {
           </p>
         </div>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {features.map((feature, index) => (
             <Card key={index} className="border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-lg transition-smooth">
               <CardHeader>
@@ -121,6 +141,26 @@ const LandingPage = () => {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* User Showcase */}
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="relative">
+            <img 
+              src={womanLaptop} 
+              alt="Woman enjoying video chat experience" 
+              className="w-full h-80 object-cover rounded-2xl shadow-elegant"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent rounded-2xl"></div>
+          </div>
+          <div className="relative">
+            <img 
+              src={womanLaptop2} 
+              alt="Beautiful woman connecting with friends online" 
+              className="w-full h-80 object-cover rounded-2xl shadow-elegant"
+            />
+            <div className="absolute inset-0 bg-gradient-to-l from-accent/10 to-transparent rounded-2xl"></div>
+          </div>
         </div>
       </section>
 
