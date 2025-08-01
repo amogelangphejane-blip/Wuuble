@@ -12,10 +12,7 @@ import {
   PhoneOff, 
   SkipForward, 
   Flag,
-  Users,
-  Wifi,
-  Monitor,
-  MonitorOff
+  Users
 } from 'lucide-react';
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
@@ -23,7 +20,6 @@ type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 export const VideoChat = () => {
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [isSearching, setIsSearching] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(1247);
@@ -128,16 +124,16 @@ export const VideoChat = () => {
     setIsSearching(true);
     setConnectionStatus('connecting');
     
-    // Simulate connection process
+    // Faster connection process like Monkey app
     setTimeout(() => {
       setIsSearching(false);
       setConnectionStatus('connected');
       setPartnerConnected(true);
       toast({
         title: "Connected!",
-        description: "You're now connected with a random user.",
+        description: "Say hi! 👋",
       });
-    }, 2000);
+    }, 800);
   };
 
   const handleEndChat = () => {
@@ -155,9 +151,10 @@ export const VideoChat = () => {
 
   const handleNextPartner = () => {
     handleEndChat();
+    // Instant next like Monkey app
     setTimeout(() => {
       handleStartChat();
-    }, 500);
+    }, 200);
   };
 
   const handleReport = () => {
@@ -187,269 +184,194 @@ export const VideoChat = () => {
     }
   };
 
-  const toggleScreenShare = async () => {
-    try {
-      if (isScreenSharing) {
-        // Stop screen sharing, switch back to camera
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: isVideoEnabled,
-          audio: isAudioEnabled
-        });
-        
-        localStreamRef.current = stream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
-        setIsScreenSharing(false);
-        
-        toast({
-          title: "Screen Sharing Stopped",
-          description: "Switched back to camera feed.",
-        });
-      } else {
-        // Start screen sharing
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: true
-        });
-        
-        // Stop current stream
-        if (localStreamRef.current) {
-          localStreamRef.current.getTracks().forEach(track => track.stop());
-        }
-        
-        localStreamRef.current = stream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
-        setIsScreenSharing(true);
-        
-        // Listen for screen share end (user clicks stop sharing in browser)
-        stream.getVideoTracks()[0].addEventListener('ended', () => {
-          setIsScreenSharing(false);
-          // Switch back to camera
-          navigator.mediaDevices.getUserMedia({
-            video: isVideoEnabled,
-            audio: isAudioEnabled
-          }).then(newStream => {
-            localStreamRef.current = newStream;
-            if (localVideoRef.current) {
-              localVideoRef.current.srcObject = newStream;
-            }
-          });
-        });
-        
-        toast({
-          title: "Screen Sharing Started",
-          description: "Your screen is now being shared with visitors.",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Screen Share Failed",
-        description: "Unable to access screen sharing. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-bg flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <Video className="w-5 h-5 text-white" />
+      {/* Simplified Header - Monkey style */}
+      <header className="bg-card/30 backdrop-blur-lg border-b border-border/50">
+        <div className="container mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow">
+              <Video className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Pompeii
+            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Monkey
             </h1>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <Badge variant="secondary" className="flex items-center space-x-1">
-              <Users className="w-3 h-3" />
-              <span>{onlineUsers.toLocaleString()} online</span>
-            </Badge>
-            <Badge 
-              variant={connectionStatus === 'connected' ? 'default' : 'secondary'}
-              className="flex items-center space-x-1"
-            >
-              <Wifi className="w-3 h-3" />
-              <span className="capitalize">{connectionStatus}</span>
-            </Badge>
-          </div>
+          <Badge variant="secondary" className="flex items-center space-x-2 px-3 py-1.5 rounded-full">
+            <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+            <span className="font-medium">{onlineUsers.toLocaleString()} online</span>
+          </Badge>
         </div>
       </header>
 
-      {/* Main Video Area */}
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
-          {/* Local Video */}
-          <Card className="relative overflow-hidden bg-gradient-card border-video-border shadow-video">
-            <div className="aspect-video bg-video-bg relative">
-              <video
-                ref={localVideoRef}
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              {!isVideoEnabled && (
-                <div className="absolute inset-0 bg-muted flex items-center justify-center">
-                  <VideoOff className="w-12 h-12 text-muted-foreground" />
-                </div>
-              )}
-              <div className="absolute top-4 left-4">
-                <Badge variant="secondary">
-                  {isScreenSharing ? "Your Screen" : "You"}
-                </Badge>
+      {/* Main Content - Mobile-first layout */}
+      <main className="flex-1 flex flex-col px-4 py-6">
+        {/* Video Container - Stack on mobile, side by side on desktop */}
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto w-full">
+          {/* Partner Video (larger on mobile) */}
+          <div className="flex-1 lg:flex-[2]">
+            <Card className="relative overflow-hidden bg-gradient-card border-video-border shadow-video rounded-2xl h-full min-h-[400px] lg:min-h-[500px]">
+              <div className="absolute inset-0 bg-video-bg">
+                {partnerConnected ? (
+                  <video
+                    ref={remoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      {isSearching ? (
+                        <>
+                          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+                          <p className="text-lg text-muted-foreground font-medium">Finding someone awesome...</p>
+                          <p className="text-sm text-muted-foreground/70 mt-2">This will only take a moment</p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-glow">
+                            <Users className="w-10 h-10 text-white" />
+                          </div>
+                          <p className="text-lg text-foreground font-medium mb-2">Ready to meet someone new?</p>
+                          <p className="text-sm text-muted-foreground">Tap the button below to start chatting</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {partnerConnected && (
+                  <div className="absolute top-4 left-4">
+                    <Badge className="bg-gradient-primary text-white border-0 shadow-lg">
+                      New Friend
+                    </Badge>
+                  </div>
+                )}
               </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
 
-          {/* Remote Video */}
-          <Card className="relative overflow-hidden bg-gradient-card border-video-border shadow-video">
-            <div className="aspect-video bg-video-bg relative">
-              {partnerConnected ? (
+          {/* Local Video (smaller, bottom-right style) */}
+          <div className="lg:flex-1 lg:max-w-sm">
+            <Card className="relative overflow-hidden bg-gradient-card border-video-border shadow-video rounded-2xl h-64 lg:h-full">
+              <div className="absolute inset-0 bg-video-bg">
                 <video
-                  ref={remoteVideoRef}
+                  ref={localVideoRef}
                   autoPlay
+                  muted
                   playsInline
                   className="w-full h-full object-cover"
                 />
-              ) : (
-                <div className="absolute inset-0 bg-muted flex items-center justify-center">
-                  <div className="text-center">
-                    {isSearching ? (
-                      <>
-                        <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <p className="text-muted-foreground">Connecting to a stranger...</p>
-                      </>
-                    ) : (
-                      <>
-                        <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">Click "Start Chat" to connect</p>
-                      </>
-                    )}
+                {!isVideoEnabled && (
+                  <div className="absolute inset-0 bg-muted flex items-center justify-center">
+                    <VideoOff className="w-10 h-10 text-muted-foreground" />
                   </div>
+                )}
+                <div className="absolute top-3 left-3">
+                  <Badge variant="secondary" className="text-xs font-medium">
+                    You
+                  </Badge>
                 </div>
-              )}
-              {partnerConnected && (
-                <div className="absolute top-4 left-4">
-                  <Badge variant="secondary">Stranger</Badge>
-                </div>
-              )}
-            </div>
-          </Card>
+              </div>
+            </Card>
+          </div>
         </div>
 
-        {/* Controls */}
-        <div className="max-w-2xl mx-auto mt-8">
-          <Card className="bg-controls-bg border-controls-border p-6 shadow-button">
-            <div className="flex items-center justify-center space-x-4">
-              {/* Video Toggle */}
+        {/* Bottom Controls - Monkey app style */}
+        <div className="mt-6 flex flex-col items-center space-y-4">
+          {/* Primary Action */}
+          <div className="flex items-center justify-center">
+            {connectionStatus === 'disconnected' && cameraPermission !== 'denied' ? (
               <Button
-                variant={isVideoEnabled ? "secondary" : "destructive"}
+                onClick={handleStartChat}
+                disabled={isSearching || cameraPermission !== 'granted'}
                 size="lg"
-                onClick={toggleVideo}
-                className="transition-smooth"
+                className="bg-gradient-primary hover:shadow-glow text-white font-semibold px-12 py-4 rounded-full text-lg transition-all duration-300 transform hover:scale-105 border-0"
               >
-                {isVideoEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+                {isSearching ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
+                    Connecting...
+                  </>
+                ) : cameraPermission === 'pending' ? (
+                  'Getting Ready...'
+                ) : (
+                  <>
+                    <Video className="w-5 h-5 mr-3" />
+                    Start Chatting
+                  </>
+                )}
               </Button>
-
-              {/* Audio Toggle */}
+            ) : cameraPermission === 'denied' ? (
               <Button
-                variant={isAudioEnabled ? "secondary" : "destructive"}
+                onClick={requestCameraAccess}
                 size="lg"
-                onClick={toggleAudio}
-                className="transition-smooth"
+                className="bg-gradient-primary hover:shadow-glow text-white font-semibold px-12 py-4 rounded-full text-lg transition-all duration-300 transform hover:scale-105 border-0"
               >
-                {isAudioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                <Video className="w-5 h-5 mr-3" />
+                Enable Camera
               </Button>
-
-              {/* Screen Share Toggle */}
-              <Button
-                variant={isScreenSharing ? "default" : "secondary"}
-                size="lg"
-                onClick={toggleScreenShare}
-                className="transition-smooth"
-              >
-                {isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
-              </Button>
-
-              {/* Camera Access Button (shown when permission denied) */}
-              {cameraPermission === 'denied' && (
+            ) : connectionStatus === 'connected' ? (
+              <div className="flex items-center space-x-4">
                 <Button
-                  onClick={requestCameraAccess}
-                  variant="default"
+                  onClick={handleNextPartner}
                   size="lg"
-                  className="bg-gradient-primary hover:shadow-glow transition-smooth px-8"
+                  className="bg-gradient-primary hover:shadow-glow text-white font-semibold px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105 border-0"
                 >
-                  <Video className="w-5 h-5 mr-2" />
-                  Allow Camera Access
+                  <SkipForward className="w-5 h-5 mr-2" />
+                  Next
                 </Button>
-              )}
-
-              {/* Main Call Control */}
-              {connectionStatus === 'disconnected' && cameraPermission !== 'denied' ? (
-                <Button
-                  onClick={handleStartChat}
-                  disabled={isSearching || cameraPermission !== 'granted'}
-                  size="lg"
-                  className="bg-gradient-primary hover:shadow-glow transition-smooth px-8"
-                >
-                  <Phone className="w-5 h-5 mr-2" />
-                  {isSearching ? 'Connecting...' : cameraPermission === 'pending' ? 'Requesting Camera...' : 'Start Chat'}
-                </Button>
-              ) : connectionStatus !== 'disconnected' ? (
                 <Button
                   onClick={handleEndChat}
                   variant="destructive"
                   size="lg"
-                  className="transition-smooth px-8"
+                  className="font-semibold px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105"
                 >
                   <PhoneOff className="w-5 h-5 mr-2" />
-                  End Chat
+                  End
                 </Button>
-              ) : null}
+              </div>
+            ) : null}
+          </div>
 
-              {/* Next Partner */}
-              {connectionStatus === 'connected' && (
-                <Button
-                  onClick={handleNextPartner}
-                  variant="secondary"
-                  size="lg"
-                  className="transition-smooth"
-                >
-                  <SkipForward className="w-5 h-5" />
-                </Button>
-              )}
+          {/* Secondary Controls */}
+          <div className="flex items-center space-x-3">
+            <Button
+              variant={isVideoEnabled ? "secondary" : "destructive"}
+              size="lg"
+              onClick={toggleVideo}
+              className="w-12 h-12 rounded-full p-0 transition-all duration-200 hover:scale-110"
+            >
+              {isVideoEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+            </Button>
 
-              {/* Report */}
-              {connectionStatus === 'connected' && (
-                <Button
-                  onClick={handleReport}
-                  variant="outline"
-                  size="lg"
-                  className="transition-smooth"
-                >
-                  <Flag className="w-5 h-5" />
-                </Button>
-              )}
-            </div>
-          </Card>
-        </div>
+            <Button
+              variant={isAudioEnabled ? "secondary" : "destructive"}
+              size="lg"
+              onClick={toggleAudio}
+              className="w-12 h-12 rounded-full p-0 transition-all duration-200 hover:scale-110"
+            >
+              {isAudioEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+            </Button>
 
-        {/* Safety Notice */}
-        <div className="max-w-2xl mx-auto mt-6">
-          <Card className="bg-warning/10 border-warning/20 p-4">
-            <div className="text-center text-sm text-warning-foreground">
-              <strong>Stay Safe:</strong> Never share personal information. Report inappropriate behavior immediately.
-              You must be 18+ to use this service.
-            </div>
-          </Card>
+            {connectionStatus === 'connected' && (
+              <Button
+                onClick={handleReport}
+                variant="outline"
+                size="lg"
+                className="w-12 h-12 rounded-full p-0 transition-all duration-200 hover:scale-110"
+              >
+                <Flag className="w-5 h-5" />
+              </Button>
+            )}
+          </div>
+
+          {/* Safety Notice - Simplified */}
+          <div className="text-center text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+            <span className="font-medium">18+ only.</span> Keep it friendly and report any inappropriate behavior.
+          </div>
         </div>
       </main>
     </div>
