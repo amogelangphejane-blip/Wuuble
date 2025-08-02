@@ -76,7 +76,7 @@ const LandingPage = () => {
                 </h1>
                 
                 <p className="text-xl text-muted-foreground mb-8 max-w-2xl">
-                  Connect with CEOs, entrepreneurs, thought leaders, and industry experts. 
+                  Connect with CEOs, entrepreneurs, thought leaders, and instagram models. 
                   Expand your network and unlock opportunities through premium video conversations.
                 </p>
                 
