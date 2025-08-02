@@ -27,7 +27,12 @@ export default {
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))',
-					glow: 'hsl(var(--primary-glow))'
+					glow: 'hsl(var(--primary-glow))',
+					elegant: 'hsl(var(--primary-elegant))'
+				},
+				luxury: {
+					DEFAULT: 'hsl(var(--luxury))',
+					foreground: 'hsl(var(--luxury-foreground))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -87,12 +92,16 @@ export default {
 			},
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-luxury': 'var(--gradient-luxury)',
 				'gradient-bg': 'var(--gradient-bg)',
-				'gradient-card': 'var(--gradient-card)'
+				'gradient-card': 'var(--gradient-card)',
+				'gradient-elegant': 'var(--gradient-elegant)'
 			},
 			boxShadow: {
 				'video': 'var(--shadow-video)',
 				'glow': 'var(--shadow-glow)',
+				'elegant': 'var(--shadow-elegant)',
+				'luxury': 'var(--shadow-luxury)',
 				'button': 'var(--shadow-button)'
 			},
 			transitionTimingFunction: {

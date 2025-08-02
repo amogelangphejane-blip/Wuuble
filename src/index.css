@@ -16,10 +16,11 @@
     --popover: 220 15% 12%;
     --popover-foreground: 220 10% 95%;
 
-    /* Vibrant accent colors for interactive elements */
-    --primary: 280 100% 65%;
-    --primary-foreground: 220 10% 95%;
-    --primary-glow: 280 100% 75%;
+    /* Luxury gold & premium colors for influential connections */
+    --primary: 45 100% 55%;
+    --primary-foreground: 220 15% 8%;
+    --primary-glow: 45 100% 65%;
+    --primary-elegant: 45 80% 45%;
 
     --secondary: 220 15% 18%;
     --secondary-foreground: 220 10% 85%;
@@ -27,8 +28,11 @@
     --muted: 220 15% 15%;
     --muted-foreground: 220 8% 65%;
 
-    --accent: 200 100% 60%;
+    --accent: 280 100% 65%;
     --accent-foreground: 220 15% 8%;
+    
+    --luxury: 45 100% 50%;
+    --luxury-foreground: 220 15% 8%;
 
     --destructive: 0 85% 60%;
     --destructive-foreground: 220 10% 95%;
@@ -51,14 +55,18 @@
     --controls-bg: 220 15% 10%;
     --controls-border: 220 15% 22%;
 
-    /* Gradients for modern effects */
-    --gradient-primary: linear-gradient(135deg, hsl(280 100% 65%), hsl(200 100% 60%));
-    --gradient-bg: radial-gradient(ellipse at top, hsl(280 100% 10%), hsl(220 15% 8%));
+    /* Premium gradients for luxury aesthetic */
+    --gradient-primary: linear-gradient(135deg, hsl(45 100% 55%), hsl(45 100% 65%));
+    --gradient-luxury: linear-gradient(135deg, hsl(45 100% 50%), hsl(280 100% 65%));
+    --gradient-bg: radial-gradient(ellipse at top, hsl(45 20% 8%), hsl(220 15% 8%));
     --gradient-card: linear-gradient(145deg, hsl(220 15% 12%), hsl(220 15% 14%));
+    --gradient-elegant: linear-gradient(45deg, hsl(45 100% 55%) 0%, hsl(45 100% 65%) 25%, hsl(280 100% 65%) 50%, hsl(45 100% 55%) 75%, hsl(45 100% 65%) 100%);
 
-    /* Shadows for depth */
+    /* Luxury shadows for premium depth */
     --shadow-video: 0 20px 40px -10px hsl(220 15% 5% / 0.5);
-    --shadow-glow: 0 0 40px hsl(280 100% 65% / 0.3);
+    --shadow-glow: 0 0 40px hsl(45 100% 55% / 0.4);
+    --shadow-elegant: 0 10px 30px -10px hsl(45 100% 55% / 0.3);
+    --shadow-luxury: 0 0 60px hsl(45 100% 55% / 0.2);
     --shadow-button: 0 4px 12px hsl(220 15% 5% / 0.4);
 
     /* Animation curves */
