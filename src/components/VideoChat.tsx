@@ -195,7 +195,7 @@ export const VideoChat = () => {
               <Video className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Monkey
+              Inner Circle
             </h1>
           </div>
           

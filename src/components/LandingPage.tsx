@@ -46,7 +46,7 @@ const LandingPage = () => {
                 <div className="w-8 h-8 bg-gradient-luxury rounded-lg flex items-center justify-center shadow-luxury">
                   <Crown className="w-5 h-5 text-luxury-foreground" />
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-luxury bg-clip-text text-transparent">Pompeii Elite</h1>
+                <h1 className="text-xl font-bold bg-gradient-luxury bg-clip-text text-transparent">Inner Circle</h1>
               </div>
               <Button 
                 onClick={() => navigate('/chat')}
@@ -126,7 +126,7 @@ const LandingPage = () => {
         <section className="container mx-auto px-6 py-20">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Why Choose <span className="text-transparent bg-gradient-luxury bg-clip-text">Pompeii Elite</span>?
+              Why Choose <span className="text-transparent bg-gradient-luxury bg-clip-text">Inner Circle</span>?
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               The premier platform for connecting with industry leaders, entrepreneurs, and influential minds
@@ -208,10 +208,10 @@ const LandingPage = () => {
                 <div className="w-6 h-6 bg-gradient-luxury rounded flex items-center justify-center">
                   <Crown className="w-4 h-4 text-luxury-foreground" />
                 </div>
-                <span className="font-semibold bg-gradient-luxury bg-clip-text text-transparent">Pompeii Elite</span>
+                <span className="font-semibold bg-gradient-luxury bg-clip-text text-transparent">Inner Circle</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                © 2024 Pompeii Elite. Where influence meets opportunity.
+                © 2024 Inner Circle. Where influence meets opportunity.
               </p>
             </div>
           </div>
