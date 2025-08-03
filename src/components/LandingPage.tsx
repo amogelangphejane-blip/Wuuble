@@ -2,9 +2,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Video, Users, Globe, Shield, Zap, Crown, Star, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import influencerHero from '@/assets/influencer-hero.jpg';
-import influencerLaptop1 from '@/assets/influencer-laptop-1.jpg';
-import influencerLaptop2 from '@/assets/influencer-laptop-2.jpg';
+import classyHero from '@/assets/classy-hero.jpg';
+import classyLaptop1 from '@/assets/classy-laptop-1.jpg';
+import classyLaptop2 from '@/assets/classy-laptop-2.jpg';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -103,8 +103,8 @@ const LandingPage = () => {
               <div className="relative">
                 <div className="relative rounded-2xl overflow-hidden shadow-luxury">
                   <img 
-                    src={influencerHero} 
-                    alt="Instagram influencer in premium video consultation" 
+                    src={classyHero} 
+                    alt="Elegant professional woman in premium video consultation" 
                     className="w-full h-auto object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-luxury/20 to-transparent"></div>
@@ -157,8 +157,8 @@ const LandingPage = () => {
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="relative group">
               <img 
-                src={influencerLaptop1} 
-                alt="Instagram influencer in professional video consultation" 
+                src={classyLaptop1} 
+                alt="Sophisticated executive in professional video consultation" 
                 className="w-full h-80 object-cover rounded-2xl shadow-luxury"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-luxury/10 to-transparent rounded-2xl"></div>
@@ -168,8 +168,8 @@ const LandingPage = () => {
             </div>
             <div className="relative group">
               <img 
-                src={influencerLaptop2} 
-                alt="Instagram influencer in premium network meeting" 
+                src={classyLaptop2} 
+                alt="Refined business leader in premium network meeting" 
                 className="w-full h-80 object-cover rounded-2xl shadow-luxury"
               />
               <div className="absolute inset-0 bg-gradient-to-l from-luxury/10 to-transparent rounded-2xl"></div>
