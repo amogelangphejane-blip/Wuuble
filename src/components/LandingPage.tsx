@@ -92,9 +92,9 @@ const LandingPage = () => {
                 </div>
                 
                 <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
-                  Meet Influential
+                  Create your
                   <span className="block text-transparent bg-gradient-luxury bg-clip-text">
-                    Industry Leaders
+                    circle of influence
                   </span>
                 </h1>
                 
