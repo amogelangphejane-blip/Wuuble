@@ -2,12 +2,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Video, Users, Globe, Shield, Zap, Crown, Star, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import classyMixedHero from '@/assets/classy-mixed-hero.jpg';
 import classyMixedLaptop1 from '@/assets/classy-mixed-laptop-1.jpg';
 import classyMixedLaptop2 from '@/assets/classy-mixed-laptop-2.jpg';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const features = [
     {
@@ -48,12 +50,33 @@ const LandingPage = () => {
                 </div>
                 <h1 className="text-xl font-bold bg-gradient-luxury bg-clip-text text-transparent">Inner Circle</h1>
               </div>
-              <Button 
-                onClick={() => navigate('/chat')}
-                className="bg-gradient-luxury hover:shadow-luxury transition-smooth"
-              >
-                Join Elite Circle
-              </Button>
+              <div className="flex items-center gap-4">
+                {user ? (
+                  <>
+                    <Button 
+                      variant="outline"
+                      onClick={() => navigate('/communities')}
+                      className="border-luxury text-luxury hover:bg-luxury/10"
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      Communities
+                    </Button>
+                    <Button 
+                      onClick={() => navigate('/chat')}
+                      className="bg-gradient-luxury hover:shadow-luxury transition-smooth"
+                    >
+                      Start Chat
+                    </Button>
+                  </>
+                ) : (
+                  <Button 
+                    onClick={() => navigate('/auth')}
+                    className="bg-gradient-luxury hover:shadow-luxury transition-smooth"
+                  >
+                    Join Elite Circle
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -81,22 +104,46 @@ const LandingPage = () => {
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <Button 
-                    onClick={() => navigate('/chat')}
-                    size="lg"
-                    className="bg-gradient-luxury hover:shadow-luxury transition-smooth text-lg px-8 py-3"
-                  >
-                    <Crown className="w-5 h-5 mr-2" />
-                    Connect with Leaders
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="lg"
-                    className="text-lg px-8 py-3 border-luxury text-luxury hover:bg-luxury/10"
-                  >
-                    <Star className="w-5 h-5 mr-2" />
-                    View Elite Features
-                  </Button>
+                  {user ? (
+                    <>
+                      <Button 
+                        onClick={() => navigate('/communities')}
+                        size="lg"
+                        className="bg-gradient-luxury hover:shadow-luxury transition-smooth text-lg px-8 py-3"
+                      >
+                        <Crown className="w-5 h-5 mr-2" />
+                        Explore Communities
+                      </Button>
+                      <Button 
+                        onClick={() => navigate('/chat')}
+                        variant="outline" 
+                        size="lg"
+                        className="text-lg px-8 py-3 border-luxury text-luxury hover:bg-luxury/10"
+                      >
+                        <Video className="w-5 h-5 mr-2" />
+                        Start Video Chat
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button 
+                        onClick={() => navigate('/auth')}
+                        size="lg"
+                        className="bg-gradient-luxury hover:shadow-luxury transition-smooth text-lg px-8 py-3"
+                      >
+                        <Crown className="w-5 h-5 mr-2" />
+                        Join Inner Circle
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="lg"
+                        className="text-lg px-8 py-3 border-luxury text-luxury hover:bg-luxury/10"
+                      >
+                        <Star className="w-5 h-5 mr-2" />
+                        View Elite Features
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
               
@@ -189,14 +236,25 @@ const LandingPage = () => {
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
               Connect with industry leaders, entrepreneurs, and visionaries. Your next breakthrough conversation awaits.
             </p>
-            <Button 
-              onClick={() => navigate('/chat')}
-              size="lg"
-              className="bg-gradient-luxury hover:shadow-luxury transition-smooth text-lg px-12 py-3"
-            >
-              <Crown className="w-5 h-5 mr-2" />
-              Enter Elite Network
-            </Button>
+            {user ? (
+              <Button 
+                onClick={() => navigate('/communities')}
+                size="lg"
+                className="bg-gradient-luxury hover:shadow-luxury transition-smooth text-lg px-12 py-3"
+              >
+                <Users className="w-5 h-5 mr-2" />
+                Explore Communities
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => navigate('/auth')}
+                size="lg"
+                className="bg-gradient-luxury hover:shadow-luxury transition-smooth text-lg px-12 py-3"
+              >
+                <Crown className="w-5 h-5 mr-2" />
+                Join Elite Network
+              </Button>
+            )}
           </div>
         </section>
 
