@@ -3,9 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Video, Users, Globe, Shield, Zap, Crown, Star, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import classyMixedHero from '@/assets/classy-mixed-hero.jpg';
-import classyMixedLaptop1 from '@/assets/classy-mixed-laptop-1.jpg';
-import classyMixedLaptop2 from '@/assets/classy-mixed-laptop-2.jpg';
+const logoUrl = '/lovable-uploads/b824c9d2-378b-420c-8acb-063c18b44aa1.png';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -148,19 +146,13 @@ const LandingPage = () => {
               </div>
               
               <div className="relative">
-                <div className="relative rounded-2xl overflow-hidden shadow-luxury">
+                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-card/30 to-card/10 border border-luxury/20 backdrop-blur-sm p-12 flex items-center justify-center">
                   <img 
-                    src={classyMixedHero} 
-                    alt="Elegant mixed race professional woman in premium video consultation" 
-                    className="w-full h-auto object-cover"
+                    src={logoUrl} 
+                    alt="Inner Circle Logo" 
+                    className="w-48 h-auto object-contain opacity-60"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-luxury/20 to-transparent"></div>
-                  <div className="absolute top-4 right-4 bg-luxury/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                    <span className="text-xs font-medium text-luxury-foreground flex items-center">
-                      <Crown className="w-3 h-3 mr-1" />
-                      Elite Member
-                    </span>
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-luxury/5 to-transparent"></div>
                 </div>
                 <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gradient-luxury rounded-full opacity-20 blur-2xl"></div>
                 <div className="absolute -top-6 -left-6 w-24 h-24 bg-luxury rounded-full opacity-30 blur-xl"></div>
@@ -202,26 +194,30 @@ const LandingPage = () => {
 
           {/* Elite Showcase */}
           <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div className="relative group">
-              <img 
-                src={classyMixedLaptop1} 
-                alt="Sophisticated mixed race executive in professional video consultation" 
-                className="w-full h-80 object-cover rounded-2xl shadow-luxury"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-luxury/10 to-transparent rounded-2xl"></div>
+            <div className="relative group bg-gradient-to-br from-card/20 to-card/5 rounded-2xl p-8 border border-luxury/10">
+              <div className="flex items-center justify-center h-48">
+                <img 
+                  src={logoUrl} 
+                  alt="Inner Circle - Elite Network" 
+                  className="w-32 h-auto object-contain opacity-40"
+                />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-luxury/5 to-transparent rounded-2xl"></div>
               <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-2 rounded-lg">
-                <span className="text-sm font-medium text-foreground">CEO, Tech Startup</span>
+                <span className="text-sm font-medium text-foreground">Elite Network</span>
               </div>
             </div>
-            <div className="relative group">
-              <img 
-                src={classyMixedLaptop2} 
-                alt="Refined mixed race business leader in premium network meeting" 
-                className="w-full h-80 object-cover rounded-2xl shadow-luxury"
-              />
-              <div className="absolute inset-0 bg-gradient-to-l from-luxury/10 to-transparent rounded-2xl"></div>
+            <div className="relative group bg-gradient-to-bl from-card/20 to-card/5 rounded-2xl p-8 border border-luxury/10">
+              <div className="flex items-center justify-center h-48">
+                <img 
+                  src={logoUrl} 
+                  alt="Inner Circle - Premium Community" 
+                  className="w-32 h-auto object-contain opacity-40"
+                />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-l from-luxury/5 to-transparent rounded-2xl"></div>
               <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm px-3 py-2 rounded-lg">
-                <span className="text-sm font-medium text-foreground">Investment Director</span>
+                <span className="text-sm font-medium text-foreground">Premium Community</span>
               </div>
             </div>
           </div>
