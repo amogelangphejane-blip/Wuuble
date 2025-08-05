@@ -95,7 +95,8 @@ export default {
 				'gradient-luxury': 'var(--gradient-luxury)',
 				'gradient-bg': 'var(--gradient-bg)',
 				'gradient-card': 'var(--gradient-card)',
-				'gradient-elegant': 'var(--gradient-elegant)'
+				'gradient-elegant': 'var(--gradient-elegant)',
+				'gradient-subtle': 'var(--gradient-subtle)'
 			},
 			boxShadow: {
 				'video': 'var(--shadow-video)',
