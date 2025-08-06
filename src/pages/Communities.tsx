@@ -12,11 +12,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Users, Lock, Globe, Crown } from 'lucide-react';
+import { AvatarUpload } from '@/components/ui/avatar-upload';
 
 interface Community {
   id: string;
   name: string;
   description: string;
+  avatar_url: string | null;
   is_private: boolean;
   member_count: number;
   creator_id: string;
@@ -30,6 +32,7 @@ const Communities = () => {
   const [newCommunity, setNewCommunity] = useState({
     name: '',
     description: '',
+    avatar_url: null as string | null,
     is_private: false
   });
   const [isCreating, setIsCreating] = useState(false);
@@ -80,6 +83,7 @@ const Communities = () => {
         .insert([{
           name: newCommunity.name,
           description: newCommunity.description,
+          avatar_url: newCommunity.avatar_url,
           is_private: newCommunity.is_private,
           creator_id: user.id
         }])
@@ -102,7 +106,7 @@ const Communities = () => {
         description: "Community created successfully"
       });
 
-      setNewCommunity({ name: '', description: '', is_private: false });
+      setNewCommunity({ name: '', description: '', avatar_url: null, is_private: false });
       setCreateDialogOpen(false);
       fetchCommunities();
     } catch (error: any) {
@@ -184,6 +188,17 @@ const Communities = () => {
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
+                      <Label>Community Avatar</Label>
+                      <AvatarUpload
+                        currentAvatarUrl={newCommunity.avatar_url}
+                        onAvatarChange={(avatarUrl) => setNewCommunity({ ...newCommunity, avatar_url: avatarUrl })}
+                        bucketName="community-avatars"
+                        folder="communities"
+                        size="lg"
+                        className="mx-auto"
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="name">Community Name</Label>
                       <Input
                         id="name"
@@ -264,7 +279,20 @@ const Communities = () => {
             {communities.map((community) => (
               <Card key={community.id} className="border-luxury/20 shadow-luxury hover:shadow-lg transition-all duration-300">
                 <CardHeader>
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0">
+                      <div className="w-16 h-16 rounded-full border-2 border-luxury/20 bg-luxury/5 flex items-center justify-center overflow-hidden">
+                        {community.avatar_url ? (
+                          <img
+                            src={community.avatar_url}
+                            alt={`${community.name} avatar`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Users className="w-8 h-8 text-luxury/60" />
+                        )}
+                      </div>
+                    </div>
                     <div className="flex-1">
                       <CardTitle className="text-xl mb-2 flex items-center gap-2">
                         {community.name}
