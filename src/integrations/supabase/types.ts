@@ -117,7 +117,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      community_is_public: {
+        Args: { community_id: string }
+        Returns: boolean
+      }
+      user_can_view_community: {
+        Args: { community_id: string; user_id: string }
+        Returns: boolean
+      }
+      user_created_community: {
+        Args: { community_id: string; user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
