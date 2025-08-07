@@ -80,26 +80,37 @@ const CommunityDetail = () => {
       setCommunity(communityData);
       setIsCreator(communityData.creator_id === user?.id);
 
-      // Fetch community members
+      // Fetch community members with profiles
       const { data: membersData, error: membersError } = await supabase
         .from('community_members')
         .select(`
           id,
           user_id,
           role,
-          joined_at,
-          profiles!community_members_user_id_fkey (
-            display_name,
-            avatar_url
-          )
+          joined_at
         `)
         .eq('community_id', id);
+
+      // Fetch profiles separately for now to avoid the foreign key issue
+      let enrichedMembers: CommunityMember[] = [];
+      if (membersData) {
+        const userIds = membersData.map(m => m.user_id);
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', userIds);
+
+        enrichedMembers = membersData.map(member => ({
+          ...member,
+          profiles: profilesData?.find(p => p.user_id === member.user_id) || null
+        }));
+      }
 
       if (membersError) {
         console.error('Error fetching members:', membersError);
       } else {
-        setMembers(membersData || []);
-        setIsMember(membersData?.some(member => member.user_id === user?.id) || false);
+        setMembers(enrichedMembers);
+        setIsMember(enrichedMembers.some(member => member.user_id === user?.id) || false);
       }
 
     } catch (error) {
@@ -232,149 +243,182 @@ const CommunityDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-luxury/5 via-white to-luxury/10">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-luxury/20 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+    <div className="min-h-screen bg-white">
+      {/* Skool-style Header */}
+      <div className="bg-white border-b sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => navigate('/communities')}
+                className="text-gray-600 hover:text-gray-900 flex items-center gap-2 text-sm font-medium"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeft className="h-4 w-4" />
                 Back to Communities
-              </Button>
-              
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-luxury flex items-center gap-2">
-                  {community.name}
-                  {community.is_private ? (
-                    <Lock className="h-5 w-5" />
-                  ) : (
-                    <Globe className="h-5 w-5" />
-                  )}
-                  {isCreator && <Crown className="h-5 w-5 text-yellow-500" />}
-                </h1>
-                
-                <div className="flex items-center gap-2">
-                  <Badge variant={community.is_private ? "secondary" : "outline"}>
-                    {community.is_private ? 'Private' : 'Public'}
-                  </Badge>
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {community.member_count} members
-                  </Badge>
-                </div>
-              </div>
+              </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {!isMember && !isCreator && (
-                <Button
+                <button
                   onClick={joinCommunity}
                   disabled={joiningLeaving}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   {joiningLeaving ? 'Joining...' : 'Join Community'}
-                </Button>
+                </button>
               )}
               
               {isMember && !isCreator && (
-                <Button
-                  variant="outline"
+                <button
                   onClick={leaveCommunity}
                   disabled={joiningLeaving}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
                 >
                   <UserMinus className="h-4 w-4 mr-2" />
                   {joiningLeaving ? 'Leaving...' : 'Leave Community'}
-                </Button>
+                </button>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Community Info */}
+      {/* Community Hero Section */}
+      <div className="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="max-w-6xl mx-auto px-6 py-16 relative">
+          <div className="text-center text-white">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <h1 className="text-4xl font-bold">
+                {community.name}
+              </h1>
+              {community.is_private && <Lock className="h-6 w-6" />}
+              {isCreator && <Crown className="h-6 w-6 text-yellow-400" />}
+            </div>
+            
+            <p className="text-white/90 text-lg mb-6 max-w-2xl mx-auto">
+              {community.description || 'Welcome to our amazing community! Connect, learn, and grow together.'}
+            </p>
+            
+            <div className="flex items-center justify-center gap-6 text-white/90">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                <span className="font-medium">{community.member_count} Members</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                <span className="font-medium">{community.is_private ? 'Private' : 'Public'} Community</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Created {new Date(community.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Skool-style Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>About</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="mb-4">
-                  {community.description || 'No description provided.'}
-                </CardDescription>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Created:</span>
-                    <span>{new Date(community.created_at).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Members:</span>
-                    <span>{community.member_count}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Type:</span>
-                    <span>{community.is_private ? 'Private' : 'Public'}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Navigation Menu */}
+            <div className="bg-white rounded-lg border p-4 mb-6">
+              <nav className="space-y-2">
+                <button className="w-full text-left px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg">
+                  💬 Discussion
+                </button>
+                <button className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
+                  📚 Classroom
+                </button>
+                <button className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
+                  📅 Calendar
+                </button>
+                <button className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
+                  👥 Members
+                </button>
+                <button className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
+                  ℹ️ About
+                </button>
+              </nav>
+            </div>
 
             {/* Members List */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Members ({members.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {members.map((member) => (
-                    <div key={member.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-sm">
-                          {member.profiles?.display_name || 'Anonymous User'}
-                        </span>
+            <div className="bg-white rounded-lg border p-4">
+              <h3 className="font-semibold text-gray-900 mb-4">Members ({members.length})</h3>
+              <div className="space-y-3">
+                {members.slice(0, 8).map((member) => (
+                  <div key={member.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        {(member.profiles?.display_name || 'A')[0].toUpperCase()}
                       </div>
-                      {member.role !== 'member' && (
-                        <Badge variant="secondary" className="text-xs">
-                          {member.role}
-                        </Badge>
-                      )}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {member.profiles?.display_name || 'Anonymous User'}
+                        </div>
+                        {member.role !== 'member' && (
+                          <div className="text-xs text-gray-500 capitalize">{member.role}</div>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  </div>
+                ))}
+                {members.length > 8 && (
+                  <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    View all {members.length} members
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Community Posts */}
-          <div className="lg:col-span-2">
+          {/* Main Content */}
+          <div className="lg:col-span-3">
             {isMember || isCreator || !community.is_private ? (
-              <CommunityPosts 
-                communityId={community.id} 
-                communityName={community.name}
-              />
+              <div className="bg-white rounded-lg border">
+                <div className="p-6 border-b">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Community Discussion</h2>
+                  <p className="text-gray-600">Share updates, ask questions, and connect with the community.</p>
+                </div>
+                
+                <div className="h-[500px] flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-2.565-.372l-3.6 1.8a.75.75 0 01-1.06-.671V14.5A8 8 0 013 12a8 8 0 018-8h.01M21 12a8 8 0 01-8 8v0a8 8 0 01-8-8" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Discussion Coming Soon</h3>
+                    <p className="text-gray-600">
+                      Community discussion features are being updated to provide the best experience.
+                    </p>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <Card className="h-[600px] flex items-center justify-center">
+              <div className="bg-white rounded-lg border h-[600px] flex items-center justify-center">
                 <div className="text-center">
-                  <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Private Community</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Lock className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Private Community</h3>
+                  <p className="text-gray-600 mb-6">
                     You need to join this community to see the discussion.
                   </p>
-                  <Button onClick={joinCommunity} disabled={joiningLeaving}>
+                  <button 
+                    onClick={joinCommunity} 
+                    disabled={joiningLeaving}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+                  >
                     <UserPlus className="h-4 w-4 mr-2" />
                     {joiningLeaving ? 'Joining...' : 'Join Community'}
-                  </Button>
+                  </button>
                 </div>
-              </Card>
+              </div>
             )}
           </div>
         </div>

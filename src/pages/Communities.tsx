@@ -4,14 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Users, Lock, Globe, Crown } from 'lucide-react';
+import { Users, Lock } from 'lucide-react';
 
 interface Community {
   id: string;
@@ -152,162 +150,196 @@ const Communities = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      {/* Header */}
-      <div className="border-b border-luxury/20 bg-background/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Crown className="h-8 w-8 text-luxury" />
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                  Communities
-                </h1>
-                <p className="text-muted-foreground">Discover and join exclusive social groups</p>
+    <div className="min-h-screen bg-white">
+      {/* Skool-style Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Discover communities
+            </h1>
+            <p className="text-gray-600">
+              or <span className="text-blue-600 cursor-pointer hover:underline" onClick={() => setCreateDialogOpen(true)}>create your own</span>
+            </p>
+          </div>
+          
+          <div className="max-w-2xl mx-auto mb-8">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search for anything"
+                className="w-full px-4 py-3 pl-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
             </div>
-            
-            <div className="flex items-center gap-4">
-              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-primary hover:opacity-90 text-white">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Community
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Create New Community</DialogTitle>
-                    <DialogDescription>
-                      Start your own exclusive social group within Inner Circle.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Community Name</Label>
-                      <Input
-                        id="name"
-                        placeholder="Enter community name"
-                        value={newCommunity.name}
-                        onChange={(e) => setNewCommunity({ ...newCommunity, name: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Describe your community"
-                        value={newCommunity.description}
-                        onChange={(e) => setNewCommunity({ ...newCommunity, description: e.target.value })}
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="private"
-                        checked={newCommunity.is_private}
-                        onCheckedChange={(checked) => setNewCommunity({ ...newCommunity, is_private: checked })}
-                      />
-                      <Label htmlFor="private">Private Community</Label>
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={createCommunity}
-                    disabled={isCreating || !newCommunity.name.trim()}
-                    className="w-full"
-                  >
-                    {isCreating ? 'Creating...' : 'Create Community'}
-                  </Button>
-                </DialogContent>
-              </Dialog>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/')}
-              >
-                Back to Home
-              </Button>
+          </div>
+
+          {/* Category Filters */}
+          <div className="flex justify-center mb-8">
+            <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+              <button className="px-4 py-2 bg-white rounded-md text-sm font-medium text-gray-900 shadow-sm">
+                All
+              </button>
+              <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-md">
+                💰 Business
+              </button>
+              <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-md">
+                🍎 Health & fitness
+              </button>
+              <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-md">
+                📚 Personal development
+              </button>
+              <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-md">
+                🎯 More...
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Create Community Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogTrigger asChild>
+          <div className="hidden" />
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Community</DialogTitle>
+            <DialogDescription>
+              Start your own exclusive social group.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Community Name</Label>
+              <Input
+                id="name"
+                placeholder="Enter community name"
+                value={newCommunity.name}
+                onChange={(e) => setNewCommunity({ ...newCommunity, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Describe your community"
+                value={newCommunity.description}
+                onChange={(e) => setNewCommunity({ ...newCommunity, description: e.target.value })}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="private"
+                checked={newCommunity.is_private}
+                onCheckedChange={(checked) => setNewCommunity({ ...newCommunity, is_private: checked })}
+              />
+              <Label htmlFor="private">Private Community</Label>
+            </div>
+          </div>
+          <Button 
+            onClick={createCommunity}
+            disabled={isCreating || !newCommunity.name.trim()}
+            className="w-full"
+          >
+            {isCreating ? 'Creating...' : 'Create Community'}
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Skool-style Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader className="space-y-2">
-                  <div className="h-6 bg-muted rounded"></div>
-                  <div className="h-4 bg-muted rounded"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-20 bg-muted rounded"></div>
-                </CardContent>
-              </Card>
+              <div key={i} className="bg-white rounded-lg shadow-sm border animate-pulse">
+                <div className="h-48 bg-gray-200 rounded-t-lg"></div>
+                <div className="p-6">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                </div>
+              </div>
             ))}
           </div>
         ) : communities.length === 0 ? (
-          <div className="text-center py-12">
-            <Users className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No communities yet</h3>
-            <p className="text-muted-foreground mb-6">
+          <div className="text-center py-16">
+            <div className="bg-gray-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <Users className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No communities yet</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
               Be the first to create a community and start building your social group.
             </p>
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+            <button 
+              onClick={() => setCreateDialogOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            >
               Create First Community
-            </Button>
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {communities.map((community) => (
-              <Card key={community.id} className="border-luxury/20 shadow-luxury hover:shadow-lg transition-all duration-300">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-xl mb-2 flex items-center gap-2">
-                        {community.name}
-                        {community.is_private ? (
-                          <Lock className="h-4 w-4 text-luxury" />
-                        ) : (
-                          <Globe className="h-4 w-4 text-luxury" />
-                        )}
-                      </CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={community.is_private ? "secondary" : "outline"}>
-                          {community.is_private ? 'Private' : 'Public'}
-                        </Badge>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {community.member_count}
-                        </Badge>
-                      </div>
+            {communities.map((community, index) => (
+              <div key={community.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow relative overflow-hidden group">
+                {/* Ranking Badge */}
+                <div className="absolute top-4 left-4 z-10">
+                  <div className="bg-white/90 backdrop-blur-sm rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold text-gray-700">
+                    #{index + 1}
+                  </div>
+                </div>
+                
+                {/* Community Banner */}
+                <div className="h-40 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative">
+                  <div className="absolute inset-0 bg-black/20"></div>
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <h3 className="text-white font-bold text-lg mb-1 truncate">
+                      {community.name}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white/90 text-sm">
+                        {community.member_count} Members
+                      </span>
+                      <span className="text-white/90 text-sm">•</span>
+                      <span className="text-white/90 text-sm">
+                        {community.is_private ? 'Private' : 'Free'}
+                      </span>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm mb-4 line-clamp-3">
-                    {community.description || 'No description provided.'}
-                  </CardDescription>
+                  
+                  {community.is_private && (
+                    <div className="absolute top-4 right-4">
+                      <Lock className="h-4 w-4 text-white" />
+                    </div>
+                  )}
+                </div>
+                
+                {/* Community Content */}
+                <div className="p-6">
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                    {community.description || 'Join this amazing community to connect with like-minded individuals and grow together.'}
+                  </p>
+                  
+                  {/* Action Buttons */}
                   <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => joinCommunity(community.id)}
-                    >
-                      Join Community
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
+                    <button 
                       onClick={() => navigate(`/communities/${community.id}`)}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-lg font-medium text-sm transition-colors"
                     >
-                      View
-                    </Button>
+                      View Community
+                    </button>
+                    <button 
+                      onClick={() => joinCommunity(community.id)}
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 py-2.5 px-4 rounded-lg font-medium text-sm transition-colors"
+                    >
+                      Join
+                    </button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         )}
