@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Lock } from 'lucide-react';
+import { Users, Lock, User, Settings } from 'lucide-react';
 
 interface Community {
   id: string;
@@ -154,6 +154,19 @@ const Communities = () => {
       {/* Skool-style Header */}
       <div className="bg-white border-b">
         <div className="max-w-6xl mx-auto px-6 py-8">
+          {/* Top Navigation */}
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/profile')}
+              className="flex items-center space-x-2"
+            >
+              <Settings className="w-4 h-4" />
+              <span>Profile Settings</span>
+            </Button>
+          </div>
+          
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
               Discover communities

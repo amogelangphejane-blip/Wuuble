@@ -7,7 +7,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Users, Lock, Globe, Crown, UserPlus, UserMinus } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
+import { CommunitySearch } from '@/components/CommunitySearch';
 
 interface Community {
   id: string;
@@ -347,17 +349,26 @@ const CommunityDetail = () => {
 
             {/* Members List */}
             <div className="bg-white rounded-lg border p-4">
-              <h3 className="font-semibold text-gray-900 mb-4">Members ({members.length})</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Members ({members.length})</h3>
+                <CommunitySearch communityId={community.id} isCreator={isCreator} />
+              </div>
               <div className="space-y-3">
                 {members.slice(0, 8).map((member) => (
                   <div key={member.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {(member.profiles?.display_name || 'A')[0].toUpperCase()}
-                      </div>
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={member.profiles?.avatar_url || ''} />
+                        <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                          {(member.profiles?.display_name || 'A')[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-gray-900 flex items-center gap-1">
                           {member.profiles?.display_name || 'Anonymous User'}
+                          {member.user_id === community?.creator_id && (
+                            <Crown className="h-3 w-3 text-yellow-500" />
+                          )}
                         </div>
                         {member.role !== 'member' && (
                           <div className="text-xs text-gray-500 capitalize">{member.role}</div>
@@ -379,26 +390,10 @@ const CommunityDetail = () => {
           {/* Main Content */}
           <div className="lg:col-span-3">
             {isMember || isCreator || !community.is_private ? (
-              <div className="bg-white rounded-lg border">
-                <div className="p-6 border-b">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Community Discussion</h2>
-                  <p className="text-gray-600">Share updates, ask questions, and connect with the community.</p>
-                </div>
-                
-                <div className="h-[500px] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-2.565-.372l-3.6 1.8a.75.75 0 01-1.06-.671V14.5A8 8 0 013 12a8 8 0 018-8h.01M21 12a8 8 0 01-8 8v0a8 8 0 01-8-8" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Discussion Coming Soon</h3>
-                    <p className="text-gray-600">
-                      Community discussion features are being updated to provide the best experience.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <CommunityPosts 
+                communityId={community.id} 
+                communityName={community.name} 
+              />
             ) : (
               <div className="bg-white rounded-lg border h-[600px] flex items-center justify-center">
                 <div className="text-center">
