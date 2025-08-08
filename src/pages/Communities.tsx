@@ -10,11 +10,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Lock, User, Settings } from 'lucide-react';
+import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
 
 interface Community {
   id: string;
   name: string;
   description: string;
+  avatar_url?: string | null;
   is_private: boolean;
   member_count: number;
   creator_id: string;
@@ -28,6 +30,7 @@ const Communities = () => {
   const [newCommunity, setNewCommunity] = useState({
     name: '',
     description: '',
+    avatar_url: null as string | null,
     is_private: false
   });
   const [isCreating, setIsCreating] = useState(false);
@@ -78,6 +81,7 @@ const Communities = () => {
         .insert([{
           name: newCommunity.name,
           description: newCommunity.description,
+          avatar_url: newCommunity.avatar_url,
           is_private: newCommunity.is_private,
           creator_id: user.id
         }])
@@ -100,7 +104,7 @@ const Communities = () => {
         description: "Community created successfully"
       });
 
-      setNewCommunity({ name: '', description: '', is_private: false });
+      setNewCommunity({ name: '', description: '', avatar_url: null, is_private: false });
       setCreateDialogOpen(false);
       fetchCommunities();
     } catch (error: any) {
@@ -245,6 +249,14 @@ const Communities = () => {
                 onChange={(e) => setNewCommunity({ ...newCommunity, description: e.target.value })}
               />
             </div>
+            <div className="space-y-2">
+              <CommunityAvatarUpload
+                currentAvatarUrl={newCommunity.avatar_url}
+                onAvatarUpdate={(avatarUrl) => setNewCommunity({ ...newCommunity, avatar_url: avatarUrl })}
+                size="md"
+                showLabel={true}
+              />
+            </div>
             <div className="flex items-center space-x-2">
               <Switch
                 id="private"
@@ -306,8 +318,22 @@ const Communities = () => {
                 </div>
                 
                 {/* Community Banner */}
-                <div className="h-40 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative">
-                  <div className="absolute inset-0 bg-black/20"></div>
+                <div className="h-40 relative overflow-hidden">
+                  {community.avatar_url ? (
+                    <>
+                      <img 
+                        src={community.avatar_url} 
+                        alt={community.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/30"></div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500"></div>
+                      <div className="absolute inset-0 bg-black/20"></div>
+                    </>
+                  )}
                   <div className="absolute bottom-4 left-4 right-4">
                     <h3 className="text-white font-bold text-lg mb-1 truncate">
                       {community.name}
