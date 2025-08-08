@@ -3,18 +3,21 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Users, Lock, Globe, Crown, UserPlus, UserMinus } from 'lucide-react';
+import { ArrowLeft, Users, Lock, Globe, Crown, UserPlus, UserMinus, Settings } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
 import { CommunitySearch } from '@/components/CommunitySearch';
+import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
 
 interface Community {
   id: string;
   name: string;
   description: string;
+  avatar_url?: string | null;
   is_private: boolean;
   member_count: number;
   creator_id: string;
@@ -44,6 +47,7 @@ const CommunityDetail = () => {
   const [isCreator, setIsCreator] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joiningLeaving, setJoiningLeaving] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -213,6 +217,12 @@ const CommunityDetail = () => {
     }
   };
 
+  const handleAvatarUpdate = (newAvatarUrl: string | null) => {
+    if (community) {
+      setCommunity({ ...community, avatar_url: newAvatarUrl });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-luxury/5 via-white to-luxury/10">
@@ -261,6 +271,16 @@ const CommunityDetail = () => {
             </div>
 
             <div className="flex items-center gap-3">
+              {isCreator && (
+                <button
+                  onClick={() => setSettingsDialogOpen(true)}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Community Settings
+                </button>
+              )}
+              
               {!isMember && !isCreator && (
                 <button
                   onClick={joinCommunity}
@@ -288,11 +308,34 @@ const CommunityDetail = () => {
       </div>
 
       {/* Community Hero Section */}
-      <div className="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative">
-        <div className="absolute inset-0 bg-black/20"></div>
+      <div className="relative">
+        {community.avatar_url ? (
+          <>
+            <div className="h-80 relative overflow-hidden">
+              <img 
+                src={community.avatar_url} 
+                alt={community.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/40"></div>
+            </div>
+          </>
+        ) : (
+          <div className="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative h-80">
+            <div className="absolute inset-0 bg-black/20"></div>
+          </div>
+        )}
         <div className="max-w-6xl mx-auto px-6 py-16 relative">
           <div className="text-center text-white">
             <div className="flex items-center justify-center gap-3 mb-4">
+              {community.avatar_url && (
+                <Avatar className="w-16 h-16 border-4 border-white/20">
+                  <AvatarImage src={community.avatar_url} alt={community.name} />
+                  <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                    {community.name[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <h1 className="text-4xl font-bold">
                 {community.name}
               </h1>
@@ -418,6 +461,29 @@ const CommunityDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Community Settings Dialog */}
+      {isCreator && (
+        <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Community Settings</DialogTitle>
+              <DialogDescription>
+                Manage your community settings and appearance.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <CommunityAvatarUpload
+                communityId={community?.id}
+                currentAvatarUrl={community?.avatar_url}
+                onAvatarUpdate={handleAvatarUpdate}
+                size="lg"
+                showLabel={true}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
