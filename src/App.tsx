@@ -9,6 +9,9 @@ import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import Communities from "./pages/Communities";
 import CommunityDetail from "./pages/CommunityDetail";
+import CommunityCalendar from "./pages/CommunityCalendar";
+import CommunityClassroom from "./pages/CommunityClassroom";
+import CommunityMembers from "./pages/CommunityMembers";
 import ProfileSettings from "./pages/ProfileSettings";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +30,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/communities" element={<Communities />} />
             <Route path="/communities/:id" element={<CommunityDetail />} />
+            <Route path="/communities/:id/calendar" element={<CommunityCalendar />} />
+            <Route path="/communities/:id/classroom" element={<CommunityClassroom />} />
+            <Route path="/communities/:id/members" element={<CommunityMembers />} />
             <Route path="/profile" element={<ProfileSettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
