@@ -343,9 +343,13 @@ const CommunityDetail = () => {
               {isCreator && <Crown className="h-6 w-6 text-yellow-400" />}
             </div>
             
-            <p className="text-white/90 text-lg mb-6 max-w-2xl mx-auto">
-              {community.description || 'Welcome to our amazing community! Connect, learn, and grow together.'}
-            </p>
+            {/* About Section - moved from sidebar */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6 max-w-2xl mx-auto">
+              <h3 className="text-xl font-semibold text-white mb-3">About</h3>
+              <p className="text-white/90 text-base leading-relaxed">
+                {community.description || 'Welcome to our amazing community! Connect, learn, and grow together.'}
+              </p>
+            </div>
             
             <div className="flex items-center justify-center gap-6 text-white/90">
               <div className="flex items-center gap-2">
@@ -372,20 +376,29 @@ const CommunityDetail = () => {
             {/* Navigation Menu */}
             <div className="bg-white rounded-lg border p-4 mb-6">
               <nav className="space-y-2">
-                <button className="w-full text-left px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg">
+                <button 
+                  onClick={() => navigate(`/communities/${id}`)}
+                  className="w-full text-left px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg"
+                >
                   💬 Discussion
                 </button>
-                <button className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
+                <button 
+                  onClick={() => navigate(`/communities/${id}/classroom`)}
+                  className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg"
+                >
                   📚 Classroom
                 </button>
-                <button className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
+                <button 
+                  onClick={() => navigate(`/communities/${id}/calendar`)}
+                  className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg"
+                >
                   📅 Calendar
                 </button>
-                <button className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
+                <button 
+                  onClick={() => navigate(`/communities/${id}/members`)}
+                  className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg"
+                >
                   👥 Members
-                </button>
-                <button className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
-                  ℹ️ About
                 </button>
               </nav>
             </div>
