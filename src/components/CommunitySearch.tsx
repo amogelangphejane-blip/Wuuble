@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Search, Users, Crown, UserCheck, UserX } from 'lucide-react';
+import { validateAvatarUrl } from '@/lib/utils';
 
 interface CommunityMember {
   id: string;
@@ -237,7 +238,7 @@ export const CommunitySearch = ({ communityId, isCreator }: CommunitySearchProps
                   <div className="flex items-start space-x-3">
                     <Avatar className="w-10 h-10">
                       <AvatarImage 
-                        src={member.profiles?.avatar_url || undefined} 
+                        src={validateAvatarUrl(member.profiles?.avatar_url)} 
                         alt={member.profiles?.display_name || 'Member'}
                         onError={() => {
                           console.warn('Member avatar failed to load:', member.profiles?.avatar_url);

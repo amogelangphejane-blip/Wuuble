@@ -68,6 +68,14 @@ export const CommunityAvatarUpload = ({
     reader.onload = (e) => {
       setPreviewUrl(e.target?.result as string);
     };
+    reader.onerror = () => {
+      console.error('Failed to read file for preview');
+      toast({
+        title: "Preview failed",
+        description: "Could not generate image preview. You can still upload the file.",
+        variant: "destructive",
+      });
+    };
     reader.readAsDataURL(file);
   };
 
@@ -83,8 +91,8 @@ export const CommunityAvatarUpload = ({
         type: selectedFile.type
       });
 
-      // Generate unique filename
-      const fileExt = selectedFile.name.split('.').pop();
+      // Generate unique filename with proper extension handling
+      const fileExt = selectedFile.name.split('.').pop() || 'jpg';
       const fileName = `communities/${communityId}/avatar-${Date.now()}.${fileExt}`;
       console.log('Generated filename:', fileName);
 
