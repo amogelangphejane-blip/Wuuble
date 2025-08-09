@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import { ProfilePictureUpload } from '@/components/ProfilePictureUpload';
+import { StorageTest } from '@/components/StorageTest';
 
 interface UserProfile {
   user_id: string;
@@ -191,6 +192,9 @@ const ProfileSettings = () => {
           currentAvatarUrl={profile?.avatar_url}
           onAvatarUpdate={handleAvatarUpdate}
         />
+
+        {/* Storage Test Section - Temporary for debugging */}
+        <StorageTest />
 
         <Separator />
 

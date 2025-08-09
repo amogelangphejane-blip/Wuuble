@@ -1,6 +1,6 @@
 -- Create storage bucket for profile pictures
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('profile-pictures', 'profile-pictures', true);
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('profile-pictures', 'profile-pictures', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 -- Create policy to allow users to upload their own profile pictures
 CREATE POLICY "Users can upload their own profile pictures" ON storage.objects
