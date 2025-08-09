@@ -322,9 +322,14 @@ const Communities = () => {
                   {community.avatar_url ? (
                     <>
                       <img 
-                        src={community.avatar_url} 
+                        src={community.avatar_url || undefined} 
                         alt={community.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.warn('Community banner image failed to load:', community.avatar_url);
+                          // Hide the image container on error
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                       <div className="absolute inset-0 bg-black/30"></div>
                     </>

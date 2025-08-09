@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, Users } from 'lucide-react';
+import { validateAvatarUrl } from '@/lib/utils';
 
 interface CommunityAvatarUploadProps {
   communityId?: string;
@@ -108,6 +109,11 @@ export const CommunityAvatarUpload = ({
         .getPublicUrl(fileName);
 
       console.log('Generated public URL:', publicUrl);
+
+      // Validate the public URL
+      if (!publicUrl || publicUrl.trim() === '') {
+        throw new Error('Failed to generate public URL for uploaded file');
+      }
 
       // Update community with new avatar URL
       const { error: updateError } = await supabase
@@ -250,8 +256,11 @@ export const CommunityAvatarUpload = ({
       <div className="flex items-center space-x-4">
         <Avatar className={sizeClasses[size]}>
           <AvatarImage 
-            src={previewUrl || currentAvatarUrl || undefined} 
-            alt="Community avatar" 
+            src={previewUrl || validateAvatarUrl(currentAvatarUrl)} 
+            alt="Community avatar"
+            onError={(e) => {
+              console.warn('Community avatar failed to load:', previewUrl || currentAvatarUrl);
+            }}
           />
           <AvatarFallback className={size === 'lg' ? 'text-2xl' : size === 'md' ? 'text-lg' : 'text-sm'}>
             <Users />

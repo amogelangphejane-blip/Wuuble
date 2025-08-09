@@ -330,7 +330,13 @@ const CommunityDetail = () => {
             <div className="flex items-center justify-center gap-3 mb-4">
               {community.avatar_url && (
                 <Avatar className="w-16 h-16 border-4 border-white/20">
-                  <AvatarImage src={community.avatar_url} alt={community.name} />
+                  <AvatarImage 
+                    src={community.avatar_url || undefined} 
+                    alt={community.name}
+                    onError={() => {
+                      console.warn('Community avatar failed to load:', community.avatar_url);
+                    }}
+                  />
                   <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                     {community.name[0].toUpperCase()}
                   </AvatarFallback>
@@ -414,7 +420,13 @@ const CommunityDetail = () => {
                   <div key={member.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-8 h-8">
-                        <AvatarImage src={member.profiles?.avatar_url || ''} />
+                        <AvatarImage 
+                          src={member.profiles?.avatar_url || undefined} 
+                          alt={member.profiles?.display_name || 'Member'}
+                          onError={() => {
+                            console.warn('Member avatar failed to load:', member.profiles?.avatar_url);
+                          }}
+                        />
                         <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                           {(member.profiles?.display_name || 'A')[0].toUpperCase()}
                         </AvatarFallback>

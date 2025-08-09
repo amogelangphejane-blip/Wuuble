@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import { ProfilePictureUpload } from '@/components/ProfilePictureUpload';
 import { StorageTest } from '@/components/StorageTest';
+import { AvatarDebugTest } from '@/components/AvatarDebugTest';
+import { StoragePolicyTest } from '@/components/StoragePolicyTest';
 
 interface UserProfile {
   user_id: string;
@@ -283,6 +285,12 @@ const ProfileSettings = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Debug Test Component */}
+        <AvatarDebugTest />
+
+        {/* Storage Policy Test Component */}
+        <StoragePolicyTest />
       </div>
     </div>
   );
