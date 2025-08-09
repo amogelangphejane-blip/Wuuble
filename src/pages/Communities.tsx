@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Lock, User, Settings } from 'lucide-react';
+import { Users, Lock, Search, Plus, Filter, TrendingUp, Star, Eye } from 'lucide-react';
 import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
+import { ModernHeader } from '@/components/ModernHeader';
 
 interface Community {
   id: string;
@@ -25,8 +27,11 @@ interface Community {
 
 const Communities = () => {
   const [communities, setCommunities] = useState<Community[]>([]);
+  const [filteredCommunities, setFilteredCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [newCommunity, setNewCommunity] = useState({
     name: '',
     description: '',
@@ -37,6 +42,15 @@ const Communities = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const categories = [
+    { name: 'All', icon: '🌐', count: 0 },
+    { name: 'Business', icon: '💼', count: 0 },
+    { name: 'Technology', icon: '💻', count: 0 },
+    { name: 'Health & Fitness', icon: '🏃', count: 0 },
+    { name: 'Personal Development', icon: '📚', count: 0 },
+    { name: 'Creative', icon: '🎨', count: 0 }
+  ];
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -50,20 +64,34 @@ const Communities = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    filterCommunities();
+  }, [communities, searchQuery, selectedCategory]);
+
   const fetchCommunities = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('communities')
-        .select('*')
+        .select(`
+          *,
+          community_members!inner(count)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCommunities(data || []);
-    } catch (error) {
+
+      const communitiesWithCounts = data?.map(community => ({
+        ...community,
+        member_count: community.community_members?.length || 0
+      })) || [];
+
+      setCommunities(communitiesWithCounts);
+    } catch (error: any) {
       console.error('Error fetching communities:', error);
       toast({
         title: "Error",
-        description: "Failed to load communities",
+        description: "Failed to fetch communities",
         variant: "destructive"
       });
     } finally {
@@ -71,16 +99,34 @@ const Communities = () => {
     }
   };
 
-  const createCommunity = async () => {
-    if (!user) return;
+  const filterCommunities = () => {
+    let filtered = communities;
 
-    setIsCreating(true);
+    if (searchQuery) {
+      filtered = filtered.filter(community =>
+        community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        community.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (selectedCategory !== 'All') {
+      // In a real app, you'd have category data in your database
+      // For now, we'll just show all communities for any category
+    }
+
+    setFilteredCommunities(filtered);
+  };
+
+  const createCommunity = async () => {
+    if (!user || !newCommunity.name.trim()) return;
+
     try {
+      setIsCreating(true);
       const { data, error } = await supabase
         .from('communities')
         .insert([{
-          name: newCommunity.name,
-          description: newCommunity.description,
+          name: newCommunity.name.trim(),
+          description: newCommunity.description.trim(),
           avatar_url: newCommunity.avatar_url,
           is_private: newCommunity.is_private,
           creator_id: user.id
@@ -91,13 +137,15 @@ const Communities = () => {
       if (error) throw error;
 
       // Add creator as admin member
-      await supabase
-        .from('community_members')
-        .insert([{
-          community_id: data.id,
-          user_id: user.id,
-          role: 'admin'
-        }]);
+      if (data) {
+        await supabase
+          .from('community_members')
+          .insert([{
+            community_id: data.id,
+            user_id: user.id,
+            role: 'admin'
+          }]);
+      }
 
       toast({
         title: "Success!",
@@ -154,240 +202,283 @@ const Communities = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Skool-style Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          {/* Top Navigation */}
-          <div className="flex justify-end mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/profile')}
-              className="flex items-center space-x-2"
+    <div className="min-h-screen bg-gradient-bg">
+      <ModernHeader />
+      
+      {/* Hero Section */}
+      <section className="bg-gradient-hero relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 relative">
+          <div className="text-center max-w-3xl mx-auto">
+            <Badge className="mb-4 bg-white/20 text-white border-white/30 hover:bg-white/30">
+              <Users className="w-4 h-4 mr-2" />
+              {communities.length} Active Communities
+            </Badge>
+            <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">
+              Discover Amazing Communities
+            </h1>
+            <p className="text-lg text-white/90 mb-8">
+              Join vibrant learning communities or create your own space for growth and collaboration
+            </p>
+            <Button 
+              size="lg"
+              onClick={() => setCreateDialogOpen(true)}
+              className="bg-white text-primary hover:bg-white/90 shadow-lg px-8 py-3 text-lg font-semibold"
             >
-              <Settings className="w-4 h-4" />
-              <span>Profile Settings</span>
+              <Plus className="mr-2 w-5 h-5" />
+              Create Community
             </Button>
           </div>
-          
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Discover communities
-            </h1>
-            <p className="text-gray-600">
-              or <span className="text-blue-600 cursor-pointer hover:underline" onClick={() => setCreateDialogOpen(true)}>create your own</span>
-            </p>
-          </div>
-          
-          <div className="max-w-2xl mx-auto mb-8">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search for anything"
-                className="w-full px-4 py-3 pl-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
+        </div>
+      </section>
 
-          {/* Category Filters */}
-          <div className="flex justify-center mb-8">
-            <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-              <button className="px-4 py-2 bg-white rounded-md text-sm font-medium text-gray-900 shadow-sm">
-                All
-              </button>
-              <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-md">
-                💰 Business
-              </button>
-              <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-md">
-                🍎 Health & fitness
-              </button>
-              <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-md">
-                📚 Personal development
-              </button>
-              <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-md">
-                🎯 More...
-              </button>
+      {/* Search and Filters */}
+      <section className="py-8 bg-muted/30">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row gap-4 mb-8">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Input
+                  placeholder="Search communities..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-12 bg-background border-border/50 focus:border-primary"
+                />
+              </div>
+              <Button variant="outline" size="lg" className="px-6">
+                <Filter className="mr-2 w-4 h-4" />
+                Filters
+              </Button>
+            </div>
+
+            {/* Category Filters */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              {categories.map((category) => (
+                <Button
+                  key={category.name}
+                  variant={selectedCategory === category.name ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category.name)}
+                  className={`
+                    ${selectedCategory === category.name 
+                      ? 'bg-primary text-primary-foreground shadow-sm' 
+                      : 'hover:bg-secondary'
+                    }
+                  `}
+                >
+                  <span className="mr-2">{category.icon}</span>
+                  {category.name}
+                </Button>
+              ))}
             </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Communities Grid */}
+      <section className="py-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="bg-card rounded-lg shadow-md animate-pulse">
+                  <div className="h-48 bg-muted rounded-t-lg"></div>
+                  <div className="p-6">
+                    <div className="h-4 bg-muted rounded mb-3"></div>
+                    <div className="h-3 bg-muted rounded w-3/4 mb-4"></div>
+                    <div className="h-10 bg-muted rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredCommunities.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="bg-muted/50 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                <Users className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-2xl font-semibold text-foreground mb-3">
+                {searchQuery ? 'No communities found' : 'No communities yet'}
+              </h3>
+              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                {searchQuery 
+                  ? 'Try adjusting your search terms or browse all communities.'
+                  : 'Be the first to create a community and start building your learning network.'
+                }
+              </p>
+              <Button 
+                size="lg"
+                onClick={() => setCreateDialogOpen(true)}
+                className="bg-gradient-hero hover:opacity-90 text-white shadow-lg px-8"
+              >
+                <Plus className="mr-2 w-5 h-5" />
+                Create First Community
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredCommunities.map((community, index) => (
+                <div 
+                  key={community.id} 
+                  className="bg-card rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group animate-fade-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  {/* Community Header */}
+                  <div className="relative h-48 overflow-hidden">
+                    {community.avatar_url ? (
+                      <>
+                        <img 
+                          src={community.avatar_url} 
+                          alt={community.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-full h-full bg-gradient-hero"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+                      </>
+                    )}
+                    
+                    {/* Badges */}
+                    <div className="absolute top-4 left-4">
+                      <Badge variant="secondary" className="bg-white/90 text-foreground">
+                        #{index + 1}
+                      </Badge>
+                    </div>
+                    
+                    {community.is_private && (
+                      <div className="absolute top-4 right-4">
+                        <Badge variant="secondary" className="bg-black/20 text-white border-white/20">
+                          <Lock className="w-3 h-3 mr-1" />
+                          Private
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* Community Title Overlay */}
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <h3 className="text-white font-bold text-lg mb-1 truncate">
+                        {community.name}
+                      </h3>
+                      <div className="flex items-center gap-2 text-white/90 text-sm">
+                        <Users className="w-4 h-4" />
+                        <span>{community.member_count} members</span>
+                        {!community.is_private && (
+                          <>
+                            <span>•</span>
+                            <span>Free</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Community Content */}
+                  <div className="p-6">
+                    <p className="text-muted-foreground text-sm mb-6 line-clamp-3 leading-relaxed">
+                      {community.description || 'Join this amazing community to connect with like-minded individuals and grow together.'}
+                    </p>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                      <Button 
+                        onClick={() => navigate(`/communities/${community.id}`)}
+                        className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View
+                      </Button>
+                      <Button 
+                        onClick={() => joinCommunity(community.id)}
+                        variant="outline"
+                        className="flex-1 hover:bg-secondary"
+                      >
+                        Join
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Create Community Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogTrigger asChild>
-          <div className="hidden" />
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Create New Community</DialogTitle>
-            <DialogDescription>
-              Start your own exclusive social group.
+            <DialogTitle className="text-2xl">Create New Community</DialogTitle>
+            <DialogDescription className="text-base">
+              Start your own learning community and bring people together around shared interests.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Community Name</Label>
+              <Label htmlFor="name" className="text-sm font-medium">Community Name</Label>
               <Input
                 id="name"
-                placeholder="Enter community name"
+                placeholder="Enter a catchy community name"
                 value={newCommunity.name}
                 onChange={(e) => setNewCommunity({ ...newCommunity, name: e.target.value })}
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
               <Textarea
                 id="description"
-                placeholder="Describe your community"
+                placeholder="What's your community about? What will members learn and discuss?"
                 value={newCommunity.description}
                 onChange={(e) => setNewCommunity({ ...newCommunity, description: e.target.value })}
+                className="min-h-[100px] resize-none"
               />
             </div>
             <div className="space-y-2">
               <CommunityAvatarUpload
                 currentAvatarUrl={newCommunity.avatar_url}
                 onAvatarUpdate={(avatarUrl) => setNewCommunity({ ...newCommunity, avatar_url: avatarUrl })}
-                size="md"
+                size="lg"
                 showLabel={true}
               />
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-4 bg-muted/30 rounded-lg">
               <Switch
                 id="private"
                 checked={newCommunity.is_private}
                 onCheckedChange={(checked) => setNewCommunity({ ...newCommunity, is_private: checked })}
               />
-              <Label htmlFor="private">Private Community</Label>
+              <div className="flex-1">
+                <Label htmlFor="private" className="text-sm font-medium cursor-pointer">
+                  Private Community
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Only invited members can join and see content
+                </p>
+              </div>
             </div>
           </div>
           <Button 
             onClick={createCommunity}
             disabled={isCreating || !newCommunity.name.trim()}
-            className="w-full"
+            className="w-full h-12 bg-gradient-hero hover:opacity-90 text-white font-semibold"
           >
-            {isCreating ? 'Creating...' : 'Create Community'}
+            {isCreating ? (
+              <>Creating...</>
+            ) : (
+              <>
+                <Plus className="mr-2 w-5 h-5" />
+                Create Community
+              </>
+            )}
           </Button>
         </DialogContent>
       </Dialog>
-
-      {/* Skool-style Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow-sm border animate-pulse">
-                <div className="h-48 bg-gray-200 rounded-t-lg"></div>
-                <div className="p-6">
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : communities.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="bg-gray-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Users className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No communities yet</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              Be the first to create a community and start building your social group.
-            </p>
-            <button 
-              onClick={() => setCreateDialogOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              Create First Community
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {communities.map((community, index) => (
-              <div key={community.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow relative overflow-hidden group">
-                {/* Ranking Badge */}
-                <div className="absolute top-4 left-4 z-10">
-                  <div className="bg-white/90 backdrop-blur-sm rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold text-gray-700">
-                    #{index + 1}
-                  </div>
-                </div>
-                
-                {/* Community Banner */}
-                <div className="h-40 relative overflow-hidden">
-                  {community.avatar_url ? (
-                    <>
-                      <img 
-                        src={community.avatar_url || undefined} 
-                        alt={community.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.warn('Community banner image failed to load:', community.avatar_url);
-                          // Hide the image container on error
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black/30"></div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500"></div>
-                      <div className="absolute inset-0 bg-black/20"></div>
-                    </>
-                  )}
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-white font-bold text-lg mb-1 truncate">
-                      {community.name}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-white/90 text-sm">
-                        {community.member_count} Members
-                      </span>
-                      <span className="text-white/90 text-sm">•</span>
-                      <span className="text-white/90 text-sm">
-                        {community.is_private ? 'Private' : 'Free'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {community.is_private && (
-                    <div className="absolute top-4 right-4">
-                      <Lock className="h-4 w-4 text-white" />
-                    </div>
-                  )}
-                </div>
-                
-                {/* Community Content */}
-                <div className="p-6">
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {community.description || 'Join this amazing community to connect with like-minded individuals and grow together.'}
-                  </p>
-                  
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => navigate(`/communities/${community.id}`)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-lg font-medium text-sm transition-colors"
-                    >
-                      View Community
-                    </button>
-                    <button 
-                      onClick={() => joinCommunity(community.id)}
-                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 py-2.5 px-4 rounded-lg font-medium text-sm transition-colors"
-                    >
-                      Join
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 };

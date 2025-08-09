@@ -7,11 +7,27 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Users, Lock, Globe, Crown, UserPlus, UserMinus, Settings } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Users, 
+  Lock, 
+  Globe, 
+  Crown, 
+  UserPlus, 
+  UserMinus, 
+  Settings,
+  MessageCircle,
+  Calendar,
+  Video,
+  BookOpen,
+  Star,
+  MoreVertical
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
 import { CommunitySearch } from '@/components/CommunitySearch';
 import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
+import { ModernHeader } from '@/components/ModernHeader';
 
 interface Community {
   id: string;
@@ -48,6 +64,14 @@ const CommunityDetail = () => {
   const [loading, setLoading] = useState(true);
   const [joiningLeaving, setJoiningLeaving] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('discussions');
+
+  const [editingCommunity, setEditingCommunity] = useState({
+    name: '',
+    description: '',
+    avatar_url: null as string | null,
+    is_private: false
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -56,15 +80,17 @@ const CommunityDetail = () => {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    if (user && id) {
+    if (id && user) {
       fetchCommunityDetails();
     }
-  }, [user, id]);
+  }, [id, user]);
 
   const fetchCommunityDetails = async () => {
-    if (!id) return;
+    if (!id || !user) return;
 
     try {
+      setLoading(true);
+      
       // Fetch community details
       const { data: communityData, error: communityError } = await supabase
         .from('communities')
@@ -72,59 +98,43 @@ const CommunityDetail = () => {
         .eq('id', id)
         .single();
 
-      if (communityError) {
-        console.error('Error fetching community:', communityError);
-        toast({
-          title: "Error",
-          description: "Failed to load community details",
-          variant: "destructive",
-        });
-        navigate('/communities');
-        return;
-      }
-
+      if (communityError) throw communityError;
       setCommunity(communityData);
-      setIsCreator(communityData.creator_id === user?.id);
+      setIsCreator(communityData.creator_id === user.id);
 
-      // Fetch community members with profiles
+      // Initialize editing state
+      setEditingCommunity({
+        name: communityData.name,
+        description: communityData.description,
+        avatar_url: communityData.avatar_url,
+        is_private: communityData.is_private
+      });
+
+      // Fetch members
       const { data: membersData, error: membersError } = await supabase
         .from('community_members')
         .select(`
-          id,
-          user_id,
-          role,
-          joined_at
+          *,
+          profiles:user_id (
+            display_name,
+            avatar_url
+          )
         `)
         .eq('community_id', id);
 
-      // Fetch profiles separately for now to avoid the foreign key issue
-      let enrichedMembers: CommunityMember[] = [];
-      if (membersData) {
-        const userIds = membersData.map(m => m.user_id);
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('user_id, display_name, avatar_url')
-          .in('user_id', userIds);
+      if (membersError) throw membersError;
+      setMembers(membersData || []);
 
-        enrichedMembers = membersData.map(member => ({
-          ...member,
-          profiles: profilesData?.find(p => p.user_id === member.user_id) || null
-        }));
-      }
+      // Check if current user is a member
+      const userMembership = membersData?.find(member => member.user_id === user.id);
+      setIsMember(!!userMembership);
 
-      if (membersError) {
-        console.error('Error fetching members:', membersError);
-      } else {
-        setMembers(enrichedMembers);
-        setIsMember(enrichedMembers.some(member => member.user_id === user?.id) || false);
-      }
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching community details:', error);
       toast({
         title: "Error",
         description: "Failed to load community details",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -132,44 +142,32 @@ const CommunityDetail = () => {
   };
 
   const joinCommunity = async () => {
-    if (!community || !user) return;
+    if (!user || !community) return;
 
-    setJoiningLeaving(true);
     try {
+      setJoiningLeaving(true);
       const { error } = await supabase
         .from('community_members')
-        .insert([
-          {
-            community_id: community.id,
-            user_id: user.id,
-            role: 'member'
-          }
-        ]);
+        .insert([{
+          community_id: community.id,
+          user_id: user.id,
+          role: 'member'
+        }]);
 
-      if (error) {
-        console.error('Error joining community:', error);
-        toast({
-          title: "Error",
-          description: "Failed to join community",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (error) throw error;
 
       toast({
-        title: "Success",
-        description: `You've joined ${community.name}!`,
+        title: "Success!",
+        description: "Joined community successfully"
       });
 
-      // Refresh community details
       fetchCommunityDetails();
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error joining community:', error);
       toast({
         title: "Error",
-        description: "Failed to join community",
-        variant: "destructive",
+        description: error.message || "Failed to join community",
+        variant: "destructive"
       });
     } finally {
       setJoiningLeaving(false);
@@ -177,59 +175,90 @@ const CommunityDetail = () => {
   };
 
   const leaveCommunity = async () => {
-    if (!community || !user) return;
+    if (!user || !community) return;
 
-    setJoiningLeaving(true);
     try {
+      setJoiningLeaving(true);
       const { error } = await supabase
         .from('community_members')
         .delete()
         .eq('community_id', community.id)
         .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error leaving community:', error);
-        toast({
-          title: "Error",
-          description: "Failed to leave community",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (error) throw error;
 
       toast({
-        title: "Success",
-        description: `You've left ${community.name}`,
+        title: "Success!",
+        description: "Left community successfully"
       });
 
-      // Refresh community details
       fetchCommunityDetails();
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error leaving community:', error);
       toast({
         title: "Error",
-        description: "Failed to leave community",
-        variant: "destructive",
+        description: error.message || "Failed to leave community",
+        variant: "destructive"
       });
     } finally {
       setJoiningLeaving(false);
     }
   };
 
-  const handleAvatarUpdate = (newAvatarUrl: string | null) => {
-    if (community) {
-      setCommunity({ ...community, avatar_url: newAvatarUrl });
+  const updateCommunity = async () => {
+    if (!user || !community || !isCreator) return;
+
+    try {
+      const { error } = await supabase
+        .from('communities')
+        .update({
+          name: editingCommunity.name,
+          description: editingCommunity.description,
+          avatar_url: editingCommunity.avatar_url,
+          is_private: editingCommunity.is_private
+        })
+        .eq('id', community.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success!",
+        description: "Community updated successfully"
+      });
+
+      setSettingsDialogOpen(false);
+      fetchCommunityDetails();
+    } catch (error: any) {
+      console.error('Error updating community:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update community",
+        variant: "destructive"
+      });
     }
   };
 
-  if (loading) {
+  const tabs = [
+    { id: 'discussions', label: 'Discussions', icon: MessageCircle },
+    { id: 'members', label: 'Members', icon: Users },
+    { id: 'events', label: 'Events', icon: Calendar },
+    { id: 'resources', label: 'Resources', icon: BookOpen }
+  ];
+
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-luxury/5 via-white to-luxury/10">
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-luxury mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading community...</p>
+      <div className="min-h-screen bg-gradient-bg">
+        <ModernHeader />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-1/4 mb-6"></div>
+            <div className="h-64 bg-muted rounded mb-8"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                <div className="h-96 bg-muted rounded"></div>
+              </div>
+              <div className="h-96 bg-muted rounded"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -238,273 +267,392 @@ const CommunityDetail = () => {
 
   if (!community) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-luxury/5 via-white to-luxury/10">
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <h3 className="text-xl font-semibold mb-2">Community not found</h3>
-            <p className="text-muted-foreground mb-6">
-              The community you're looking for doesn't exist or you don't have access to it.
-            </p>
-            <Button onClick={() => navigate('/communities')}>
-              Back to Communities
-            </Button>
-          </div>
+      <div className="min-h-screen bg-gradient-bg">
+        <ModernHeader />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Community not found</h1>
+          <p className="text-muted-foreground mb-8">The community you're looking for doesn't exist or has been removed.</p>
+          <Button onClick={() => navigate('/communities')}>
+            <ArrowLeft className="mr-2 w-4 h-4" />
+            Back to Communities
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Skool-style Header */}
-      <div className="bg-white border-b sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/communities')}
-                className="text-gray-600 hover:text-gray-900 flex items-center gap-2 text-sm font-medium"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Communities
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {isCreator && (
-                <button
-                  onClick={() => setSettingsDialogOpen(true)}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium text-sm transition-colors"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Community Settings
-                </button>
-              )}
-              
-              {!isMember && !isCreator && (
-                <button
-                  onClick={joinCommunity}
-                  disabled={joiningLeaving}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  {joiningLeaving ? 'Joining...' : 'Join Community'}
-                </button>
-              )}
-              
-              {isMember && !isCreator && (
-                <button
-                  onClick={leaveCommunity}
-                  disabled={joiningLeaving}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
-                >
-                  <UserMinus className="h-4 w-4 mr-2" />
-                  {joiningLeaving ? 'Leaving...' : 'Leave Community'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Community Hero Section */}
-      <div className="relative">
-        {community.avatar_url ? (
-          <>
-            <div className="h-80 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-bg">
+      <ModernHeader />
+      
+      {/* Community Header */}
+      <section className="relative overflow-hidden">
+        {/* Hero Background */}
+        <div className="h-80 relative">
+          {community.avatar_url ? (
+            <>
               <img 
                 src={community.avatar_url} 
                 alt={community.name}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-black/40"></div>
-            </div>
-          </>
-        ) : (
-          <div className="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative h-80">
-            <div className="absolute inset-0 bg-black/20"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+            </>
+          ) : (
+            <>
+              <div className="w-full h-full bg-gradient-hero"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent"></div>
+            </>
+          )}
+          
+          {/* Back Button */}
+          <div className="absolute top-6 left-6">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/communities')}
+              className="bg-black/20 hover:bg-black/30 text-white border border-white/20"
+            >
+              <ArrowLeft className="mr-2 w-4 h-4" />
+              Back
+            </Button>
           </div>
-        )}
-        <div className="max-w-6xl mx-auto px-6 py-16 relative">
-          <div className="text-center text-white">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              {community.avatar_url && (
-                <Avatar className="w-16 h-16 border-4 border-white/20">
-                  <AvatarImage 
-                    src={community.avatar_url || undefined} 
-                    alt={community.name}
-                    onError={() => {
-                      console.warn('Community avatar failed to load:', community.avatar_url);
-                    }}
-                  />
-                  <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                    {community.name[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              )}
-              <h1 className="text-4xl font-bold">
-                {community.name}
-              </h1>
-              {community.is_private && <Lock className="h-6 w-6" />}
-              {isCreator && <Crown className="h-6 w-6 text-yellow-400" />}
-            </div>
-            
-            {/* About Section - moved from sidebar */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-6 max-w-2xl mx-auto">
-              <h3 className="text-xl font-semibold text-white mb-3">About</h3>
-              <p className="text-white/90 text-base leading-relaxed">
-                {community.description || 'Welcome to our amazing community! Connect, learn, and grow together.'}
-              </p>
-            </div>
-            
-            <div className="flex items-center justify-center gap-6 text-white/90">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                <span className="font-medium">{community.member_count} Members</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                <span className="font-medium">{community.is_private ? 'Private' : 'Public'} Community</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium">Created {new Date(community.created_at).toLocaleDateString()}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Skool-style Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            {/* Navigation Menu */}
-            <div className="bg-white rounded-lg border p-4 mb-6">
-              <nav className="space-y-2">
-                <button 
-                  onClick={() => navigate(`/communities/${id}`)}
-                  className="w-full text-left px-3 py-2 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg"
-                >
-                  💬 Discussion
-                </button>
-                <button 
-                  onClick={() => navigate(`/communities/${id}/classroom`)}
-                  className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg"
-                >
-                  📚 Classroom
-                </button>
-                <button 
-                  onClick={() => navigate(`/communities/${id}/calendar`)}
-                  className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg"
-                >
-                  📅 Calendar
-                </button>
-                <button 
-                  onClick={() => navigate(`/communities/${id}/members`)}
-                  className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg"
-                >
-                  👥 Members
-                </button>
-              </nav>
-            </div>
-
-            {/* Members List */}
-            <div className="bg-white rounded-lg border p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Members ({members.length})</h3>
-                <CommunitySearch communityId={community.id} isCreator={isCreator} />
-              </div>
-              <div className="space-y-3">
-                {members.slice(0, 8).map((member) => (
-                  <div key={member.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage 
-                          src={member.profiles?.avatar_url || undefined} 
-                          alt={member.profiles?.display_name || 'Member'}
-                          onError={() => {
-                            console.warn('Member avatar failed to load:', member.profiles?.avatar_url);
-                          }}
-                        />
-                        <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                          {(member.profiles?.display_name || 'A')[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 flex items-center gap-1">
-                          {member.profiles?.display_name || 'Anonymous User'}
-                          {member.user_id === community?.creator_id && (
-                            <Crown className="h-3 w-3 text-yellow-500" />
-                          )}
-                        </div>
-                        {member.role !== 'member' && (
-                          <div className="text-xs text-gray-500 capitalize">{member.role}</div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          {/* Community Info Overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-6">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col md:flex-row md:items-end gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <h1 className="text-3xl lg:text-4xl font-bold text-white">
+                      {community.name}
+                    </h1>
+                    {community.is_private && (
+                      <Badge variant="secondary" className="bg-black/30 text-white border-white/30">
+                        <Lock className="w-3 h-3 mr-1" />
+                        Private
+                      </Badge>
+                    )}
+                    {isCreator && (
+                      <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-200 border-yellow-400/30">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Creator
+                      </Badge>
+                    )}
                   </div>
-                ))}
-                {members.length > 8 && (
-                  <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    View all {members.length} members
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            {isMember || isCreator || !community.is_private ? (
-              <CommunityPosts 
-                communityId={community.id} 
-                communityName={community.name} 
-              />
-            ) : (
-              <div className="bg-white rounded-lg border h-[600px] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Lock className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Private Community</h3>
-                  <p className="text-gray-600 mb-6">
-                    You need to join this community to see the discussion.
+                  
+                  <p className="text-white/90 text-lg mb-4 max-w-2xl">
+                    {community.description}
                   </p>
-                  <button 
-                    onClick={joinCommunity} 
-                    disabled={joiningLeaving}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    {joiningLeaving ? 'Joining...' : 'Join Community'}
-                  </button>
+                  
+                  <div className="flex items-center gap-6 text-white/80">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      <span className="font-medium">{members.length} members</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-5 h-5" />
+                      <span>{community.is_private ? 'Private' : 'Public'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Star className="w-5 h-5" />
+                      <span>Active community</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3">
+                  {!isMember && !isCreator ? (
+                    <Button
+                      onClick={joinCommunity}
+                      disabled={joiningLeaving}
+                      size="lg"
+                      className="bg-white text-primary hover:bg-white/90 shadow-lg px-8"
+                    >
+                      <UserPlus className="mr-2 w-5 h-5" />
+                      {joiningLeaving ? 'Joining...' : 'Join Community'}
+                    </Button>
+                  ) : isMember && !isCreator ? (
+                    <Button
+                      onClick={leaveCommunity}
+                      disabled={joiningLeaving}
+                      variant="outline"
+                      size="lg"
+                      className="border-white/30 text-white hover:bg-white/10"
+                    >
+                      <UserMinus className="mr-2 w-5 h-5" />
+                      {joiningLeaving ? 'Leaving...' : 'Leave'}
+                    </Button>
+                  ) : null}
+                  
+                  {isCreator && (
+                    <Button
+                      onClick={() => setSettingsDialogOpen(true)}
+                      variant="outline"
+                      size="lg"
+                      className="border-white/30 text-white hover:bg-white/10"
+                    >
+                      <Settings className="mr-2 w-5 h-5" />
+                      Settings
+                    </Button>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Community Settings Dialog */}
+      {/* Navigation Tabs */}
+      <section className="border-b bg-background/80 backdrop-blur-sm sticky top-16 z-40">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {tabs.map((tab) => (
+              <Button
+                key={tab.id}
+                variant={activeTab === tab.id ? "default" : "ghost"}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  flex items-center gap-2 px-6 py-3 rounded-none border-b-2 transition-all
+                  ${activeTab === tab.id 
+                    ? 'border-primary bg-primary/10 text-primary' 
+                    : 'border-transparent hover:border-border hover:bg-secondary/50'
+                  }
+                `}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content Area */}
+            <div className="lg:col-span-2">
+              {activeTab === 'discussions' && (
+                <div className="space-y-6">
+                  {(isMember || isCreator) ? (
+                    <CommunityPosts communityId={community.id} />
+                  ) : (
+                    <Card className="text-center py-12">
+                      <CardContent>
+                        <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold mb-2">Join to see discussions</h3>
+                        <p className="text-muted-foreground mb-6">
+                          Become a member to participate in community discussions and connect with other learners.
+                        </p>
+                        <Button onClick={joinCommunity} disabled={joiningLeaving}>
+                          <UserPlus className="mr-2 w-4 h-4" />
+                          Join Community
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'members' && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Community Members ({members.length})
+                    </CardTitle>
+                    <CardDescription>
+                      Connect with fellow community members
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {members.map((member) => (
+                        <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/50 transition-colors">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={member.profiles?.avatar_url || ''} />
+                            <AvatarFallback>
+                              {(member.profiles?.display_name || 'U').charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="font-medium">
+                              {member.profiles?.display_name || 'Anonymous User'}
+                            </div>
+                            <div className="text-sm text-muted-foreground capitalize">
+                              {member.role}
+                              {member.user_id === community.creator_id && (
+                                <Crown className="w-3 h-3 inline ml-1 text-yellow-500" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeTab === 'events' && (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">No events scheduled</h3>
+                    <p className="text-muted-foreground">
+                      Community events and workshops will appear here.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {activeTab === 'resources' && (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">No resources yet</h3>
+                    <p className="text-muted-foreground">
+                      Learning resources and materials will be shared here.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Quick Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Video className="mr-2 w-4 h-4" />
+                    Start Video Chat
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Calendar className="mr-2 w-4 h-4" />
+                    Schedule Event
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <BookOpen className="mr-2 w-4 h-4" />
+                    Share Resource
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Community Stats */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Community Stats</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Total Members</span>
+                    <span className="font-semibold">{members.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Created</span>
+                    <span className="font-semibold">
+                      {new Date(community.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Type</span>
+                    <Badge variant={community.is_private ? "secondary" : "default"}>
+                      {community.is_private ? 'Private' : 'Public'}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Recent Members */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Recent Members</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {members.slice(0, 5).map((member) => (
+                      <div key={member.id} className="flex items-center gap-3">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={member.profiles?.avatar_url || ''} />
+                          <AvatarFallback className="text-xs">
+                            {(member.profiles?.display_name || 'U').charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">
+                            {member.profiles?.display_name || 'Anonymous User'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(member.joined_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Settings Dialog */}
       {isCreator && (
         <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Community Settings</DialogTitle>
               <DialogDescription>
-                Manage your community settings and appearance.
+                Update your community information and settings.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6 py-4">
-              <CommunityAvatarUpload
-                communityId={community?.id}
-                currentAvatarUrl={community?.avatar_url}
-                onAvatarUpdate={handleAvatarUpdate}
-                size="lg"
-                showLabel={true}
-              />
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Community Name</label>
+                <input
+                  type="text"
+                  value={editingCommunity.name}
+                  onChange={(e) => setEditingCommunity({ ...editingCommunity, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Description</label>
+                <textarea
+                  value={editingCommunity.description}
+                  onChange={(e) => setEditingCommunity({ ...editingCommunity, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px] resize-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <CommunityAvatarUpload
+                  currentAvatarUrl={editingCommunity.avatar_url}
+                  onAvatarUpdate={(avatarUrl) => setEditingCommunity({ ...editingCommunity, avatar_url: avatarUrl })}
+                  size="lg"
+                  showLabel={true}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                onClick={updateCommunity}
+                className="flex-1"
+              >
+                Update Community
+              </Button>
+              <Button 
+                onClick={() => setSettingsDialogOpen(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
