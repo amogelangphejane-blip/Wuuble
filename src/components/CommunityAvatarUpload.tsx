@@ -75,9 +75,17 @@ export const CommunityAvatarUpload = ({
 
     setUploading(true);
     try {
+      console.log('Starting community avatar upload for community:', communityId, 'by user:', user.id);
+      console.log('File details:', {
+        name: selectedFile.name,
+        size: selectedFile.size,
+        type: selectedFile.type
+      });
+
       // Generate unique filename
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `communities/${communityId}/avatar-${Date.now()}.${fileExt}`;
+      console.log('Generated filename:', fileName);
 
       // Upload file to Supabase storage
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -88,13 +96,18 @@ export const CommunityAvatarUpload = ({
         });
 
       if (uploadError) {
+        console.error('Community avatar upload error details:', uploadError);
         throw uploadError;
       }
+
+      console.log('Community avatar upload successful:', uploadData);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('community-avatars')
         .getPublicUrl(fileName);
+
+      console.log('Generated public URL:', publicUrl);
 
       // Update community with new avatar URL
       const { error: updateError } = await supabase
@@ -106,16 +119,34 @@ export const CommunityAvatarUpload = ({
         .eq('id', communityId);
 
       if (updateError) {
+        console.error('Community update error:', updateError);
         throw updateError;
       }
 
+      console.log('Community updated successfully');
+
       // Remove old avatar if it exists and is different
       if (currentAvatarUrl && currentAvatarUrl !== publicUrl) {
-        const oldPath = currentAvatarUrl.split('/').pop();
-        if (oldPath) {
-          await supabase.storage
-            .from('community-avatars')
-            .remove([`communities/${communityId}/${oldPath}`]);
+        try {
+          // Extract the storage path from the public URL
+          // URL format: https://[project].supabase.co/storage/v1/object/public/community-avatars/[path]
+          const urlParts = currentAvatarUrl.split('/storage/v1/object/public/community-avatars/');
+          if (urlParts.length > 1) {
+            const storagePath = urlParts[1];
+            console.log('Attempting to delete old community avatar:', storagePath);
+            
+            const { error: deleteError } = await supabase.storage
+              .from('community-avatars')
+              .remove([storagePath]);
+            
+            if (deleteError) {
+              console.warn('Failed to delete old community avatar:', deleteError);
+              // Don't throw here, as the main upload was successful
+            }
+          }
+        } catch (deleteError) {
+          console.warn('Error during old community avatar cleanup:', deleteError);
+          // Don't throw here, as the main upload was successful
         }
       }
 
@@ -161,11 +192,23 @@ export const CommunityAvatarUpload = ({
       }
 
       // Remove file from storage
-      const oldPath = currentAvatarUrl.split('/').pop();
-      if (oldPath) {
-        await supabase.storage
-          .from('community-avatars')
-          .remove([`communities/${communityId}/${oldPath}`]);
+      try {
+        // Extract the storage path from the public URL
+        const urlParts = currentAvatarUrl.split('/storage/v1/object/public/community-avatars/');
+        if (urlParts.length > 1) {
+          const storagePath = urlParts[1];
+          console.log('Attempting to delete community avatar:', storagePath);
+          
+          const { error: deleteError } = await supabase.storage
+            .from('community-avatars')
+            .remove([storagePath]);
+          
+          if (deleteError) {
+            console.warn('Failed to delete community avatar from storage:', deleteError);
+          }
+        }
+      } catch (deleteError) {
+        console.warn('Error during community avatar deletion:', deleteError);
       }
 
       onAvatarUpdate(null);

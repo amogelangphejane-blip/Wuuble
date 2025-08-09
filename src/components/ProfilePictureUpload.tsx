@@ -61,9 +61,17 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
 
     setUploading(true);
     try {
+      console.log('Starting profile picture upload for user:', user.id);
+      console.log('File details:', {
+        name: selectedFile.name,
+        size: selectedFile.size,
+        type: selectedFile.type
+      });
+
       // Generate unique filename
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+      console.log('Generated filename:', fileName);
 
       // Upload file to Supabase storage
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -74,13 +82,18 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
         });
 
       if (uploadError) {
+        console.error('Upload error details:', uploadError);
         throw uploadError;
       }
+
+      console.log('Upload successful:', uploadData);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('profile-pictures')
         .getPublicUrl(fileName);
+
+      console.log('Generated public URL:', publicUrl);
 
       // Update profile with new avatar URL
       const { error: updateError } = await supabase
@@ -92,16 +105,34 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
         .eq('user_id', user.id);
 
       if (updateError) {
+        console.error('Profile update error:', updateError);
         throw updateError;
       }
 
+      console.log('Profile updated successfully');
+
       // Remove old avatar if it exists and is different
       if (currentAvatarUrl && currentAvatarUrl !== publicUrl) {
-        const oldPath = currentAvatarUrl.split('/').pop();
-        if (oldPath) {
-          await supabase.storage
-            .from('profile-pictures')
-            .remove([`${user.id}/${oldPath}`]);
+        try {
+          // Extract the storage path from the public URL
+          // URL format: https://[project].supabase.co/storage/v1/object/public/profile-pictures/[path]
+          const urlParts = currentAvatarUrl.split('/storage/v1/object/public/profile-pictures/');
+          if (urlParts.length > 1) {
+            const storagePath = urlParts[1];
+            console.log('Attempting to delete old avatar:', storagePath);
+            
+            const { error: deleteError } = await supabase.storage
+              .from('profile-pictures')
+              .remove([storagePath]);
+            
+            if (deleteError) {
+              console.warn('Failed to delete old avatar:', deleteError);
+              // Don't throw here, as the main upload was successful
+            }
+          }
+        } catch (deleteError) {
+          console.warn('Error during old avatar cleanup:', deleteError);
+          // Don't throw here, as the main upload was successful
         }
       }
 
@@ -147,11 +178,23 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
       }
 
       // Remove file from storage
-      const oldPath = currentAvatarUrl.split('/').pop();
-      if (oldPath) {
-        await supabase.storage
-          .from('profile-pictures')
-          .remove([`${user.id}/${oldPath}`]);
+      try {
+        // Extract the storage path from the public URL
+        const urlParts = currentAvatarUrl.split('/storage/v1/object/public/profile-pictures/');
+        if (urlParts.length > 1) {
+          const storagePath = urlParts[1];
+          console.log('Attempting to delete avatar:', storagePath);
+          
+          const { error: deleteError } = await supabase.storage
+            .from('profile-pictures')
+            .remove([storagePath]);
+          
+          if (deleteError) {
+            console.warn('Failed to delete avatar from storage:', deleteError);
+          }
+        }
+      } catch (deleteError) {
+        console.warn('Error during avatar deletion:', deleteError);
       }
 
       onAvatarUpdate(null);
