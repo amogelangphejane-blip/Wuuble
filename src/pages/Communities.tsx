@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Lock, User, Settings } from 'lucide-react';
 import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
+import { ensureInnerCircleCommunity } from '@/lib/innerCircle';
 
 interface Community {
   id: string;
@@ -47,6 +48,8 @@ const Communities = () => {
   useEffect(() => {
     if (user) {
       fetchCommunities();
+      // Ensure Inner Circle community exists with correct avatar
+      ensureInnerCircleCommunity(user.id);
     }
   }, [user]);
 
