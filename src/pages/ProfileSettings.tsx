@@ -13,6 +13,7 @@ import { ProfilePictureUpload } from '@/components/ProfilePictureUpload';
 import { StorageTest } from '@/components/StorageTest';
 import { AvatarDebugTest } from '@/components/AvatarDebugTest';
 import { StoragePolicyTest } from '@/components/StoragePolicyTest';
+import { ProfilePictureTest } from '@/components/ProfilePictureTest';
 
 interface UserProfile {
   user_id: string;
@@ -194,6 +195,9 @@ const ProfileSettings = () => {
           currentAvatarUrl={profile?.avatar_url}
           onAvatarUpdate={handleAvatarUpdate}
         />
+
+        {/* New Comprehensive Profile Picture Test */}
+        <ProfilePictureTest />
 
         {/* Storage Test Section - Temporary for debugging */}
         <StorageTest />

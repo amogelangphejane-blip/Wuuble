@@ -30,6 +30,9 @@ const AvatarImage = React.forwardRef<
     if (src) {
       setImageError(false)
       setImageLoaded(false)
+    } else {
+      // If no src, consider it as an error to show fallback
+      setImageError(true)
     }
   }, [src])
 
@@ -40,11 +43,14 @@ const AvatarImage = React.forwardRef<
   }
 
   const handleLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.log('Avatar image loaded successfully:', src)
     setImageLoaded(true)
+    setImageError(false)
     onLoad?.(e)
   }
 
   // Don't render image if there's no src, empty src, or error occurred
+  // This will allow the fallback to show
   if (!src || src.trim() === '' || imageError) {
     return null
   }

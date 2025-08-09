@@ -11,6 +11,7 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function validateAvatarUrl(url: string | null | undefined): string | undefined {
   if (!url || typeof url !== 'string' || url.trim() === '') {
+    console.debug('Avatar URL is empty or null');
     return undefined;
   }
 
@@ -18,19 +19,44 @@ export function validateAvatarUrl(url: string | null | undefined): string | unde
   
   // Check if it's a valid URL format
   try {
-    new URL(trimmedUrl);
-  } catch {
-    console.warn('Invalid avatar URL format:', trimmedUrl);
+    const urlObj = new URL(trimmedUrl);
+    console.debug('Avatar URL validation passed for:', trimmedUrl);
+    
+    // Additional validation for common issues
+    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+      console.warn('Avatar URL has invalid protocol:', urlObj.protocol);
+      return undefined;
+    }
+    
+  } catch (error) {
+    console.warn('Invalid avatar URL format:', trimmedUrl, error);
     return undefined;
   }
 
   // Check if it's a Supabase storage URL (common case)
   if (trimmedUrl.includes('supabase.co/storage/v1/object/public/')) {
-    return trimmedUrl;
+    // Additional validation for Supabase URLs
+    if (trimmedUrl.includes('profile-pictures') || trimmedUrl.includes('community-avatars')) {
+      return trimmedUrl;
+    }
+    console.warn('Supabase URL does not contain expected bucket path:', trimmedUrl);
+    return trimmedUrl; // Still return it, but warn
   }
 
   // Check if it's another valid image URL format
   if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+    // Check if it looks like an image URL
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+    const hasImageExtension = imageExtensions.some(ext => 
+      trimmedUrl.toLowerCase().includes(ext)
+    );
+    
+    if (hasImageExtension || trimmedUrl.includes('image') || trimmedUrl.includes('avatar')) {
+      return trimmedUrl;
+    }
+    
+    // Allow all HTTPS URLs but warn about potential non-image URLs
+    console.debug('URL does not appear to be an image but allowing:', trimmedUrl);
     return trimmedUrl;
   }
 
