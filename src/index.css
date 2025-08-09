@@ -2,96 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Video Chat Design System - Modern, sleek interface for video communication */
+/* Modern Online Learning Platform Design System - Clean, professional interface */
 
 @layer base {
   :root {
-    /* Dark theme optimized for video chat */
-    --background: 220 15% 8%;
-    --foreground: 220 10% 95%;
+    /* Light theme optimized for online learning */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-    --card: 220 15% 12%;
-    --card-foreground: 220 10% 95%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 220 15% 12%;
-    --popover-foreground: 220 10% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    /* Luxury gold & premium colors for influential connections */
-    --primary: 45 100% 55%;
-    --primary-foreground: 220 15% 8%;
-    --primary-glow: 45 100% 65%;
-    --primary-elegant: 45 80% 45%;
+    /* Professional blue color scheme */
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --primary-light: 221.2 83.2% 63.3%;
+    --primary-dark: 221.2 83.2% 43.3%;
 
-    --secondary: 220 15% 18%;
-    --secondary-foreground: 220 10% 85%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
 
-    --muted: 220 15% 15%;
-    --muted-foreground: 220 8% 65%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 280 100% 65%;
-    --accent-foreground: 220 15% 8%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
     
-    --luxury: 45 100% 50%;
-    --luxury-foreground: 220 15% 8%;
+    /* Learning platform specific colors */
+    --learning: 221.2 83.2% 53.3%;
+    --learning-foreground: 210 40% 98%;
+    --learning-light: 221.2 83.2% 93.3%;
 
-    --destructive: 0 85% 60%;
-    --destructive-foreground: 220 10% 95%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --success: 140 70% 55%;
-    --success-foreground: 220 15% 8%;
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 210 40% 98%;
 
-    --warning: 45 100% 60%;
-    --warning-foreground: 220 15% 8%;
+    --warning: 47.9 95.8% 53.1%;
+    --warning-foreground: 222.2 84% 4.9%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 16%;
-    --ring: 280 100% 65%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    /* Video chat specific colors */
-    --video-border: 220 15% 25%;
-    --video-bg: 220 20% 5%;
-    --controls-bg: 220 15% 10%;
-    --controls-border: 220 15% 22%;
+    /* Modern gradients for professional aesthetic */
+    --gradient-primary: linear-gradient(135deg, hsl(221.2 83.2% 53.3%), hsl(221.2 83.2% 63.3%));
+    --gradient-learning: linear-gradient(135deg, hsl(221.2 83.2% 53.3%), hsl(200 100% 60%));
+    --gradient-bg: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 40% 98%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 40% 99%));
+    --gradient-hero: linear-gradient(135deg, hsl(221.2 83.2% 53.3%) 0%, hsl(200 100% 60%) 100%);
 
-    /* Premium gradients for luxury aesthetic */
-    --gradient-primary: linear-gradient(135deg, hsl(45 100% 55%), hsl(45 100% 65%));
-    --gradient-luxury: linear-gradient(135deg, hsl(45 100% 50%), hsl(280 100% 65%));
-    --gradient-bg: radial-gradient(ellipse at top, hsl(45 20% 8%), hsl(220 15% 8%));
-    --gradient-card: linear-gradient(145deg, hsl(220 15% 12%), hsl(220 15% 14%));
-    --gradient-elegant: linear-gradient(45deg, hsl(45 100% 55%) 0%, hsl(45 100% 65%) 25%, hsl(280 100% 65%) 50%, hsl(45 100% 55%) 75%, hsl(45 100% 65%) 100%);
-    --gradient-subtle: linear-gradient(145deg, hsl(var(--background)), hsl(220 15% 10%));
+    /* Professional shadows for depth */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+    --shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
 
-    /* Luxury shadows for premium depth */
-    --shadow-video: 0 20px 40px -10px hsl(220 15% 5% / 0.5);
-    --shadow-glow: 0 0 40px hsl(45 100% 55% / 0.4);
-    --shadow-elegant: 0 10px 30px -10px hsl(45 100% 55% / 0.3);
-    --shadow-luxury: 0 0 60px hsl(45 100% 55% / 0.2);
-    --shadow-button: 0 4px 12px hsl(220 15% 5% / 0.4);
-
-    /* Animation curves */
+    /* Smooth transitions */
+    --transition-all: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
+    /* Sidebar colors for light theme */
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
+    --sidebar-primary: 221.2 83.2% 53.3%;
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 221.2 83.2% 53.3%;
   }
 
   .dark {
+    /* Dark theme for better accessibility */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
@@ -101,8 +91,10 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
+    --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 222.2 47.4% 11.2%;
+    --primary-light: 221.2 83.2% 63.3%;
+    --primary-dark: 221.2 83.2% 43.3%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -113,20 +105,46 @@
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
 
+    --learning: 221.2 83.2% 53.3%;
+    --learning-foreground: 222.2 47.4% 11.2%;
+    --learning-light: 217.2 32.6% 17.5%;
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 210 40% 98%;
+
+    --warning: 47.9 95.8% 53.1%;
+    --warning-foreground: 222.2 84% 4.9%;
+
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 221.2 83.2% 53.3%;
+
+    /* Dark theme gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(221.2 83.2% 53.3%), hsl(221.2 83.2% 63.3%));
+    --gradient-learning: linear-gradient(135deg, hsl(221.2 83.2% 53.3%), hsl(200 100% 60%));
+    --gradient-bg: linear-gradient(180deg, hsl(222.2 84% 4.9%), hsl(217.2 32.6% 17.5%));
+    --gradient-card: linear-gradient(145deg, hsl(222.2 84% 4.9%), hsl(217.2 32.6% 17.5%));
+    --gradient-hero: linear-gradient(135deg, hsl(221.2 83.2% 53.3%) 0%, hsl(200 100% 60%) 100%);
+
+    /* Dark theme shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.4), 0 1px 2px -1px hsl(0 0% 0% / 0.4);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(0 0% 0% / 0.4);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 8px 10px -6px hsl(0 0% 0% / 0.4);
+
+    /* Dark sidebar colors */
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary: 221.2 83.2% 53.3%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 221.2 83.2% 53.3%;
   }
 }
 
@@ -137,5 +155,11 @@
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
   }
 }

@@ -1,11 +1,25 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Video, Users, Globe, Shield, Zap, Crown, Star, Award } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+  BookOpen, 
+  Users, 
+  MessageCircle, 
+  Calendar, 
+  Star, 
+  CheckCircle, 
+  ArrowRight,
+  Play,
+  Award,
+  Target,
+  Zap,
+  Shield,
+  Globe
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import classyMixedHero from '@/assets/classy-mixed-hero.jpg';
-import classyMixedLaptop1 from '@/assets/classy-mixed-laptop-1.jpg';
-import classyMixedLaptop2 from '@/assets/classy-mixed-laptop-2.jpg';
+import { ModernHeader } from '@/components/ModernHeader';
+import { ModernFooter } from '@/components/ModernFooter';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -13,268 +27,349 @@ const LandingPage = () => {
 
   const features = [
     {
-      icon: <Crown className="w-6 h-6" />,
-      title: "Elite Connections",
-      description: "Connect with industry leaders, entrepreneurs, and influential minds from around the globe"
+      icon: <Users className="w-6 h-6" />,
+      title: "Vibrant Communities",
+      description: "Join thriving learning communities where knowledge meets collaboration and growth happens naturally."
     },
     {
-      icon: <Star className="w-6 h-6" />,
-      title: "Premium Community",
-      description: "Join an exclusive network of successful professionals and thought leaders"
+      icon: <BookOpen className="w-6 h-6" />,
+      title: "Interactive Courses",
+      description: "Access expertly crafted courses designed to accelerate your learning journey with practical skills."
     },
     {
-      icon: <Shield className="w-6 h-6" />,
-      title: "Verified Profiles",
-      description: "Connect with confidence through our verified member system ensuring authentic interactions"
+      icon: <MessageCircle className="w-6 h-6" />,
+      title: "Real-time Discussions",
+      description: "Engage in meaningful conversations with peers and mentors through our seamless chat system."
+    },
+    {
+      icon: <Calendar className="w-6 h-6" />,
+      title: "Live Sessions",
+      description: "Participate in scheduled workshops, webinars, and interactive learning sessions."
     },
     {
       icon: <Award className="w-6 h-6" />,
-      title: "Curated Matches",
-      description: "Our algorithm connects you with influential people who share your interests and goals"
+      title: "Achievements",
+      description: "Track your progress and earn recognition for your learning milestones and contributions."
+    },
+    {
+      icon: <Shield className="w-6 h-6" />,
+      title: "Safe Learning",
+      description: "Learn in a secure, moderated environment designed for productive educational experiences."
+    }
+  ];
+
+  const testimonials = [
+    {
+      name: "Sarah Chen",
+      role: "Software Engineer",
+      avatar: "SC",
+      content: "LearnHub transformed my career. The community support and quality content made all the difference in my learning journey.",
+      rating: 5
+    },
+    {
+      name: "Michael Rodriguez",
+      role: "Product Designer",
+      avatar: "MR",
+      content: "The interactive discussions and peer feedback helped me grow faster than any traditional course ever could.",
+      rating: 5
+    },
+    {
+      name: "Emily Johnson",
+      role: "Marketing Manager",
+      avatar: "EJ",
+      content: "I love how easy it is to connect with like-minded learners. The platform feels intuitive and engaging.",
+      rating: 5
+    }
+  ];
+
+  const stats = [
+    { value: "50K+", label: "Active Learners" },
+    { value: "200+", label: "Communities" },
+    { value: "1M+", label: "Discussions" },
+    { value: "95%", label: "Success Rate" }
+  ];
+
+  const courses = [
+    {
+      title: "Web Development Mastery",
+      description: "Learn modern web development with React, Node.js, and best practices",
+      students: 1250,
+      rating: 4.9,
+      image: "🌐",
+      category: "Technology"
+    },
+    {
+      title: "Digital Marketing Strategy",
+      description: "Master digital marketing from SEO to social media and analytics",
+      students: 890,
+      rating: 4.8,
+      image: "📱",
+      category: "Marketing"
+    },
+    {
+      title: "Data Science Fundamentals",
+      description: "Dive into data analysis, machine learning, and statistical modeling",
+      students: 2100,
+      rating: 4.9,
+      image: "📊",
+      category: "Data Science"
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-luxury/10 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-luxury opacity-5"></div>
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-luxury/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/5 rounded-full blur-3xl"></div>
-      <div className="relative z-10">
-        {/* Header */}
-        <header className="border-b border-border/50 backdrop-blur-sm bg-background/80">
-          <div className="container mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-luxury rounded-lg flex items-center justify-center shadow-luxury">
-                  <Crown className="w-5 h-5 text-luxury-foreground" />
-                </div>
-                <h1 className="text-xl font-bold bg-gradient-luxury bg-clip-text text-transparent">Inner Circle</h1>
-              </div>
-              <div className="flex items-center gap-4">
-                {user ? (
-                  <>
-                    <Button 
-                      variant="outline"
-                      onClick={() => navigate('/communities')}
-                      className="border-luxury text-luxury hover:bg-luxury/10"
-                    >
-                      <Users className="w-4 h-4 mr-2" />
-                      Communities
-                    </Button>
-                    <Button 
-                      onClick={() => navigate('/chat')}
-                      className="bg-gradient-luxury hover:shadow-luxury transition-smooth"
-                    >
-                      Start Chat
-                    </Button>
-                  </>
-                ) : (
-                  <Button 
-                    onClick={() => navigate('/auth')}
-                    className="bg-gradient-luxury hover:shadow-luxury transition-smooth"
-                  >
-                    Join Elite Circle
-                  </Button>
-                )}
-              </div>
+    <div className="min-h-screen bg-gradient-bg">
+      <ModernHeader />
+      
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-hero opacity-5"></div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32 relative">
+          <div className="text-center max-w-4xl mx-auto">
+            <Badge className="mb-6 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+              🚀 Join 50,000+ learners worldwide
+            </Badge>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
+              Learn Together,{' '}
+              <span className="bg-gradient-hero bg-clip-text text-transparent">
+                Grow Faster
+              </span>
+            </h1>
+            <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+              Join vibrant learning communities where knowledge sharing accelerates growth. 
+              Connect with peers, access premium courses, and transform your skills.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button 
+                size="lg"
+                onClick={() => navigate(user ? '/communities' : '/auth')}
+                className="bg-gradient-hero hover:opacity-90 text-white shadow-lg hover:shadow-xl transition-all px-8 py-3 text-lg"
+              >
+                {user ? 'Explore Communities' : 'Get Started Free'}
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+              <Button 
+                size="lg"
+                variant="outline"
+                className="border-2 hover:bg-secondary px-8 py-3 text-lg"
+                onClick={() => {
+                  document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <Play className="mr-2 w-5 h-5" />
+                Watch Demo
+              </Button>
             </div>
           </div>
-        </header>
+        </div>
+      </section>
 
-        {/* Hero Section */}
-        <section className="container mx-auto px-6 py-20">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="text-center lg:text-left">
-                <div className="inline-flex items-center space-x-2 bg-luxury/20 px-4 py-2 rounded-full mb-6 border border-luxury/30">
-                  <Crown className="w-4 h-4 text-luxury" />
-                  <span className="text-sm font-medium text-foreground">832 influential leaders online</span>
+      {/* Stats Section */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center animate-fade-in">
+                <div className="text-3xl lg:text-4xl font-bold text-foreground mb-2">
+                  {stat.value}
                 </div>
-                
-                <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
-                  Build your
-                  <span className="block text-transparent bg-gradient-luxury bg-clip-text">
-                    network
-                  </span>
-                </h1>
-                
-                <p className="text-xl text-muted-foreground mb-8 max-w-2xl">
-                  Connect with an elite group of like-minded people. 
-                  Expand your network and unlock opportunities through premium video conversations.
-                </p>
-                
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  {user ? (
-                    <>
-                      <Button 
-                        onClick={() => navigate('/communities')}
-                        size="lg"
-                        className="bg-gradient-luxury hover:shadow-luxury transition-smooth text-lg px-8 py-3"
-                      >
-                        <Crown className="w-5 h-5 mr-2" />
-                        Explore Communities
-                      </Button>
-                      <Button 
-                        onClick={() => navigate('/chat')}
-                        variant="outline" 
-                        size="lg"
-                        className="text-lg px-8 py-3 border-luxury text-luxury hover:bg-luxury/10"
-                      >
-                        <Video className="w-5 h-5 mr-2" />
-                        Start Video Chat
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button 
-                        onClick={() => navigate('/auth')}
-                        size="lg"
-                        className="bg-gradient-luxury hover:shadow-luxury transition-smooth text-lg px-8 py-3"
-                      >
-                        <Crown className="w-5 h-5 mr-2" />
-                        Join Inner Circle
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="lg"
-                        className="text-lg px-8 py-3 border-luxury text-luxury hover:bg-luxury/10"
-                      >
-                        <Star className="w-5 h-5 mr-2" />
-                        View Elite Features
-                      </Button>
-                    </>
-                  )}
+                <div className="text-muted-foreground">
+                  {stat.label}
                 </div>
               </div>
-              
-              <div className="relative">
-                <div className="relative rounded-2xl overflow-hidden shadow-luxury">
-                  <img 
-                    src={classyMixedHero} 
-                    alt="Elegant mixed race professional woman in premium video consultation" 
-                    className="w-full h-auto object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-luxury/20 to-transparent"></div>
-                  <div className="absolute top-4 right-4 bg-luxury/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                    <span className="text-xs font-medium text-luxury-foreground flex items-center">
-                      <Crown className="w-3 h-3 mr-1" />
-                      Elite Member
-                    </span>
-                  </div>
-                </div>
-                <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gradient-luxury rounded-full opacity-20 blur-2xl"></div>
-                <div className="absolute -top-6 -left-6 w-24 h-24 bg-luxury rounded-full opacity-30 blur-xl"></div>
-              </div>
-            </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Features Section */}
-        <section className="container mx-auto px-6 py-20">
+      {/* Features Section */}
+      <section id="features" className="py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Why Choose <span className="text-transparent bg-gradient-luxury bg-clip-text">Inner Circle</span>?
+            <Badge className="mb-4 bg-learning/10 text-learning border-learning/20">
+              Features
+            </Badge>
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+              Everything you need to learn and grow
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              The premier platform for connecting with industry leaders, entrepreneurs, and influential minds
+              Discover powerful features designed to enhance your learning experience 
+              and connect you with a global community of learners.
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="border-luxury/30 bg-card/50 backdrop-blur-sm hover:shadow-luxury transition-smooth hover:border-luxury/50 group">
+              <Card 
+                key={index} 
+                className="border-0 shadow-md hover:shadow-lg transition-all duration-300 animate-fade-in bg-gradient-card"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
                 <CardHeader>
-                  <div className="w-12 h-12 bg-gradient-luxury rounded-lg flex items-center justify-center mb-4 group-hover:shadow-luxury transition-smooth">
-                    <div className="text-luxury-foreground">
+                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                    <div className="text-primary">
                       {feature.icon}
                     </div>
                   </div>
-                  <CardTitle className="text-lg group-hover:text-luxury transition-smooth">{feature.title}</CardTitle>
+                  <CardTitle className="text-xl">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-muted-foreground">
+                  <CardDescription className="text-base leading-relaxed">
                     {feature.description}
                   </CardDescription>
                 </CardContent>
               </Card>
             ))}
           </div>
+        </div>
+      </section>
 
-          {/* Elite Showcase */}
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div className="relative group">
-              <img 
-                src={classyMixedLaptop1} 
-                alt="Sophisticated mixed race executive in professional video consultation" 
-                className="w-full h-80 object-cover rounded-2xl shadow-luxury"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-luxury/10 to-transparent rounded-2xl"></div>
-              <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm px-3 py-2 rounded-lg">
-                <span className="text-sm font-medium text-foreground">CEO, Tech Startup</span>
-              </div>
-            </div>
-            <div className="relative group">
-              <img 
-                src={classyMixedLaptop2} 
-                alt="Refined mixed race business leader in premium network meeting" 
-                className="w-full h-80 object-cover rounded-2xl shadow-luxury"
-              />
-              <div className="absolute inset-0 bg-gradient-to-l from-luxury/10 to-transparent rounded-2xl"></div>
-              <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm px-3 py-2 rounded-lg">
-                <span className="text-sm font-medium text-foreground">Investment Director</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="container mx-auto px-6 py-20">
-          <div className="bg-gradient-to-r from-luxury/10 to-accent/10 rounded-2xl p-12 text-center border border-luxury/20 shadow-luxury">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Ready to Join the <span className="text-transparent bg-gradient-luxury bg-clip-text">Elite Circle</span>?
+      {/* Courses Section */}
+      <section id="courses" className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 bg-success/10 text-success border-success/20">
+              Popular Courses
+            </Badge>
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+              Start learning today
             </h2>
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Connect with industry leaders, entrepreneurs, and visionaries. Your next breakthrough conversation awaits.
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Explore our most popular courses designed by industry experts 
+              and loved by thousands of learners.
             </p>
-            {user ? (
-              <Button 
-                onClick={() => navigate('/communities')}
-                size="lg"
-                className="bg-gradient-luxury hover:shadow-luxury transition-smooth text-lg px-12 py-3"
-              >
-                <Users className="w-5 h-5 mr-2" />
-                Explore Communities
-              </Button>
-            ) : (
-              <Button 
-                onClick={() => navigate('/auth')}
-                size="lg"
-                className="bg-gradient-luxury hover:shadow-luxury transition-smooth text-lg px-12 py-3"
-              >
-                <Crown className="w-5 h-5 mr-2" />
-                Join Elite Network
-              </Button>
-            )}
           </div>
-        </section>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {courses.map((course, index) => (
+              <Card 
+                key={index}
+                className="border-0 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group bg-gradient-card"
+              >
+                <CardHeader>
+                  <div className="text-4xl mb-4">{course.image}</div>
+                  <Badge variant="secondary" className="w-fit mb-2">
+                    {course.category}
+                  </Badge>
+                  <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                    {course.title}
+                  </CardTitle>
+                  <CardDescription className="text-base">
+                    {course.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center">
+                        <Users className="w-4 h-4 mr-1" />
+                        {course.students.toLocaleString()}
+                      </div>
+                      <div className="flex items-center">
+                        <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
+                        {course.rating}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="text-center mt-12">
+            <Button 
+              size="lg"
+              variant="outline"
+              onClick={() => navigate('/communities')}
+              className="border-2 hover:bg-secondary px-8"
+            >
+              View All Courses
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      </section>
 
-        {/* Footer */}
-        <footer className="border-t border-border/50 bg-background/80 backdrop-blur-sm">
-          <div className="container mx-auto px-6 py-8">
-            <div className="flex flex-col md:flex-row items-center justify-between">
-              <div className="flex items-center space-x-2 mb-4 md:mb-0">
-                <div className="w-6 h-6 bg-gradient-luxury rounded flex items-center justify-center">
-                  <Crown className="w-4 h-4 text-luxury-foreground" />
-                </div>
-                <span className="font-semibold bg-gradient-luxury bg-clip-text text-transparent">Inner Circle</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                © 2024 Inner Circle. Where influence meets opportunity.
-              </p>
+      {/* Testimonials Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 bg-warning/10 text-warning border-warning/20">
+              Testimonials
+            </Badge>
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+              Loved by learners worldwide
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              See what our community members have to say about their 
+              learning experience on LearnHub.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <Card 
+                key={index}
+                className="border-0 shadow-md bg-gradient-card animate-fade-in"
+                style={{ animationDelay: `${index * 0.2}s` }}
+              >
+                <CardHeader>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
+                      {testimonial.avatar}
+                    </div>
+                    <div>
+                      <div className="font-semibold">{testimonial.name}</div>
+                      <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                    </div>
+                  </div>
+                  <div className="flex space-x-1 mt-2">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground leading-relaxed">
+                    "{testimonial.content}"
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-hero relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="text-center max-w-3xl mx-auto">
+            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
+              Ready to transform your learning journey?
+            </h2>
+            <p className="text-lg text-white/90 mb-8">
+              Join thousands of learners who are already growing their skills 
+              and advancing their careers with LearnHub.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                size="lg"
+                onClick={() => navigate(user ? '/communities' : '/auth')}
+                className="bg-white text-primary hover:bg-white/90 shadow-lg px-8 py-3 text-lg font-semibold"
+              >
+                {user ? 'Explore Communities' : 'Start Learning Today'}
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+              <Button 
+                size="lg"
+                variant="outline"
+                className="border-2 border-white text-white hover:bg-white/10 px-8 py-3 text-lg"
+                onClick={() => navigate('/communities')}
+              >
+                Browse Communities
+              </Button>
             </div>
           </div>
-        </footer>
-      </div>
+        </div>
+      </section>
+
+      <ModernFooter />
     </div>
   );
 };
