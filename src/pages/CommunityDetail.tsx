@@ -28,6 +28,7 @@ import { CommunityPosts } from '@/components/CommunityPosts';
 import { CommunitySearch } from '@/components/CommunitySearch';
 import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
 import { ModernHeader } from '@/components/ModernHeader';
+import { validateAvatarUrl } from '@/lib/utils';
 
 interface Community {
   id: string;
@@ -473,7 +474,11 @@ const CommunityDetail = () => {
                       {members.map((member) => (
                         <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/50 transition-colors">
                           <Avatar className="w-10 h-10">
-                            <AvatarImage src={member.profiles?.avatar_url || ''} />
+                            <AvatarImage 
+                              src={validateAvatarUrl(member.profiles?.avatar_url)} 
+                              alt={member.profiles?.display_name || 'User avatar'}
+                              onError={() => console.warn('Member avatar failed to load:', member.profiles?.avatar_url)}
+                            />
                             <AvatarFallback>
                               {(member.profiles?.display_name || 'U').charAt(0).toUpperCase()}
                             </AvatarFallback>
@@ -579,7 +584,11 @@ const CommunityDetail = () => {
                     {members.slice(0, 5).map((member) => (
                       <div key={member.id} className="flex items-center gap-3">
                         <Avatar className="w-8 h-8">
-                          <AvatarImage src={member.profiles?.avatar_url || ''} />
+                          <AvatarImage 
+                            src={validateAvatarUrl(member.profiles?.avatar_url)} 
+                            alt={member.profiles?.display_name || 'User avatar'}
+                            onError={() => console.warn('Member avatar failed to load:', member.profiles?.avatar_url)}
+                          />
                           <AvatarFallback className="text-xs">
                             {(member.profiles?.display_name || 'U').charAt(0).toUpperCase()}
                           </AvatarFallback>

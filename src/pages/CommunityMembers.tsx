@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Users, Search, Crown, UserPlus, Mail, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunitySearch } from '@/components/CommunitySearch';
+import { validateAvatarUrl } from '@/lib/utils';
 
 interface Community {
   id: string;
@@ -219,7 +220,7 @@ const CommunityMembers = () => {
                       <div className="flex items-start gap-3">
                         <Avatar className="w-12 h-12">
                           <AvatarImage 
-                            src={member.profiles?.avatar_url || undefined} 
+                            src={validateAvatarUrl(member.profiles?.avatar_url)} 
                             alt={member.profiles?.display_name || 'Member'}
                             onError={() => {
                               console.warn('Member avatar failed to load:', member.profiles?.avatar_url);

@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Send, MessageCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { validateAvatarUrl } from '@/lib/utils';
 
 interface CommunityPost {
   id: string;
@@ -255,7 +256,7 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
                   <div className="flex gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage 
-                        src={post.profiles?.avatar_url || undefined} 
+                        src={validateAvatarUrl(post.profiles?.avatar_url)} 
                         alt={post.profiles?.display_name || 'User'}
                         onError={() => {
                           console.warn('Post author avatar failed to load:', post.profiles?.avatar_url);

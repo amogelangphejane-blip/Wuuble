@@ -23,6 +23,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { validateAvatarUrl } from '@/lib/utils';
 
 interface ModernHeaderProps {
   showAuthButtons?: boolean;
@@ -127,8 +128,9 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
                         <AvatarImage 
-                          src={profile?.avatar_url || ''} 
-                          alt={profile?.display_name || user.email || 'User'} 
+                          src={validateAvatarUrl(profile?.avatar_url)} 
+                          alt={profile?.display_name || user.email || 'User'}
+                          onError={() => console.warn('Header avatar failed to load:', profile?.avatar_url)}
                         />
                         <AvatarFallback className="bg-primary text-primary-foreground">
                           {(profile?.display_name || user.email || 'U').charAt(0).toUpperCase()}
