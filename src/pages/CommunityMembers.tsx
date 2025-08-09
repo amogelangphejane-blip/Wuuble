@@ -218,7 +218,13 @@ const CommunityMembers = () => {
                     <div key={member.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                       <div className="flex items-start gap-3">
                         <Avatar className="w-12 h-12">
-                          <AvatarImage src={member.profiles?.avatar_url || ''} />
+                          <AvatarImage 
+                            src={member.profiles?.avatar_url || undefined} 
+                            alt={member.profiles?.display_name || 'Member'}
+                            onError={() => {
+                              console.warn('Member avatar failed to load:', member.profiles?.avatar_url);
+                            }}
+                          />
                           <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                             {(member.profiles?.display_name || 'A')[0].toUpperCase()}
                           </AvatarFallback>

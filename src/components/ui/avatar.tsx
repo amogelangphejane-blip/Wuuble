@@ -21,13 +21,46 @@ Avatar.displayName = AvatarPrimitive.Root.displayName
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image
-    ref={ref}
-    className={cn("aspect-square h-full w-full", className)}
-    {...props}
-  />
-))
+>(({ className, src, alt, onError, onLoad, ...props }, ref) => {
+  const [imageError, setImageError] = React.useState(false)
+  const [imageLoaded, setImageLoaded] = React.useState(false)
+
+  // Reset error state when src changes
+  React.useEffect(() => {
+    if (src) {
+      setImageError(false)
+      setImageLoaded(false)
+    }
+  }, [src])
+
+  const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.warn('Avatar image failed to load:', src)
+    setImageError(true)
+    onError?.(e)
+  }
+
+  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    setImageLoaded(true)
+    onLoad?.(e)
+  }
+
+  // Don't render image if there's no src, empty src, or error occurred
+  if (!src || src.trim() === '' || imageError) {
+    return null
+  }
+
+  return (
+    <AvatarPrimitive.Image
+      ref={ref}
+      className={cn("aspect-square h-full w-full object-cover", className)}
+      src={src}
+      alt={alt}
+      onError={handleError}
+      onLoad={handleLoad}
+      {...props}
+    />
+  )
+})
 AvatarImage.displayName = AvatarPrimitive.Image.displayName
 
 const AvatarFallback = React.forwardRef<

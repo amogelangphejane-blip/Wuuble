@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, User } from 'lucide-react';
+import { validateAvatarUrl } from '@/lib/utils';
 
 interface ProfilePictureUploadProps {
   currentAvatarUrl?: string | null;
@@ -94,6 +95,11 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
         .getPublicUrl(fileName);
 
       console.log('Generated public URL:', publicUrl);
+
+      // Validate the public URL
+      if (!publicUrl || publicUrl.trim() === '') {
+        throw new Error('Failed to generate public URL for uploaded file');
+      }
 
       // Update profile with new avatar URL
       const { error: updateError } = await supabase
@@ -234,8 +240,11 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
         <div className="flex items-center space-x-4">
           <Avatar className="w-20 h-20">
             <AvatarImage 
-              src={previewUrl || currentAvatarUrl || undefined} 
-              alt="Profile picture" 
+              src={previewUrl || validateAvatarUrl(currentAvatarUrl)} 
+              alt="Profile picture"
+              onError={(e) => {
+                console.warn('Profile avatar failed to load:', previewUrl || currentAvatarUrl);
+              }}
             />
             <AvatarFallback className="text-2xl">
               <User />

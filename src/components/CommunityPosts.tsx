@@ -254,7 +254,13 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
                 <div key={post.id}>
                   <div className="flex gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={post.profiles?.avatar_url || ''} />
+                      <AvatarImage 
+                        src={post.profiles?.avatar_url || undefined} 
+                        alt={post.profiles?.display_name || 'User'}
+                        onError={() => {
+                          console.warn('Post author avatar failed to load:', post.profiles?.avatar_url);
+                        }}
+                      />
                       <AvatarFallback className="text-xs">
                         {getInitials(getDisplayName(post))}
                       </AvatarFallback>

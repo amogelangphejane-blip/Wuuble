@@ -236,7 +236,13 @@ export const CommunitySearch = ({ communityId, isCreator }: CommunitySearchProps
                 <Card key={member.id} className="p-4">
                   <div className="flex items-start space-x-3">
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src={member.profiles?.avatar_url || ''} />
+                      <AvatarImage 
+                        src={member.profiles?.avatar_url || undefined} 
+                        alt={member.profiles?.display_name || 'Member'}
+                        onError={() => {
+                          console.warn('Member avatar failed to load:', member.profiles?.avatar_url);
+                        }}
+                      />
                       <AvatarFallback>
                         {getInitials(getDisplayName(member))}
                       </AvatarFallback>
