@@ -14,7 +14,8 @@ import {
   List,
   CalendarDays,
   Filter,
-  TrendingUp
+  TrendingUp,
+  Lock
 } from 'lucide-react';
 import { EnhancedEventForm } from '@/components/EnhancedEventForm';
 import { EventCard } from '@/components/EventCard';
@@ -44,6 +45,8 @@ const EnhancedCommunityCalendar = () => {
   const { user, loading: authLoading } = useAuth();
   
   const [community, setCommunity] = useState<Community | null>(null);
+  const [isMember, setIsMember] = useState(false);
+  const [isCreator, setIsCreator] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showEventForm, setShowEventForm] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
@@ -91,9 +94,10 @@ const EnhancedCommunityCalendar = () => {
   }, [searchParams, events]);
 
   const fetchCommunityDetails = async () => {
-    if (!id) return;
+    if (!id || !user) return;
 
     try {
+      // Fetch community details
       const { data: communityData, error } = await supabase
         .from('communities')
         .select('*')
@@ -106,6 +110,17 @@ const EnhancedCommunityCalendar = () => {
       }
 
       setCommunity(communityData);
+      setIsCreator(communityData.creator_id === user.id);
+
+      // Check if user is a member
+      const { data: memberData } = await supabase
+        .from('community_members')
+        .select('*')
+        .eq('community_id', id)
+        .eq('user_id', user.id)
+        .single();
+
+      setIsMember(!!memberData);
     } catch (error) {
       console.error('Error fetching community details:', error);
     } finally {
@@ -116,6 +131,24 @@ const EnhancedCommunityCalendar = () => {
   // Filter and search events
   const filteredEvents = useMemo(() => {
     let filtered = events;
+
+    // Apply permission-based filtering first
+    filtered = filtered.filter(event => {
+      // Public events are visible to everyone
+      if (event.visibility === 'public') return true;
+      
+      // Private events only visible to creator
+      if (event.visibility === 'private') {
+        return user?.id === event.user_id;
+      }
+      
+      // Members-only events visible to community members and creator
+      if (event.visibility === 'members_only') {
+        return isMember || isCreator || user?.id === event.user_id;
+      }
+      
+      return false;
+    });
 
     // Apply search
     if (searchQuery.trim()) {
@@ -171,7 +204,7 @@ const EnhancedCommunityCalendar = () => {
     }
 
     return filtered;
-  }, [events, searchQuery, filters]);
+  }, [events, searchQuery, filters, isMember, isCreator, user]);
 
   // Get all unique tags for filter options
   const availableTags = useMemo(() => {
@@ -329,7 +362,7 @@ const EnhancedCommunityCalendar = () => {
               onRSVP={rsvpToEvent}
               onShare={shareEvent}
               onDownloadCalendar={downloadCalendarFile}
-              userCanManageEvent={user?.id === event.user_id}
+              userCanManageEvent={user?.id === event.user_id || isCreator}
               viewMode="card"
             />
           ))}
@@ -347,7 +380,7 @@ const EnhancedCommunityCalendar = () => {
             onRSVP={rsvpToEvent}
             onShare={shareEvent}
             onDownloadCalendar={downloadCalendarFile}
-            userCanManageEvent={user?.id === event.user_id}
+            userCanManageEvent={user?.id === event.user_id || isCreator}
             viewMode="list"
           />
         ))}
@@ -389,13 +422,15 @@ const EnhancedCommunityCalendar = () => {
                   />
                 </DialogContent>
               </Dialog>
-              <Button 
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
-                onClick={() => setShowEventForm(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Event
-              </Button>
+              {(isMember || isCreator) && (
+                <Button 
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+                  onClick={() => setShowEventForm(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Event
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -515,8 +550,22 @@ const EnhancedCommunityCalendar = () => {
                   <p className="text-gray-600">Loading events...</p>
                 </div>
               </div>
-            ) : (
+            ) : (isMember || isCreator) ? (
               renderEvents()
+            ) : (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Join to see events</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Become a member to discover and participate in community events.
+                  </p>
+                  <Button onClick={() => navigate(`/communities/${id}`)}>
+                    <ArrowLeft className="mr-2 w-4 h-4" />
+                    Back to Community
+                  </Button>
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>

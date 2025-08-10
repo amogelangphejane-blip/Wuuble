@@ -22,6 +22,7 @@ ADD COLUMN tags TEXT[], -- Array of tags for better categorization
 ADD COLUMN visibility VARCHAR(20) CHECK (visibility IN ('public', 'members_only', 'private')) DEFAULT 'members_only',
 ADD COLUMN requires_approval BOOLEAN DEFAULT false,
 ADD COLUMN external_url VARCHAR(500), -- For virtual events or external links
+ADD COLUMN cover_image_url VARCHAR(500), -- Event cover image URL
 ADD COLUMN timezone VARCHAR(50) DEFAULT 'UTC';
 
 -- Create event RSVPs table

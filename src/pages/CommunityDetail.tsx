@@ -502,15 +502,44 @@ const CommunityDetail = () => {
               )}
 
               {activeTab === 'events' && (
-                <Card>
-                  <CardContent className="text-center py-12">
-                    <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No events scheduled</h3>
-                    <p className="text-muted-foreground">
-                      Community events and workshops will appear here.
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="space-y-6">
+                  {(isMember || isCreator) ? (
+                    <div>
+                      {/* Navigate to Enhanced Calendar */}
+                      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+                        <CardContent className="text-center py-8">
+                          <Calendar className="w-12 h-12 text-primary mx-auto mb-4" />
+                          <h3 className="text-xl font-semibold mb-2">Community Events</h3>
+                          <p className="text-muted-foreground mb-6">
+                            Discover, create, and join community events. Connect with members through workshops, meetups, and activities.
+                          </p>
+                          <Button 
+                            onClick={() => navigate(`/communities/${id}/calendar`)}
+                            size="lg"
+                            className="bg-primary hover:bg-primary/90"
+                          >
+                            <Calendar className="mr-2 w-5 h-5" />
+                            View Events Calendar
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ) : (
+                    <Card className="text-center py-12">
+                      <CardContent>
+                        <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold mb-2">Join to see events</h3>
+                        <p className="text-muted-foreground mb-6">
+                          Become a member to discover and participate in community events.
+                        </p>
+                        <Button onClick={joinCommunity} disabled={joiningLeaving}>
+                          <UserPlus className="mr-2 w-4 h-4" />
+                          Join Community
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               )}
 
               {activeTab === 'resources' && (
@@ -538,9 +567,13 @@ const CommunityDetail = () => {
                     <Video className="mr-2 w-4 h-4" />
                     Start Video Chat
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => navigate(`/communities/${id}/calendar`)}
+                  >
                     <Calendar className="mr-2 w-4 h-4" />
-                    Schedule Event
+                    View Events
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
                     <BookOpen className="mr-2 w-4 h-4" />

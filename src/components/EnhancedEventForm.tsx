@@ -66,6 +66,7 @@ const eventFormSchema = z.object({
   visibility: z.enum(['public', 'members_only', 'private']).default('members_only'),
   requiresApproval: z.boolean().default(false),
   externalUrl: z.string().url().optional().or(z.literal('')),
+  coverImageUrl: z.string().url().optional().or(z.literal('')),
   timezone: z.string().default('UTC'),
 });
 
@@ -347,6 +348,50 @@ export const EnhancedEventForm = ({
                           {...field}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Cover Image */}
+                <FormField
+                  control={form.control}
+                  name="coverImageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cover Image (Optional)</FormLabel>
+                      <FormControl>
+                        <div className="space-y-3">
+                          <Input 
+                            placeholder="Enter image URL (e.g., https://example.com/image.jpg)"
+                            {...field}
+                          />
+                          {field.value && (
+                            <div className="relative">
+                              <img 
+                                src={field.value} 
+                                alt="Event cover preview"
+                                className="w-full h-32 object-cover rounded-md border"
+                                onError={() => {
+                                  field.onChange('');
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute top-2 right-2"
+                                onClick={() => field.onChange('')}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Add a cover image to make your event more attractive. Use a high-quality image (recommended: 1200x600px).
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

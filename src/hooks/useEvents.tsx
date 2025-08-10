@@ -174,6 +174,7 @@ export const useEvents = (communityId?: string) => {
           visibility: eventData.visibility,
           requires_approval: eventData.requiresApproval,
           external_url: eventData.externalUrl,
+          cover_image_url: eventData.coverImageUrl,
           timezone: eventData.timezone,
         });
 
