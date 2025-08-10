@@ -24,6 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { validateAvatarUrl } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface ModernHeaderProps {
   showAuthButtons?: boolean;
@@ -120,6 +121,9 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
 
           {/* Right Section */}
           <div className="flex items-center space-x-4">
+            {/* Theme Toggle */}
+            <ThemeToggle />
+            
             {user && showAuthButtons ? (
               <>
                 {/* User Menu */}
@@ -208,6 +212,14 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
               {navigationItems.map((item) => (
                 <NavigationLink key={item.href} item={item} mobile />
               ))}
+              
+              {/* Theme Toggle for Mobile */}
+              <div className="border-t pt-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">Theme</span>
+                  <ThemeToggle />
+                </div>
+              </div>
               
               {!user && showAuthButtons && (
                 <>
