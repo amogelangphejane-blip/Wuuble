@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Calendar, Plus, Clock, MapPin } from 'lucide-react';
+import { EventForm } from '@/components/EventForm';
+import { format, parseISO } from 'date-fns';
 
 interface Community {
   id: string;
@@ -17,13 +19,33 @@ interface Community {
   created_at: string;
 }
 
+interface CommunityEvent {
+  id: string;
+  community_id: string;
+  user_id: string;
+  title: string;
+  description?: string;
+  event_date: string;
+  start_time?: string;
+  end_time?: string;
+  location?: string;
+  is_virtual: boolean;
+  max_attendees?: number;
+  created_at: string;
+  updated_at: string;
+}
+
 const CommunityCalendar = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   
   const [community, setCommunity] = useState<Community | null>(null);
+  const [events, setEvents] = useState<CommunityEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -34,6 +56,7 @@ const CommunityCalendar = () => {
   useEffect(() => {
     if (user && id) {
       fetchCommunityDetails();
+      fetchEvents();
     }
   }, [user, id]);
 
@@ -57,6 +80,64 @@ const CommunityCalendar = () => {
       console.error('Error fetching community details:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEvents = async () => {
+    if (!id) return;
+
+    try {
+      setEventsLoading(true);
+      const { data: eventsData, error } = await supabase
+        .from('community_events')
+        .select('*')
+        .eq('community_id', id)
+        .order('event_date', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching events:', error);
+        return;
+      }
+
+      setEvents(eventsData || []);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
+
+  const handleCreateEvent = async (eventData: any) => {
+    if (!id || !user) return;
+
+    try {
+      setEventsLoading(true);
+      const { error } = await supabase
+        .from('community_events')
+        .insert({
+          community_id: id,
+          user_id: user.id,
+          title: eventData.title,
+          description: eventData.description,
+          event_date: format(eventData.eventDate, 'yyyy-MM-dd'),
+          start_time: eventData.startTime,
+          end_time: eventData.endTime,
+          location: eventData.location,
+          is_virtual: eventData.isVirtual,
+          max_attendees: eventData.maxAttendees,
+        });
+
+      if (error) {
+        console.error('Error creating event:', error);
+        return;
+      }
+
+      // Refresh events list
+      await fetchEvents();
+    } catch (error) {
+      console.error('Error creating event:', error);
+    } finally {
+      setEventsLoading(false);
     }
   };
 
@@ -104,7 +185,10 @@ const CommunityCalendar = () => {
               </button>
             </div>
             <div className="flex items-center gap-3">
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => setShowEventForm(true)}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Event
               </Button>
@@ -134,71 +218,62 @@ const CommunityCalendar = () => {
                 <CardTitle>Upcoming Events</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {/* Sample events - in a real app, these would come from the database */}
-                  <div className="border-l-4 border-blue-500 pl-4 py-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">Weekly Community Meetup</h3>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            <span>Tomorrow, 7:00 PM</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            <span>Virtual</span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-2">
-                          Join us for our weekly community discussion and networking session.
-                        </p>
-                      </div>
-                    </div>
+                {eventsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   </div>
-
-                  <div className="border-l-4 border-green-500 pl-4 py-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">Workshop: Advanced Topics</h3>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            <span>Dec 25, 2024, 2:00 PM</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            <span>Conference Room A</span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-2">
-                          Deep dive into advanced concepts with industry experts.
-                        </p>
+                ) : (
+                  <div className="space-y-4">
+                    {events.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No events scheduled yet.</p>
+                        <p className="text-sm">Create your first event to get started!</p>
                       </div>
-                    </div>
+                    ) : (
+                      events
+                        .filter(event => {
+                          if (!selectedDate) return true;
+                          return format(parseISO(event.event_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+                        })
+                        .map((event, index) => {
+                          const borderColors = ['border-blue-500', 'border-green-500', 'border-purple-500', 'border-orange-500', 'border-pink-500'];
+                          const borderColor = borderColors[index % borderColors.length];
+                          
+                          return (
+                            <div key={event.id} className={`border-l-4 ${borderColor} pl-4 py-3`}>
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <h3 className="font-semibold text-gray-900">{event.title}</h3>
+                                  <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-4 w-4" />
+                                      <span>
+                                        {format(parseISO(event.event_date), 'MMM d, yyyy')}
+                                        {event.start_time && `, ${event.start_time}`}
+                                        {event.end_time && ` - ${event.end_time}`}
+                                      </span>
+                                    </div>
+                                    {event.location && (
+                                      <div className="flex items-center gap-1">
+                                        <MapPin className="h-4 w-4" />
+                                        <span>{event.is_virtual ? 'Virtual' : event.location}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {event.description && (
+                                    <p className="text-sm text-gray-600 mt-2">
+                                      {event.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                    )}
                   </div>
-
-                  <div className="border-l-4 border-purple-500 pl-4 py-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">New Year Community Party</h3>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            <span>Jan 1, 2025, 8:00 PM</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            <span>Community Center</span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-2">
-                          Celebrate the new year with fellow community members!
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -210,14 +285,61 @@ const CommunityCalendar = () => {
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setShowEventForm(true)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Event
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setSelectedDate(undefined)}
+                >
                   <Calendar className="h-4 w-4 mr-2" />
-                  View Full Calendar
+                  View All Events
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Filter by Date</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  className="w-full"
+                  modifiers={{
+                    hasEvent: events.map(event => parseISO(event.event_date))
+                  }}
+                  modifiersStyles={{
+                    hasEvent: { 
+                      backgroundColor: 'rgb(59 130 246)', 
+                      color: 'white',
+                      fontWeight: 'bold'
+                    }
+                  }}
+                />
+                {selectedDate && (
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-sm text-gray-600 mb-2">
+                      Showing events for {format(selectedDate, 'MMM d, yyyy')}
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setSelectedDate(undefined)}
+                      className="w-full"
+                    >
+                      Clear Filter
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -227,7 +349,13 @@ const CommunityCalendar = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-center space-y-2">
-                  <div className="text-3xl font-bold text-blue-600">8</div>
+                  <div className="text-3xl font-bold text-blue-600">
+                    {events.filter(event => {
+                      const eventDate = parseISO(event.event_date);
+                      const now = new Date();
+                      return eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear();
+                    }).length}
+                  </div>
                   <div className="text-sm text-gray-600">Events Scheduled</div>
                 </div>
               </CardContent>
@@ -235,6 +363,15 @@ const CommunityCalendar = () => {
           </div>
         </div>
       </div>
+
+      {/* Event Form Modal */}
+      <EventForm
+        isOpen={showEventForm}
+        onClose={() => setShowEventForm(false)}
+        onSubmit={handleCreateEvent}
+        communityId={id || ''}
+        isLoading={eventsLoading}
+      />
     </div>
   );
 };
