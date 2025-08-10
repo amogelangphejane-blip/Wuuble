@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, User } from 'lucide-react';
 import { validateAvatarUrl } from '@/lib/utils';
+import React from 'react'; // Added missing import for React
 
 interface ProfilePictureUploadProps {
   currentAvatarUrl?: string | null;
@@ -19,6 +20,7 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -26,6 +28,8 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    console.log('File selected:', file.name, file.size, file.type);
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -52,7 +56,17 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
     // Create preview URL
     const reader = new FileReader();
     reader.onload = (e) => {
-      setPreviewUrl(e.target?.result as string);
+      const result = e.target?.result as string;
+      console.log('Preview URL created successfully');
+      setPreviewUrl(result);
+    };
+    reader.onerror = () => {
+      console.error('Failed to read file for preview');
+      toast({
+        title: "Preview failed",
+        description: "Could not create image preview",
+        variant: "destructive",
+      });
     };
     reader.onerror = () => {
       console.error('Failed to read file for preview');
@@ -66,9 +80,14 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !user) return;
+    if (!selectedFile || !user) {
+      console.error('Cannot upload: missing file or user');
+      return;
+    }
 
     setUploading(true);
+    setUploadProgress('Preparing upload...');
+    
     try {
       console.log('Starting profile picture upload for user:', user.id);
       console.log('File details:', {
@@ -82,6 +101,8 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
       const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
       console.log('Generated filename:', fileName);
 
+      setUploadProgress('Uploading to storage...');
+
       // Upload file to Supabase storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-pictures')
@@ -92,10 +113,11 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
 
       if (uploadError) {
         console.error('Upload error details:', uploadError);
-        throw uploadError;
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
       console.log('Upload successful:', uploadData);
+      setUploadProgress('Generating public URL...');
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -109,6 +131,14 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
         throw new Error('Failed to generate public URL for uploaded file');
       }
 
+      // Additional validation of the generated URL
+      const validatedUrl = validateAvatarUrl(publicUrl);
+      if (!validatedUrl) {
+        throw new Error('Generated URL failed validation');
+      }
+
+      setUploadProgress('Updating profile...');
+
       // Update profile with new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
@@ -120,13 +150,14 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
 
       if (updateError) {
         console.error('Profile update error:', updateError);
-        throw updateError;
+        throw new Error(`Profile update failed: ${updateError.message}`);
       }
 
       console.log('Profile updated successfully');
 
       // Remove old avatar if it exists and is different
       if (currentAvatarUrl && currentAvatarUrl !== publicUrl) {
+        setUploadProgress('Cleaning up old avatar...');
         try {
           // Extract the storage path from the public URL
           // URL format: https://[project].supabase.co/storage/v1/object/public/profile-pictures/[path]
@@ -142,6 +173,8 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
             if (deleteError) {
               console.warn('Failed to delete old avatar:', deleteError);
               // Don't throw here, as the main upload was successful
+            } else {
+              console.log('Old avatar deleted successfully');
             }
           }
         } catch (deleteError) {
@@ -153,6 +186,7 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
       onAvatarUpdate(publicUrl);
       setPreviewUrl(null);
       setSelectedFile(null);
+      setUploadProgress('');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -163,13 +197,15 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
       });
     } catch (error) {
       console.error('Error uploading avatar:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Upload failed",
-        description: "Failed to upload profile picture. Please try again.",
+        description: `Failed to upload profile picture: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
       setUploading(false);
+      setUploadProgress('');
     }
   };
 
@@ -177,7 +213,11 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
     if (!user || !currentAvatarUrl) return;
 
     setUploading(true);
+    setUploadProgress('Removing avatar...');
+    
     try {
+      console.log('Removing avatar for user:', user.id);
+      
       // Update profile to remove avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
@@ -188,7 +228,8 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
         .eq('user_id', user.id);
 
       if (updateError) {
-        throw updateError;
+        console.error('Profile update error:', updateError);
+        throw new Error(`Failed to update profile: ${updateError.message}`);
       }
 
       // Remove file from storage
@@ -205,6 +246,8 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
           
           if (deleteError) {
             console.warn('Failed to delete avatar from storage:', deleteError);
+          } else {
+            console.log('Avatar deleted from storage successfully');
           }
         }
       } catch (deleteError) {
@@ -218,23 +261,38 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
       });
     } catch (error) {
       console.error('Error removing avatar:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Remove failed",
-        description: "Failed to remove profile picture. Please try again.",
+        description: `Failed to remove profile picture: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
       setUploading(false);
+      setUploadProgress('');
     }
   };
 
   const handleCancel = () => {
     setPreviewUrl(null);
     setSelectedFile(null);
+    setUploadProgress('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
+
+  // Debug current state
+  React.useEffect(() => {
+    console.log('ProfilePictureUpload state:', {
+      currentAvatarUrl,
+      validatedUrl: validateAvatarUrl(currentAvatarUrl),
+      previewUrl,
+      hasSelectedFile: !!selectedFile,
+      uploading,
+      userId: user?.id
+    });
+  }, [currentAvatarUrl, previewUrl, selectedFile, uploading, user?.id]);
 
   return (
     <Card>
@@ -252,6 +310,9 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
               alt="Profile picture"
               onError={(e) => {
                 console.warn('Profile avatar failed to load:', previewUrl || currentAvatarUrl);
+              }}
+              onLoad={() => {
+                console.log('Profile avatar loaded successfully');
               }}
             />
             <AvatarFallback className="text-2xl">
@@ -313,6 +374,12 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
                   Cancel
                 </Button>
               </div>
+            )}
+            
+            {uploadProgress && (
+              <p className="text-sm text-blue-600 font-medium">
+                {uploadProgress}
+              </p>
             )}
             
             <p className="text-sm text-muted-foreground">
