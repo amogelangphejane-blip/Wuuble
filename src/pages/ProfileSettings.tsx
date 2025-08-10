@@ -13,6 +13,7 @@ import { ProfilePictureUpload } from '@/components/ProfilePictureUpload';
 import { StorageTest } from '@/components/StorageTest';
 import { AvatarDebugTest } from '@/components/AvatarDebugTest';
 import { StoragePolicyTest } from '@/components/StoragePolicyTest';
+import { RLSDebugTool } from '@/components/RLSDebugTool';
 
 interface UserProfile {
   user_id: string;
@@ -291,6 +292,9 @@ const ProfileSettings = () => {
 
         {/* Storage Policy Test Component */}
         <StoragePolicyTest />
+
+        {/* RLS Debug Tool */}
+        <RLSDebugTool />
       </div>
     </div>
   );
