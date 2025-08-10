@@ -28,7 +28,7 @@ export const useEventNotifications = () => {
             community:communities(name)
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as string)
         .eq('is_active', true)
         .order('scheduled_for', { ascending: true });
 
@@ -58,8 +58,8 @@ export const useEventNotifications = () => {
       const { error } = await supabase
         .from('event_notifications')
         .insert({
-          event_id: eventId,
-          user_id: user.id,
+          event_id: eventId as string,
+          user_id: user.id as string,
           notification_type: notificationType,
           scheduled_for: scheduledFor.toISOString(),
           message,
@@ -90,8 +90,8 @@ export const useEventNotifications = () => {
       const eventDateTime = new Date(`${event.event_date}T${event.start_time || '00:00'}:00`);
       
       const notifications = reminderTimes.map(minutes => ({
-        event_id: event.id,
-        user_id: user.id,
+        event_id: event.id as string,
+        user_id: user.id as string,
         notification_type: 'reminder' as const,
         scheduled_for: addMinutes(eventDateTime, -minutes).toISOString(),
         message: `Reminder: "${event.title}" starts in ${minutes} minute${minutes !== 1 ? 's' : ''}`,
@@ -272,8 +272,8 @@ export const useEventReminders = () => {
 
     try {
       const notifications = reminderTimes.map(minutes => ({
-        event_id: eventId,
-        user_id: user.id,
+        event_id: eventId as string,
+        user_id: user.id as string,
         notification_type: 'reminder' as const,
         scheduled_for: addMinutes(eventDateTime, -minutes).toISOString(),
         message: `Reminder: Your event starts in ${minutes} minute${minutes !== 1 ? 's' : ''}`,
@@ -318,8 +318,8 @@ export const useEventReminders = () => {
       await supabase
         .from('event_notifications')
         .delete()
-        .eq('event_id', eventId)
-        .eq('user_id', user.id)
+        .eq('event_id', eventId as string)
+        .eq('user_id', user.id as string)
         .eq('notification_type', 'reminder');
 
       // Create new reminders

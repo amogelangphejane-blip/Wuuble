@@ -35,10 +35,10 @@ export const useEvents = (communityId?: string) => {
         .select(`
           *,
           category:event_categories(*),
-          creator_profile:profiles!community_events_user_id_fkey(display_name, avatar_url),
+          creator_profile:profiles!user_id(display_name, avatar_url),
           rsvp_count:event_rsvps(count)
         `)
-        .eq('community_id', communityId)
+        .eq('community_id', communityId as string)
         .order('event_date', { ascending: true });
 
       // Apply filters
@@ -79,7 +79,7 @@ export const useEvents = (communityId?: string) => {
           .from('event_rsvps')
           .select('*')
           .in('event_id', eventIds)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id as string);
 
         // Merge RSVP data with events
         const eventsWithRSVP = eventsData.map(event => ({
@@ -110,7 +110,7 @@ export const useEvents = (communityId?: string) => {
       const { data: categoriesData, error } = await supabase
         .from('event_categories')
         .select('*')
-        .or(`community_id.is.null,community_id.eq.${communityId}`)
+        .or(`community_id.is.null,community_id.eq.${communityId as string}`)
         .order('is_default', { ascending: false })
         .order('name');
 
@@ -133,7 +133,7 @@ export const useEvents = (communityId?: string) => {
       const { data: preferencesData, error } = await supabase
         .from('user_event_preferences')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as string)
         .single();
 
       if (error && error.code !== 'PGRST116') {
@@ -157,8 +157,8 @@ export const useEvents = (communityId?: string) => {
       const { error } = await supabase
         .from('community_events')
         .insert({
-          community_id: communityId,
-          user_id: user.id,
+          community_id: communityId as string,
+          user_id: user.id as string,
           title: eventData.title,
           description: eventData.description,
           event_date: format(eventData.eventDate, 'yyyy-MM-dd'),
@@ -167,7 +167,7 @@ export const useEvents = (communityId?: string) => {
           location: eventData.location,
           is_virtual: eventData.isVirtual,
           max_attendees: eventData.maxAttendees,
-          category_id: eventData.categoryId,
+          category_id: eventData.categoryId as string | undefined,
           recurring_type: eventData.recurringType,
           recurring_end_date: eventData.recurringEndDate ? format(eventData.recurringEndDate, 'yyyy-MM-dd') : null,
           tags: eventData.tags,
@@ -215,8 +215,8 @@ export const useEvents = (communityId?: string) => {
       const { error } = await supabase
         .from('event_rsvps')
         .upsert({
-          event_id: eventId,
-          user_id: user.id,
+          event_id: eventId as string,
+          user_id: user.id as string,
           status,
           response_note: note,
         });
@@ -260,7 +260,7 @@ export const useEvents = (communityId?: string) => {
           name: categoryData.name,
           color: categoryData.color,
           icon: categoryData.icon,
-          community_id: communityId,
+          community_id: communityId as string,
           is_default: false,
         });
 
@@ -300,7 +300,7 @@ export const useEvents = (communityId?: string) => {
       const { error } = await supabase
         .from('user_event_preferences')
         .upsert({
-          user_id: user.id,
+          user_id: user.id as string,
           ...preferences,
         });
 
@@ -341,8 +341,8 @@ export const useEvents = (communityId?: string) => {
       await supabase
         .from('event_shares')
         .insert({
-          event_id: eventId,
-          user_id: user.id,
+          event_id: eventId as string,
+          user_id: user.id as string,
           platform,
         });
 
@@ -490,9 +490,9 @@ export const useEventRSVPs = (eventId?: string) => {
         .from('event_rsvps')
         .select(`
           *,
-          user_profile:profiles!event_rsvps_user_id_fkey(display_name, avatar_url)
+          user_profile:profiles!user_id(display_name, avatar_url)
         `)
-        .eq('event_id', eventId)
+        .eq('event_id', eventId as string)
         .order('created_at', { ascending: false });
 
       if (error) {
