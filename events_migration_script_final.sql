@@ -367,14 +367,14 @@ EXECUTE FUNCTION create_default_user_event_preferences();
 -- Step 16: Insert default event categories
 INSERT INTO public.event_categories (name, color, icon, community_id, is_default) 
 SELECT * FROM (VALUES
-  ('General', '#3B82F6', 'Calendar', NULL, true),
-  ('Meeting', '#10B981', 'Users', NULL, true),
-  ('Workshop', '#8B5CF6', 'BookOpen', NULL, true),
-  ('Social', '#F59E0B', 'Coffee', NULL, true),
-  ('Sports', '#EF4444', 'Trophy', NULL, true),
-  ('Entertainment', '#EC4899', 'Music', NULL, true),
-  ('Education', '#6366F1', 'GraduationCap', NULL, true),
-  ('Business', '#374151', 'Briefcase', NULL, true)
+  ('General', '#3B82F6', 'Calendar', NULL::UUID, true),
+  ('Meeting', '#10B981', 'Users', NULL::UUID, true),
+  ('Workshop', '#8B5CF6', 'BookOpen', NULL::UUID, true),
+  ('Social', '#F59E0B', 'Coffee', NULL::UUID, true),
+  ('Sports', '#EF4444', 'Trophy', NULL::UUID, true),
+  ('Entertainment', '#EC4899', 'Music', NULL::UUID, true),
+  ('Education', '#6366F1', 'GraduationCap', NULL::UUID, true),
+  ('Business', '#374151', 'Briefcase', NULL::UUID, true)
 ) AS v(name, color, icon, community_id, is_default)
 WHERE NOT EXISTS (SELECT 1 FROM public.event_categories WHERE is_default = true);
 
