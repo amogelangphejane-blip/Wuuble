@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, User } from 'lucide-react';
 import { validateAvatarUrl } from '@/lib/utils';
+import { uploadProfilePicture } from '@/utils/uploadHelpers';
 
 interface ProfilePictureUploadProps {
   currentAvatarUrl?: string | null;
@@ -77,37 +78,17 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
         type: selectedFile.type
       });
 
-      // Generate unique filename with proper extension handling
-      const fileExt = selectedFile.name.split('.').pop() || 'jpg';
-      const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
-      console.log('Generated filename:', fileName);
+      // Use enhanced upload helper with better error handling
+      const uploadResult = await uploadProfilePicture(selectedFile, user.id);
 
-      // Upload file to Supabase storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('profile-pictures')
-        .upload(fileName, selectedFile, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (uploadError) {
-        console.error('Upload error details:', uploadError);
-        throw uploadError;
+      if (!uploadResult.success) {
+        console.error('Upload failed:', uploadResult.error, uploadResult.debugInfo);
+        throw new Error(uploadResult.error);
       }
 
-      console.log('Upload successful:', uploadData);
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-pictures')
-        .getPublicUrl(fileName);
-
+      const publicUrl = uploadResult.publicUrl!;
+      console.log('Upload successful:', uploadResult.debugInfo);
       console.log('Generated public URL:', publicUrl);
-
-      // Validate the public URL
-      if (!publicUrl || publicUrl.trim() === '') {
-        throw new Error('Failed to generate public URL for uploaded file');
-      }
 
       // Update profile with new avatar URL
       const { error: updateError } = await supabase

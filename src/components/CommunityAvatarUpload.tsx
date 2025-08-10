@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, Users } from 'lucide-react';
 import { validateAvatarUrl } from '@/lib/utils';
+import { uploadCommunityAvatar } from '@/utils/uploadHelpers';
 
 interface CommunityAvatarUploadProps {
   communityId?: string;
@@ -91,37 +92,17 @@ export const CommunityAvatarUpload = ({
         type: selectedFile.type
       });
 
-      // Generate unique filename with proper extension handling
-      const fileExt = selectedFile.name.split('.').pop() || 'jpg';
-      const fileName = `communities/${communityId}/avatar-${Date.now()}.${fileExt}`;
-      console.log('Generated filename:', fileName);
+      // Use enhanced upload helper with better error handling
+      const uploadResult = await uploadCommunityAvatar(selectedFile, communityId, user.id);
 
-      // Upload file to Supabase storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('community-avatars')
-        .upload(fileName, selectedFile, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (uploadError) {
-        console.error('Community avatar upload error details:', uploadError);
-        throw uploadError;
+      if (!uploadResult.success) {
+        console.error('Community upload failed:', uploadResult.error, uploadResult.debugInfo);
+        throw new Error(uploadResult.error);
       }
 
-      console.log('Community avatar upload successful:', uploadData);
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('community-avatars')
-        .getPublicUrl(fileName);
-
+      const publicUrl = uploadResult.publicUrl!;
+      console.log('Community avatar upload successful:', uploadResult.debugInfo);
       console.log('Generated public URL:', publicUrl);
-
-      // Validate the public URL
-      if (!publicUrl || publicUrl.trim() === '') {
-        throw new Error('Failed to generate public URL for uploaded file');
-      }
 
       // Update community with new avatar URL
       const { error: updateError } = await supabase
