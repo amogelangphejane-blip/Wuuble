@@ -29,6 +29,7 @@ export interface CommunityEvent {
   visibility: 'public' | 'members_only' | 'private';
   requires_approval: boolean;
   external_url?: string;
+  cover_image_url?: string;
   timezone: string;
   created_at: string;
   updated_at: string;
@@ -107,6 +108,7 @@ export interface EventFormData {
   visibility: 'public' | 'members_only' | 'private';
   requiresApproval: boolean;
   externalUrl?: string;
+  coverImageUrl?: string;
   timezone: string;
 }
 
