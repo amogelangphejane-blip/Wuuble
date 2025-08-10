@@ -35,7 +35,7 @@ export const useEvents = (communityId?: string) => {
         .select(`
           *,
           category:event_categories(*),
-          creator_profile:profiles!community_events_user_id_fkey(display_name, avatar_url),
+          creator_profile:profiles!user_id(display_name, avatar_url),
           rsvp_count:event_rsvps(count)
         `)
         .eq('community_id', communityId)
