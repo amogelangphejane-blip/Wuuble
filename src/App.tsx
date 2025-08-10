@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Communities from "./pages/Communities";
 import CommunityDetail from "./pages/CommunityDetail";
 import CommunityCalendar from "./pages/CommunityCalendar";
+import EnhancedCommunityCalendar from "./pages/EnhancedCommunityCalendar";
 import CommunityClassroom from "./pages/CommunityClassroom";
 import CommunityMembers from "./pages/CommunityMembers";
 import ProfileSettings from "./pages/ProfileSettings";
@@ -37,7 +38,10 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/communities" element={<Communities />} />
               <Route path="/communities/:id" element={<CommunityDetail />} />
-              <Route path="/communities/:id/calendar" element={<CommunityCalendar />} />
+              {/* Enhanced calendar route - new default */}
+              <Route path="/communities/:id/calendar" element={<EnhancedCommunityCalendar />} />
+              {/* Legacy calendar route for backward compatibility */}
+              <Route path="/communities/:id/calendar/legacy" element={<CommunityCalendar />} />
               <Route path="/communities/:id/classroom" element={<CommunityClassroom />} />
               <Route path="/communities/:id/members" element={<CommunityMembers />} />
               <Route path="/profile" element={<ProfileSettings />} />
