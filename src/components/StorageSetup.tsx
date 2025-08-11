@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { setupStorageBuckets, type SetupResult } from '@/utils/setupStorage';
+import { Settings, CheckCircle, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { setupStorageBuckets, type SetupResult } from '@/scripts/setupStorageBuckets';
 
 export const StorageSetup = () => {
   const [setting, setSetting] = useState(false);
@@ -12,7 +12,7 @@ export const StorageSetup = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const setupStorage = async () => {
+  const handleSetupStorage = async () => {
     if (!user) {
       toast({
         title: "Error",
@@ -26,6 +26,7 @@ export const StorageSetup = () => {
     setResults([]);
 
     try {
+      console.log('🔧 Starting storage setup...');
       const setupResults = await setupStorageBuckets();
       setResults(setupResults);
 
@@ -33,41 +34,44 @@ export const StorageSetup = () => {
       
       if (allSuccessful) {
         toast({
-          title: "Setup Complete",
-          description: "Storage buckets have been configured. You can now upload profile pictures!",
+          title: "Success",
+          description: "Storage buckets set up successfully! You can now upload avatars.",
         });
-        
-        // Trigger a page refresh to update storage status in other components
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
       } else {
+        const errorCount = setupResults.filter(r => !r.success).length;
         toast({
           title: "Setup Issues",
-          description: "Some setup steps failed. Check the results below for details.",
+          description: `${errorCount} issue(s) encountered during setup. Check the details below.`,
           variant: "destructive",
         });
       }
-
     } catch (error) {
-      setResults([{ step: 'Setup Failed', success: false, message: `Setup failed: ${error}` }]);
+      console.error('Storage setup failed:', error);
       toast({
         title: "Setup Failed",
-        description: "Failed to set up storage. Please try again or contact support.",
+        description: "Failed to set up storage buckets. Please try again or check your permissions.",
         variant: "destructive",
       });
+      setResults([{
+        step: 'Setup Error',
+        success: false,
+        message: `Unexpected error: ${error}`,
+        details: error
+      }]);
     } finally {
       setSetting(false);
     }
   };
 
-  const getStatusIcon = (success: boolean) => {
-    return success ? (
+  const getStatusIcon = (status: boolean) => {
+    return status ? (
       <CheckCircle className="w-4 h-4 text-green-500" />
     ) : (
       <XCircle className="w-4 h-4 text-red-500" />
     );
   };
+
+  const getWarningIcon = () => <AlertTriangle className="w-4 h-4 text-yellow-500" />;
 
   return (
     <Card className="w-full">
@@ -77,53 +81,79 @@ export const StorageSetup = () => {
           Storage Setup
         </CardTitle>
         <CardDescription>
-          Set up storage buckets and policies required for profile picture uploads
+          Set up storage buckets for profile pictures and community avatars
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-           <div className="flex items-start gap-3">
-             <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
-             <div>
-               <h4 className="font-medium text-yellow-800">Storage Setup Required</h4>
-               <p className="text-sm text-yellow-700 mt-1">
-                 The storage buckets for profile pictures need to be created before uploads can work.
-                 <br /><br />
-                 <strong>Quick Fix:</strong> Go to your <a href="https://supabase.com/dashboard" target="_blank" className="underline">Supabase Dashboard</a> → Storage → Create the following buckets:
-                 <br />• <code>profile-pictures</code> (public, 5MB limit)
-                 <br />• <code>community-avatars</code> (public, 5MB limit)
-                 <br /><br />
-                 Or try the automated setup below (may require admin permissions).
-               </p>
-             </div>
-           </div>
-         </div>
-
-        <Button onClick={setupStorage} disabled={setting} className="w-full">
-          {setting ? 'Setting Up Storage...' : 'Set Up Storage Buckets'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={handleSetupStorage} 
+            disabled={setting}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {setting ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Setting Up...
+              </>
+            ) : (
+              'Set Up Storage Buckets'
+            )}
+          </Button>
+          
+          {results.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              {results.filter(r => r.success).length}/{results.length} steps completed
+            </div>
+          )}
+        </div>
 
         {results.length > 0 && (
           <div className="space-y-2">
-            <h4 className="font-semibold">Setup Progress</h4>
+            <h4 className="font-semibold">Setup Results</h4>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {results.map((result, index) => (
-                               <div 
-                 key={index} 
-                 className="flex items-start gap-3 p-3 rounded-lg border"
-               >
-                 {getStatusIcon(result.success)}
-                 <div className="flex-1 min-w-0">
-                   <p className="font-medium text-sm">{result.step}</p>
-                   <p className="text-xs text-muted-foreground break-words">
-                     {result.message}
-                   </p>
-                 </div>
-               </div>
+                <div 
+                  key={index} 
+                  className={`flex items-start gap-3 p-3 rounded-lg border ${
+                    result.success 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-red-50 border-red-200'
+                  }`}
+                >
+                  {getStatusIcon(result.success)}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{result.step}</p>
+                    <p className="text-xs text-muted-foreground break-words">
+                      {result.message}
+                    </p>
+                    {result.details && (
+                      <details className="mt-1">
+                        <summary className="text-xs cursor-pointer text-blue-600">
+                          View Details
+                        </summary>
+                        <pre className="text-xs mt-1 p-2 bg-gray-100 rounded overflow-x-auto">
+                          {JSON.stringify(result.details, null, 2)}
+                        </pre>
+                      </details>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         )}
+
+        <div className="text-sm text-muted-foreground space-y-1">
+          <p><strong>What this does:</strong></p>
+          <ul className="list-disc list-inside space-y-1 text-xs">
+            <li>Creates <code>profile-pictures</code> bucket for user avatars</li>
+            <li>Creates <code>community-avatars</code> bucket for community images</li>
+            <li>Sets up proper permissions and file size limits (5MB)</li>
+            <li>Enables public access for image display</li>
+            <li>Tests upload permissions to verify everything works</li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
   );

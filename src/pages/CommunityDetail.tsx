@@ -674,6 +674,7 @@ const CommunityDetail = () => {
               </div>
               <div className="space-y-2">
                 <CommunityAvatarUpload
+                  communityId={id}
                   currentAvatarUrl={editingCommunity.avatar_url}
                   onAvatarUpdate={(avatarUrl) => setEditingCommunity({ ...editingCommunity, avatar_url: avatarUrl })}
                   size="lg"
