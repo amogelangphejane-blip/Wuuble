@@ -98,7 +98,7 @@ export const CommunityAvatarUpload = ({
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !user || !communityId) return;
+    if (!selectedFile || !user) return;
 
     setUploading(true);
     try {
@@ -111,7 +111,9 @@ export const CommunityAvatarUpload = ({
 
       // Generate unique filename with proper extension handling
       const fileExt = selectedFile.name.split('.').pop() || 'jpg';
-      const fileName = `communities/${communityId}/avatar-${Date.now()}.${fileExt}`;
+      const fileName = communityId 
+        ? `communities/${communityId}/avatar-${Date.now()}.${fileExt}`
+        : `temp/community-avatar-${user.id}-${Date.now()}.${fileExt}`;
       console.log('Generated filename:', fileName);
 
       // Upload file to Supabase storage
@@ -141,44 +143,46 @@ export const CommunityAvatarUpload = ({
         throw new Error('Failed to generate public URL for uploaded file');
       }
 
-      // Update community with new avatar URL
-      const { error: updateError } = await supabase
-        .from('communities')
-        .update({ 
-          avatar_url: publicUrl,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', communityId);
+      // Update community with new avatar URL only if communityId exists
+      if (communityId) {
+        const { error: updateError } = await supabase
+          .from('communities')
+          .update({ 
+            avatar_url: publicUrl,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', communityId);
 
-      if (updateError) {
-        console.error('Community update error:', updateError);
-        throw updateError;
-      }
+        if (updateError) {
+          console.error('Community update error:', updateError);
+          throw updateError;
+        }
 
-      console.log('Community updated successfully');
+        console.log('Community updated successfully');
 
-      // Remove old avatar if it exists and is different
-      if (currentAvatarUrl && currentAvatarUrl !== publicUrl) {
-        try {
-          // Extract the storage path from the public URL
-          // URL format: https://[project].supabase.co/storage/v1/object/public/community-avatars/[path]
-          const urlParts = currentAvatarUrl.split('/storage/v1/object/public/community-avatars/');
-          if (urlParts.length > 1) {
-            const storagePath = urlParts[1];
-            console.log('Attempting to delete old community avatar:', storagePath);
-            
-            const { error: deleteError } = await supabase.storage
-              .from('community-avatars')
-              .remove([storagePath]);
-            
-            if (deleteError) {
-              console.warn('Failed to delete old community avatar:', deleteError);
-              // Don't throw here, as the main upload was successful
+        // Remove old avatar if it exists and is different
+        if (currentAvatarUrl && currentAvatarUrl !== publicUrl) {
+          try {
+            // Extract the storage path from the public URL
+            // URL format: https://[project].supabase.co/storage/v1/object/public/community-avatars/[path]
+            const urlParts = currentAvatarUrl.split('/storage/v1/object/public/community-avatars/');
+            if (urlParts.length > 1) {
+              const storagePath = urlParts[1];
+              console.log('Attempting to delete old community avatar:', storagePath);
+              
+              const { error: deleteError } = await supabase.storage
+                .from('community-avatars')
+                .remove([storagePath]);
+              
+              if (deleteError) {
+                console.warn('Failed to delete old community avatar:', deleteError);
+                // Don't throw here, as the main upload was successful
+              }
             }
+          } catch (deleteError) {
+            console.warn('Error during old community avatar cleanup:', deleteError);
+            // Don't throw here, as the main upload was successful
           }
-        } catch (deleteError) {
-          console.warn('Error during old community avatar cleanup:', deleteError);
-          // Don't throw here, as the main upload was successful
         }
       }
 
@@ -191,7 +195,7 @@ export const CommunityAvatarUpload = ({
 
       toast({
         title: "Success",
-        description: "Community avatar updated successfully",
+        description: communityId ? "Community avatar updated successfully" : "Avatar uploaded successfully",
       });
     } catch (error) {
       console.error('Error uploading community avatar:', error);
@@ -206,21 +210,23 @@ export const CommunityAvatarUpload = ({
   };
 
   const handleRemove = async () => {
-    if (!user || !currentAvatarUrl || !communityId) return;
+    if (!user || !currentAvatarUrl) return;
 
     setUploading(true);
     try {
-      // Update community to remove avatar URL
-      const { error: updateError } = await supabase
-        .from('communities')
-        .update({ 
-          avatar_url: null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', communityId);
+      // Update community to remove avatar URL only if communityId exists
+      if (communityId) {
+        const { error: updateError } = await supabase
+          .from('communities')
+          .update({ 
+            avatar_url: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', communityId);
 
-      if (updateError) {
-        throw updateError;
+        if (updateError) {
+          throw updateError;
+        }
       }
 
       // Remove file from storage
@@ -312,7 +318,7 @@ export const CommunityAvatarUpload = ({
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
+              disabled={uploading || (communityId && storageReady === false)}
             >
               <Upload className="w-4 h-4 mr-2" />
               Choose Image
@@ -337,7 +343,7 @@ export const CommunityAvatarUpload = ({
               <Button
                 size="sm"
                 onClick={handleUpload}
-                disabled={uploading}
+                disabled={uploading || (communityId && storageReady === false)}
                 className="bg-green-600 hover:bg-green-700"
               >
                 {uploading ? 'Uploading...' : 'Upload'}
