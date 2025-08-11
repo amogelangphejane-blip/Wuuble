@@ -34,7 +34,15 @@ export async function setupStorageBuckets(): Promise<SetupResult[]> {
       });
 
       if (profileBucketError) {
-        results.push({ step: 'Profile Pictures Bucket', success: false, message: `Failed to create: ${profileBucketError.message}` });
+        if (profileBucketError.message.includes('row-level security') || profileBucketError.message.includes('policy')) {
+          results.push({ 
+            step: 'Profile Pictures Bucket', 
+            success: false, 
+            message: `Permission denied: ${profileBucketError.message}. Please create the bucket manually via Supabase Dashboard → Storage → Create bucket named 'profile-pictures' (public, 5MB limit).` 
+          });
+        } else {
+          results.push({ step: 'Profile Pictures Bucket', success: false, message: `Failed to create: ${profileBucketError.message}` });
+        }
       } else {
         results.push({ step: 'Profile Pictures Bucket', success: true, message: 'Created successfully' });
       }
@@ -53,7 +61,15 @@ export async function setupStorageBuckets(): Promise<SetupResult[]> {
       });
 
       if (communityBucketError) {
-        results.push({ step: 'Community Avatars Bucket', success: false, message: `Failed to create: ${communityBucketError.message}` });
+        if (communityBucketError.message.includes('row-level security') || communityBucketError.message.includes('policy')) {
+          results.push({ 
+            step: 'Community Avatars Bucket', 
+            success: false, 
+            message: `Permission denied: ${communityBucketError.message}. Please create the bucket manually via Supabase Dashboard → Storage → Create bucket named 'community-avatars' (public, 5MB limit).` 
+          });
+        } else {
+          results.push({ step: 'Community Avatars Bucket', success: false, message: `Failed to create: ${communityBucketError.message}` });
+        }
       } else {
         results.push({ step: 'Community Avatars Bucket', success: true, message: 'Created successfully' });
       }
@@ -73,12 +89,20 @@ export async function setupStorageBuckets(): Promise<SetupResult[]> {
       if (finalProfileExists && finalCommunityExists) {
         results.push({ step: 'Verification', success: true, message: 'Storage setup complete! Upload functionality is ready.' });
       } else {
-        results.push({ step: 'Verification', success: false, message: 'Setup incomplete - some buckets are still missing' });
+        const missingBuckets = [];
+        if (!finalProfileExists) missingBuckets.push('profile-pictures');
+        if (!finalCommunityExists) missingBuckets.push('community-avatars');
+        
+        results.push({ 
+          step: 'Manual Setup Required', 
+          success: false, 
+          message: `Missing buckets: ${missingBuckets.join(', ')}. Please create them manually via Supabase Dashboard → Storage, or run the SQL script in setup_storage_manual.sql in your Supabase SQL Editor.` 
+        });
       }
     }
 
   } catch (error) {
-    results.push({ step: 'Setup Error', success: false, message: `Unexpected error: ${error}` });
+    results.push({ step: 'Setup Error', success: false, message: `Unexpected error: ${error}. Please try manual setup via Supabase Dashboard.` });
   }
 
   return results;
