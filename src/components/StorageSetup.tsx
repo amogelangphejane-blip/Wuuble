@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Settings, CheckCircle, XCircle, AlertTriangle, ExternalLink } from 'lucide-react';
 import { setupStorageBuckets, type SetupResult } from '@/utils/setupStorage';
 
 export const StorageSetup = () => {
@@ -42,18 +42,32 @@ export const StorageSetup = () => {
           window.location.reload();
         }, 2000);
       } else {
-        toast({
-          title: "Setup Issues",
-          description: "Some setup steps failed. Check the results below for details.",
-          variant: "destructive",
-        });
+        const hasPermissionError = setupResults.some(r => 
+          r.message.includes('Permission denied') || 
+          r.message.includes('row-level security') ||
+          r.message.includes('policy')
+        );
+        
+        if (hasPermissionError) {
+          toast({
+            title: "Manual Setup Required",
+            description: "Automatic setup failed due to permissions. Please follow the manual setup instructions below.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Setup Issues",
+            description: "Some setup steps failed. Check the results below for details.",
+            variant: "destructive",
+          });
+        }
       }
 
     } catch (error) {
       setResults([{ step: 'Setup Failed', success: false, message: `Setup failed: ${error}` }]);
       toast({
         title: "Setup Failed",
-        description: "Failed to set up storage. Please try again or contact support.",
+        description: "Failed to set up storage. Please try the manual setup instructions below.",
         variant: "destructive",
       });
     } finally {
@@ -77,30 +91,35 @@ export const StorageSetup = () => {
           Storage Setup
         </CardTitle>
         <CardDescription>
-          Set up storage buckets and policies required for profile picture uploads
+          Set up storage buckets required for profile picture uploads
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-           <div className="flex items-start gap-3">
-             <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
-             <div>
-               <h4 className="font-medium text-yellow-800">Storage Setup Required</h4>
-               <p className="text-sm text-yellow-700 mt-1">
-                 The storage buckets for profile pictures need to be created before uploads can work.
-                 <br /><br />
-                 <strong>Quick Fix:</strong> Go to your <a href="https://supabase.com/dashboard" target="_blank" className="underline">Supabase Dashboard</a> → Storage → Create the following buckets:
-                 <br />• <code>profile-pictures</code> (public, 5MB limit)
-                 <br />• <code>community-avatars</code> (public, 5MB limit)
-                 <br /><br />
-                 Or try the automated setup below (may require admin permissions).
-               </p>
-             </div>
-           </div>
-         </div>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-yellow-800">Storage Setup Required</h4>
+              <p className="text-sm text-yellow-700 mt-1">
+                The storage buckets for profile pictures need to be created before uploads can work.
+                <br /><br />
+                <strong>Manual Setup (Recommended):</strong>
+                <br />1. Go to your <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center gap-1">
+                  Supabase Dashboard <ExternalLink className="w-3 h-3" />
+                </a>
+                <br />2. Navigate to Storage → Create the following buckets:
+                <br />   • <code className="bg-yellow-100 px-1 rounded">profile-pictures</code> (public, 5MB limit, image/* types)
+                <br />   • <code className="bg-yellow-100 px-1 rounded">community-avatars</code> (public, 5MB limit, image/* types)
+                <br />3. Or run the SQL script in <code className="bg-yellow-100 px-1 rounded">setup_storage_manual.sql</code> in your SQL Editor
+                <br /><br />
+                <strong>Alternative:</strong> Try the automated setup below (may require admin permissions).
+              </p>
+            </div>
+          </div>
+        </div>
 
         <Button onClick={setupStorage} disabled={setting} className="w-full">
-          {setting ? 'Setting Up Storage...' : 'Set Up Storage Buckets'}
+          {setting ? 'Setting Up Storage...' : 'Try Automated Setup'}
         </Button>
 
         {results.length > 0 && (
@@ -108,18 +127,18 @@ export const StorageSetup = () => {
             <h4 className="font-semibold">Setup Progress</h4>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {results.map((result, index) => (
-                               <div 
-                 key={index} 
-                 className="flex items-start gap-3 p-3 rounded-lg border"
-               >
-                 {getStatusIcon(result.success)}
-                 <div className="flex-1 min-w-0">
-                   <p className="font-medium text-sm">{result.step}</p>
-                   <p className="text-xs text-muted-foreground break-words">
-                     {result.message}
-                   </p>
-                 </div>
-               </div>
+                <div 
+                  key={index} 
+                  className="flex items-start gap-3 p-3 rounded-lg border"
+                >
+                  {getStatusIcon(result.success)}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{result.step}</p>
+                    <p className="text-xs text-muted-foreground break-words">
+                      {result.message}
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
