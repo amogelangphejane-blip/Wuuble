@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import { ProfilePictureUpload } from '@/components/ProfilePictureUpload';
 import { StorageTest } from '@/components/StorageTest';
+import { StorageSetup } from '@/components/StorageSetup';
 import { AvatarDebugTest } from '@/components/AvatarDebugTest';
 import { StoragePolicyTest } from '@/components/StoragePolicyTest';
 
@@ -188,6 +189,9 @@ const ProfileSettings = () => {
             Manage your profile information and preferences
           </p>
         </div>
+
+        {/* Storage Setup Section */}
+        <StorageSetup />
 
         {/* Profile Picture Section */}
         <ProfilePictureUpload 

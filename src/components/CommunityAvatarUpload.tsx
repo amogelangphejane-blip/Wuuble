@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, Users } from 'lucide-react';
+import { Upload, X, Users, AlertTriangle } from 'lucide-react';
 import { validateAvatarUrl } from '@/lib/utils';
+import { checkCommunityStorageReady } from '@/utils/setupStorage';
 
 interface CommunityAvatarUploadProps {
   communityId?: string;
@@ -27,6 +28,7 @@ export const CommunityAvatarUpload = ({
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [storageReady, setStorageReady] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -36,6 +38,22 @@ export const CommunityAvatarUpload = ({
     md: 'w-20 h-20',
     lg: 'w-32 h-32'
   };
+
+  // Check if storage is properly configured
+  useEffect(() => {
+    const checkStorageSetup = async () => {
+      if (!user) return;
+      
+      const isReady = await checkCommunityStorageReady();
+      setStorageReady(isReady);
+      
+      if (!isReady) {
+        console.warn('Community avatars storage bucket is missing');
+      }
+    };
+
+    checkStorageSetup();
+  }, [user]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

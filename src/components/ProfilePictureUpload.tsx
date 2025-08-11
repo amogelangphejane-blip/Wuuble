@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, User } from 'lucide-react';
+import { Upload, X, User, AlertTriangle } from 'lucide-react';
 import { validateAvatarUrl } from '@/lib/utils';
+import { checkStorageReady } from '@/utils/setupStorage';
 
 interface ProfilePictureUploadProps {
   currentAvatarUrl?: string | null;
@@ -19,9 +20,26 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [storageReady, setStorageReady] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Check if storage is properly configured
+  useEffect(() => {
+    const checkStorageSetup = async () => {
+      if (!user) return;
+      
+      const isReady = await checkStorageReady();
+      setStorageReady(isReady);
+      
+      if (!isReady) {
+        console.warn('Profile pictures storage bucket is missing');
+      }
+    };
+
+    checkStorageSetup();
+  }, [user]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -92,7 +110,15 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
 
       if (uploadError) {
         console.error('Upload error details:', uploadError);
-        throw uploadError;
+        
+        // Provide more specific error messages
+        if (uploadError.message.includes('Bucket not found')) {
+          throw new Error('Storage not configured. Please set up storage buckets first.');
+        } else if (uploadError.message.includes('Policy')) {
+          throw new Error('Upload permission denied. Please check storage policies.');
+        } else {
+          throw uploadError;
+        }
       }
 
       console.log('Upload successful:', uploadData);
@@ -239,9 +265,19 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Profile Picture</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Profile Picture
+          {storageReady === false && (
+            <AlertTriangle className="w-4 h-4 text-yellow-500" />
+          )}
+        </CardTitle>
         <CardDescription>
           Upload a profile picture to personalize your account
+          {storageReady === false && (
+            <span className="block mt-1 text-yellow-600 font-medium">
+              ⚠️ Storage setup required - use the Storage Setup section above
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -277,7 +313,7 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
                 type="button"
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+                disabled={uploading || storageReady === false}
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Choose Image
@@ -300,7 +336,7 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
               <div className="flex items-center space-x-2">
                 <Button
                   onClick={handleUpload}
-                  disabled={uploading}
+                  disabled={uploading || storageReady === false}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   {uploading ? 'Uploading...' : 'Upload'}
