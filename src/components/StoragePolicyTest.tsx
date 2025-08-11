@@ -146,6 +146,40 @@ export const StoragePolicyTest = () => {
         addResult('Bucket Configuration', 'error', `Bucket config check failed: ${error}`);
       }
 
+      // Test 7: Check RLS Policies
+      try {
+        // Test community access
+        const { data: communities, error: communityError } = await supabase
+          .from('communities')
+          .select('id, name, is_private')
+          .limit(5);
+        
+        if (communityError) {
+          addResult('Community RLS Test', 'error', `Cannot access communities: ${communityError.message}`);
+        } else {
+          addResult('Community RLS Test', 'success', `Can access ${communities.length} communities`);
+        }
+      } catch (error) {
+        addResult('Community RLS Test', 'error', `Community access test failed: ${error}`);
+      }
+
+      // Test 8: Check Helper Function
+      try {
+        const { data: functionTest, error: functionError } = await supabase
+          .rpc('is_community_member', { 
+            community_id: '00000000-0000-0000-0000-000000000000', 
+            user_id: user.id 
+          });
+        
+        if (functionError) {
+          addResult('Helper Function Test', 'warning', `Helper function issue: ${functionError.message}`);
+        } else {
+          addResult('Helper Function Test', 'success', 'Helper function is working correctly');
+        }
+      } catch (error) {
+        addResult('Helper Function Test', 'error', `Function test failed: ${error}`);
+      }
+
     } catch (error) {
       addResult('General Error', 'error', `Test suite failed: ${error}`);
     } finally {
