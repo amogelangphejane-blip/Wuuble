@@ -1,106 +1,165 @@
 #!/usr/bin/env node
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
-const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8";
+interface SetupResult {
+  step: string;
+  success: boolean;
+  message: string;
+  details?: any;
+}
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-
-async function setupStorageBuckets() {
-  console.log('🚀 Setting up storage buckets for profile uploads...\n');
+export async function setupStorageBuckets(): Promise<SetupResult[]> {
+  const results: SetupResult[] = [];
 
   try {
-    // Check existing buckets
-    console.log('📋 Checking existing buckets...');
+    console.log('🚀 Starting storage bucket setup...');
+    
+    // Step 1: Check existing buckets
+    results.push({ step: 'Checking Buckets', success: true, message: 'Checking existing storage buckets...' });
+    
     const { data: existingBuckets, error: listError } = await supabase.storage.listBuckets();
     
     if (listError) {
-      console.error('❌ Failed to list buckets:', listError.message);
-      return;
+      results.push({ step: 'Checking Buckets', success: false, message: `Failed to list buckets: ${listError.message}`, details: listError });
+      return results;
     }
 
-    console.log(`📦 Found ${existingBuckets.length} existing buckets:`, existingBuckets.map(b => b.id).join(', '));
-
+    console.log('📋 Existing buckets:', existingBuckets.map(b => b.id));
     const profileBucketExists = existingBuckets.some(b => b.id === 'profile-pictures');
     const communityBucketExists = existingBuckets.some(b => b.id === 'community-avatars');
 
-    // Create profile-pictures bucket
+    // Step 2: Create profile-pictures bucket if needed
     if (!profileBucketExists) {
-      console.log('\n🖼️ Creating profile-pictures bucket...');
+      console.log('📸 Creating profile-pictures bucket...');
+      results.push({ step: 'Profile Pictures Bucket', success: true, message: 'Creating profile-pictures bucket...' });
       
-      const { error: profileBucketError } = await supabase.storage.createBucket('profile-pictures', {
+      const { data: profileBucketData, error: profileBucketError } = await supabase.storage.createBucket('profile-pictures', {
         public: true,
         fileSizeLimit: 5242880, // 5MB
         allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
       });
 
       if (profileBucketError) {
-        console.error('❌ Failed to create profile-pictures bucket:', profileBucketError.message);
+        console.error('❌ Failed to create profile-pictures bucket:', profileBucketError);
+        results.push({ step: 'Profile Pictures Bucket', success: false, message: `Failed to create: ${profileBucketError.message}`, details: profileBucketError });
       } else {
         console.log('✅ Profile-pictures bucket created successfully');
+        results.push({ step: 'Profile Pictures Bucket', success: true, message: 'Created successfully', details: profileBucketData });
       }
     } else {
       console.log('✅ Profile-pictures bucket already exists');
+      results.push({ step: 'Profile Pictures Bucket', success: true, message: 'Already exists' });
     }
 
-    // Create community-avatars bucket
+    // Step 3: Create community-avatars bucket if needed
     if (!communityBucketExists) {
-      console.log('\n👥 Creating community-avatars bucket...');
+      console.log('👥 Creating community-avatars bucket...');
+      results.push({ step: 'Community Avatars Bucket', success: true, message: 'Creating community-avatars bucket...' });
       
-      const { error: communityBucketError } = await supabase.storage.createBucket('community-avatars', {
+      const { data: communityBucketData, error: communityBucketError } = await supabase.storage.createBucket('community-avatars', {
         public: true,
         fileSizeLimit: 5242880, // 5MB
         allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
       });
 
       if (communityBucketError) {
-        console.error('❌ Failed to create community-avatars bucket:', communityBucketError.message);
+        console.error('❌ Failed to create community-avatars bucket:', communityBucketError);
+        results.push({ step: 'Community Avatars Bucket', success: false, message: `Failed to create: ${communityBucketError.message}`, details: communityBucketError });
       } else {
         console.log('✅ Community-avatars bucket created successfully');
+        results.push({ step: 'Community Avatars Bucket', success: true, message: 'Created successfully', details: communityBucketData });
       }
     } else {
       console.log('✅ Community-avatars bucket already exists');
+      results.push({ step: 'Community Avatars Bucket', success: true, message: 'Already exists' });
     }
 
-    // Verify final setup
-    console.log('\n🔍 Verifying setup...');
+    // Step 4: Verify final setup
+    console.log('🔍 Verifying final setup...');
     const { data: finalBuckets, error: finalListError } = await supabase.storage.listBuckets();
     
     if (finalListError) {
-      console.error('❌ Cannot verify setup:', finalListError.message);
-      return;
+      results.push({ step: 'Verification', success: false, message: `Cannot verify setup: ${finalListError.message}`, details: finalListError });
+    } else {
+      const finalProfileExists = finalBuckets.some(b => b.id === 'profile-pictures');
+      const finalCommunityExists = finalBuckets.some(b => b.id === 'community-avatars');
+      
+      console.log('📊 Final verification:', { 
+        profilePictures: finalProfileExists, 
+        communityAvatars: finalCommunityExists,
+        totalBuckets: finalBuckets.length 
+      });
+      
+      if (finalProfileExists && finalCommunityExists) {
+        results.push({ step: 'Verification', success: true, message: 'Storage setup complete! Upload functionality is ready.' });
+      } else {
+        results.push({ step: 'Verification', success: false, message: 'Setup incomplete - some buckets are still missing' });
+      }
     }
 
-    const finalProfileExists = finalBuckets.some(b => b.id === 'profile-pictures');
-    const finalCommunityExists = finalBuckets.some(b => b.id === 'community-avatars');
-    
-    console.log(`📋 Final bucket status:`);
-    console.log(`  - Profile Pictures: ${finalProfileExists ? '✅' : '❌'}`);
-    console.log(`  - Community Avatars: ${finalCommunityExists ? '✅' : '❌'}`);
+    // Step 5: Test upload permissions
+    console.log('🔐 Testing upload permissions...');
+    try {
+      const testFileName = `test-upload-${Date.now()}.txt`;
+      const testFile = new File(['test'], 'test.txt', { type: 'text/plain' });
+      
+      // Test profile pictures upload
+      const { error: profileUploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(`temp/${testFileName}`, testFile);
 
-    if (finalProfileExists && finalCommunityExists) {
-      console.log('\n🎉 Setup complete! Upload functionality is ready.');
-      console.log('\nNext steps:');
-      console.log('1. Go to Profile Settings in your app');
-      console.log('2. Try uploading a profile picture');
-      console.log('3. The upload should now work correctly');
-    } else {
-      console.log('\n⚠️ Setup incomplete - some buckets are still missing');
+      if (profileUploadError) {
+        results.push({ step: 'Profile Upload Test', success: false, message: `Upload test failed: ${profileUploadError.message}`, details: profileUploadError });
+      } else {
+        results.push({ step: 'Profile Upload Test', success: true, message: 'Profile pictures upload works' });
+        // Clean up test file
+        await supabase.storage.from('profile-pictures').remove([`temp/${testFileName}`]);
+      }
+
+      // Test community avatars upload
+      const { error: communityUploadError } = await supabase.storage
+        .from('community-avatars')
+        .upload(`temp/${testFileName}`, testFile);
+
+      if (communityUploadError) {
+        results.push({ step: 'Community Upload Test', success: false, message: `Upload test failed: ${communityUploadError.message}`, details: communityUploadError });
+      } else {
+        results.push({ step: 'Community Upload Test', success: true, message: 'Community avatars upload works' });
+        // Clean up test file
+        await supabase.storage.from('community-avatars').remove([`temp/${testFileName}`]);
+      }
+
+    } catch (error) {
+      results.push({ step: 'Upload Permission Test', success: false, message: `Permission test failed: ${error}`, details: error });
     }
 
   } catch (error) {
-    console.error('💥 Setup failed:', error);
+    console.error('💥 Storage setup failed:', error);
+    results.push({ step: 'Setup Error', success: false, message: `Unexpected error: ${error}`, details: error });
   }
+
+  return results;
 }
 
-// Run the setup if this script is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  setupStorageBuckets().then(() => {
-    console.log('\n📋 Script completed.');
-    process.exit(0);
-  }).catch((error) => {
-    console.error('Script failed:', error);
-    process.exit(1);
+// Function to run the setup and log results
+export async function runStorageSetup(): Promise<void> {
+  console.log('🔧 Running storage bucket setup...');
+  const results = await setupStorageBuckets();
+  
+  console.log('📋 Setup Results:');
+  results.forEach(result => {
+    const icon = result.success ? '✅' : '❌';
+    console.log(`${icon} ${result.step}: ${result.message}`);
+    if (result.details) {
+      console.log('   Details:', result.details);
+    }
   });
+  
+  const allSuccessful = results.every(r => r.success);
+  if (allSuccessful) {
+    console.log('🎉 Storage setup completed successfully!');
+  } else {
+    console.log('⚠️ Storage setup had issues. Check the results above.');
+  }
 }

@@ -4,6 +4,7 @@ export interface SetupResult {
   step: string;
   success: boolean;
   message: string;
+  details?: any;
 }
 
 export async function setupStorageBuckets(): Promise<SetupResult[]> {
