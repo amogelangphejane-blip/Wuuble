@@ -97,30 +97,59 @@ const EnhancedCommunityCalendar = () => {
     if (!id || !user) return;
 
     try {
-      // Fetch community details
-      const { data: communityData, error } = await supabase
-        .from('communities')
-        .select('*')
-        .eq('id', id)
-        .single();
+      // Try to fetch community details directly first
+      // If it fails due to RLS, we'll handle it gracefully
+      let communityData = null;
+      let communityError = null;
 
-      if (error) {
-        navigate('/communities');
-        return;
+      try {
+        const result = await supabase
+          .from('communities')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        communityData = result.data;
+        communityError = result.error;
+      } catch (err) {
+        communityError = err;
+      }
+
+      // If we can't access the community directly, try through membership
+      if (communityError || !communityData) {
+        // Check if user is a member first
+        const { data: membershipData } = await supabase
+          .from('community_members')
+          .select(`
+            *,
+            communities!inner(*)
+          `)
+          .eq('community_id', id)
+          .eq('user_id', user.id)
+          .single();
+
+        if (membershipData?.communities) {
+          communityData = membershipData.communities;
+          setIsMember(true);
+        } else {
+          // User is not a member and can't access this community
+          navigate('/communities');
+          return;
+        }
+      } else {
+        // We have community data, now check membership
+        const { data: membershipData } = await supabase
+          .from('community_members')
+          .select('*')
+          .eq('community_id', id)
+          .eq('user_id', user.id)
+          .single();
+
+        setIsMember(!!membershipData);
       }
 
       setCommunity(communityData);
       setIsCreator(communityData.creator_id === user.id);
-
-      // Check if user is a member
-      const { data: memberData } = await supabase
-        .from('community_members')
-        .select('*')
-        .eq('community_id', id)
-        .eq('user_id', user.id)
-        .single();
-
-      setIsMember(!!memberData);
     } catch (error) {
       console.error('Error fetching community details:', error);
     } finally {
