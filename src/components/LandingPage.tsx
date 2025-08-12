@@ -17,7 +17,9 @@ import {
   Globe,
   UserPlus,
   Coffee,
-  Smile
+  Smile,
+  Flag,
+  Mic
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
