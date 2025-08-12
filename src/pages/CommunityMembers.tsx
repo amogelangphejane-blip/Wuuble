@@ -66,51 +66,73 @@ const CommunityMembers = () => {
   }, [searchTerm, members]);
 
   const fetchCommunityDetails = async () => {
-    if (!id) return;
+    if (!id || !user) return;
 
     try {
-      // Fetch community details
-      const { data: communityData, error: communityError } = await supabase
-        .from('communities')
-        .select('*')
-        .eq('id', id)
-        .single();
+      // Try to fetch community details directly first
+      // If it fails due to RLS, we'll handle it gracefully
+      let communityData = null;
+      let communityError = null;
 
-      if (communityError) {
-        navigate('/communities');
-        return;
+      try {
+        const result = await supabase
+          .from('communities')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        communityData = result.data;
+        communityError = result.error;
+      } catch (err) {
+        communityError = err;
+      }
+
+      // If we can't access the community directly, try through membership
+      if (communityError || !communityData) {
+        // Check if user is a member first
+        const { data: membershipData } = await supabase
+          .from('community_members')
+          .select(`
+            *,
+            communities!inner(*)
+          `)
+          .eq('community_id', id)
+          .eq('user_id', user.id)
+          .single();
+
+        if (membershipData?.communities) {
+          communityData = membershipData.communities;
+        } else {
+          // User is not a member and can't access this community
+          navigate('/communities');
+          return;
+        }
       }
 
       setCommunity(communityData);
-      setIsCreator(communityData.creator_id === user?.id);
 
-      // Fetch community members with profiles
+      // Fetch members with profile information
       const { data: membersData, error: membersError } = await supabase
         .from('community_members')
         .select(`
-          id,
-          user_id,
-          role,
-          joined_at
+          *,
+          profiles:user_id (
+            display_name,
+            avatar_url,
+            bio
+          )
         `)
-        .eq('community_id', id);
-
-      // Fetch profiles separately
-      let enrichedMembers: CommunityMember[] = [];
-      if (membersData) {
-        const userIds = membersData.map(m => m.user_id);
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('user_id, display_name, avatar_url')
-          .in('user_id', userIds);
-
-        enrichedMembers = membersData.map(member => ({
-          ...member,
-          profiles: profilesData?.find(p => p.user_id === member.user_id) || null
-        }));
-      }
+        .eq('community_id', id)
+        .order('joined_at', { ascending: false });
 
       if (!membersError) {
+        const enrichedMembers = membersData?.map(member => ({
+          ...member,
+          display_name: member.profiles?.display_name || 'Anonymous User',
+          avatar_url: member.profiles?.avatar_url || null,
+          bio: member.profiles?.bio || null
+        })) || [];
+
         setMembers(enrichedMembers);
         setFilteredMembers(enrichedMembers);
       }

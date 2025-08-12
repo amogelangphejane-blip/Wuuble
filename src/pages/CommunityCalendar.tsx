@@ -61,18 +61,47 @@ const CommunityCalendar = () => {
   }, [user, id]);
 
   const fetchCommunityDetails = async () => {
-    if (!id) return;
+    if (!id || !user) return;
 
     try {
-      const { data: communityData, error } = await supabase
-        .from('communities')
-        .select('*')
-        .eq('id', id)
-        .single();
+      // Try to fetch community details directly first
+      // If it fails due to RLS, we'll handle it gracefully
+      let communityData = null;
+      let communityError = null;
 
-      if (error) {
-        navigate('/communities');
-        return;
+      try {
+        const result = await supabase
+          .from('communities')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        communityData = result.data;
+        communityError = result.error;
+      } catch (err) {
+        communityError = err;
+      }
+
+      // If we can't access the community directly, try through membership
+      if (communityError || !communityData) {
+        // Check if user is a member first
+        const { data: membershipData } = await supabase
+          .from('community_members')
+          .select(`
+            *,
+            communities!inner(*)
+          `)
+          .eq('community_id', id)
+          .eq('user_id', user.id)
+          .single();
+
+        if (membershipData?.communities) {
+          communityData = membershipData.communities;
+        } else {
+          // User is not a member and can't access this community
+          navigate('/communities');
+          return;
+        }
       }
 
       setCommunity(communityData);
