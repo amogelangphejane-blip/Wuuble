@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
-  BookOpen, 
+  Heart, 
   Users, 
   MessageCircle, 
   Calendar, 
@@ -10,11 +10,14 @@ import {
   CheckCircle, 
   ArrowRight,
   Play,
-  Award,
+  Sparkles,
   Target,
   Zap,
   Shield,
-  Globe
+  Globe,
+  UserPlus,
+  Coffee,
+  Smile
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,90 +32,90 @@ const LandingPage = () => {
     {
       icon: <Users className="w-6 h-6" />,
       title: "Vibrant Communities",
-      description: "Join thriving learning communities where knowledge meets collaboration and growth happens naturally."
+      description: "Join thriving social communities where meaningful friendships are born and genuine connections flourish."
     },
     {
-      icon: <BookOpen className="w-6 h-6" />,
-      title: "Interactive Courses",
-      description: "Access expertly crafted courses designed to accelerate your learning journey with practical skills."
+      icon: <Heart className="w-6 h-6" />,
+      title: "Meaningful Connections",
+      description: "Build lasting relationships with like-minded people who share your interests, values, and aspirations."
     },
     {
       icon: <MessageCircle className="w-6 h-6" />,
-      title: "Real-time Discussions",
-      description: "Engage in meaningful conversations with peers and mentors through our seamless chat system."
+      title: "Real-time Conversations",
+      description: "Engage in authentic conversations that spark new friendships and deepen existing bonds."
     },
     {
       icon: <Calendar className="w-6 h-6" />,
-      title: "Live Sessions",
-      description: "Participate in scheduled workshops, webinars, and interactive learning sessions."
+      title: "Social Events",
+      description: "Join exciting meetups, hangouts, and social activities designed to bring people together."
     },
     {
-      icon: <Award className="w-6 h-6" />,
-      title: "Achievements",
-      description: "Track your progress and earn recognition for your learning milestones and contributions."
+      icon: <Sparkles className="w-6 h-6" />,
+      title: "Personal Growth",
+      description: "Grow alongside your new friends through shared experiences and mutual support."
     },
     {
       icon: <Shield className="w-6 h-6" />,
-      title: "Safe Learning",
-      description: "Learn in a secure, moderated environment designed for productive educational experiences."
+      title: "Safe Environment",
+      description: "Connect in a secure, welcoming space designed for authentic social interactions."
     }
   ];
 
   const testimonials = [
     {
       name: "Sarah Chen",
-      role: "Software Engineer",
+      role: "Community Member",
       avatar: "SC",
-      content: "wobble transformed my career. The community support and quality content made all the difference in my learning journey.",
+      content: "I found my closest friends through wobble. The genuine connections I've made here have transformed my social life completely.",
       rating: 5
     },
     {
       name: "Michael Rodriguez",
-      role: "Product Designer",
+      role: "Social Connector",
       avatar: "MR",
-      content: "The interactive discussions and peer feedback helped me grow faster than any traditional course ever could.",
+      content: "The community events helped me break out of my shell. I've built meaningful friendships that extend far beyond the platform.",
       rating: 5
     },
     {
       name: "Emily Johnson",
-      role: "Marketing Manager",
+      role: "Friend & Mentor",
       avatar: "EJ",
-      content: "I love how easy it is to connect with like-minded learners. The platform feels intuitive and engaging.",
+      content: "Not only did I make amazing friends, but I also found mentors who've helped me grow personally and professionally.",
       rating: 5
     }
   ];
 
   const stats = [
-    { value: "50K+", label: "Active Learners" },
+    { value: "50K+", label: "New Friendships" },
     { value: "200+", label: "Communities" },
-    { value: "1M+", label: "Discussions" },
-    { value: "95%", label: "Success Rate" }
+    { value: "1M+", label: "Connections Made" },
+    { value: "95%", label: "Find Their Tribe" }
   ];
 
-  const courses = [
+  const connectionTypes = [
     {
-      title: "Web Development Mastery",
-      description: "Learn modern web development with React, Node.js, and best practices",
-      students: 1250,
+      title: "Close Friendships",
+      description: "Build deep, meaningful friendships with people who truly understand you",
+      members: 12500,
       rating: 4.9,
-      image: "🌐",
-      category: "Technology"
+      image: "💝",
+      category: "Deep Bonds"
     },
     {
-      title: "Digital Marketing Strategy",
-      description: "Master digital marketing from SEO to social media and analytics",
-      students: 890,
+      title: "Professional Network",
+      description: "Connect with ambitious individuals who can support your career growth",
+      members: 8900,
       rating: 4.8,
-      image: "📱",
-      category: "Marketing"
+      image: "🚀",
+      category: "Career Growth"
     },
     {
-      title: "Data Science Fundamentals",
-      description: "Dive into data analysis, machine learning, and statistical modeling",
-      students: 2100,
+      title: "Hobby Communities",
+      description: "Find your tribe through shared interests, hobbies, and passions",
+      members: 21000,
       rating: 4.9,
-      image: "📊",
-      category: "Data Science"
+      image: "🎨",
+      category: "Shared Interests"
     }
   ];
 
@@ -126,17 +129,17 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32 relative">
           <div className="text-center max-w-4xl mx-auto">
             <Badge className="mb-6 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
-              🚀 Join 50,000+ learners worldwide
+              💫 Join 50,000+ people making real connections
             </Badge>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
-              Learn Together,{' '}
+              Make Friends,{' '}
               <span className="bg-gradient-hero bg-clip-text text-transparent">
-                Grow Faster
+                Grow Together
               </span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              Join vibrant learning communities where knowledge sharing accelerates growth. 
-              Connect with peers, access premium courses, and transform your skills.
+              Connect with amazing people who share your interests and values. Build meaningful friendships, 
+              grow personally, and create powerful connections that last a lifetime.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 
@@ -144,7 +147,7 @@ const LandingPage = () => {
                 onClick={() => navigate(user ? '/communities' : '/auth')}
                 className="bg-gradient-hero hover:opacity-90 text-white shadow-lg hover:shadow-xl transition-all px-8 py-3 text-lg"
               >
-                {user ? 'Explore Communities' : 'Get Started Free'}
+                {user ? 'Find Your Tribe' : 'Start Making Friends'}
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button 
@@ -156,7 +159,7 @@ const LandingPage = () => {
                 }}
               >
                 <Play className="mr-2 w-5 h-5" />
-                Watch Demo
+                See How It Works
               </Button>
             </div>
           </div>
@@ -186,14 +189,14 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-learning/10 text-learning border-learning/20">
-              Features
+              Connection Features
             </Badge>
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Everything you need to learn and grow
+              Everything you need to build lasting friendships
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discover powerful features designed to enhance your learning experience 
-              and connect you with a global community of learners.
+              Discover powerful features designed to help you connect authentically 
+              with people who matter and grow together.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -222,37 +225,37 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Courses Section */}
-      <section id="courses" className="py-20 bg-muted/30">
+      {/* Connection Types Section */}
+      <section id="connections" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-success/10 text-success border-success/20">
-              Popular Courses
+              Connection Types
             </Badge>
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Start learning today
+              Find your perfect connection style
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Explore our most popular courses designed by industry experts 
-              and loved by thousands of learners.
+              Whether you're looking for deep friendships, professional connections, 
+              or hobby buddies - we've got the perfect community for you.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {courses.map((course, index) => (
+            {connectionTypes.map((type, index) => (
               <Card 
                 key={index}
                 className="border-0 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group bg-gradient-card"
               >
                 <CardHeader>
-                  <div className="text-4xl mb-4">{course.image}</div>
+                  <div className="text-4xl mb-4">{type.image}</div>
                   <Badge variant="secondary" className="w-fit mb-2">
-                    {course.category}
+                    {type.category}
                   </Badge>
                   <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                    {course.title}
+                    {type.title}
                   </CardTitle>
                   <CardDescription className="text-base">
-                    {course.description}
+                    {type.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -260,11 +263,11 @@ const LandingPage = () => {
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center">
                         <Users className="w-4 h-4 mr-1" />
-                        {course.students.toLocaleString()}
+                        {type.members.toLocaleString()} members
                       </div>
                       <div className="flex items-center">
                         <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
-                        {course.rating}
+                        {type.rating}
                       </div>
                     </div>
                   </div>
@@ -279,7 +282,7 @@ const LandingPage = () => {
               onClick={() => navigate('/communities')}
               className="border-2 hover:bg-secondary px-8"
             >
-              View All Courses
+              Explore All Communities
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </div>
@@ -291,14 +294,14 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-warning/10 text-warning border-warning/20">
-              Testimonials
+              Success Stories
             </Badge>
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Loved by learners worldwide
+              Real friendships, real stories
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              See what our community members have to say about their 
-              learning experience on wobble.
+              Hear from our community members about the meaningful connections 
+              and lasting friendships they've built through wobble.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -341,11 +344,11 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center max-w-3xl mx-auto">
             <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
-              Ready to transform your learning journey?
+              Ready to build meaningful connections?
             </h2>
             <p className="text-lg text-white/90 mb-8">
-              Join thousands of learners who are already growing their skills 
-              and advancing their careers with wobble.
+              Join thousands of people who are already building lasting friendships 
+              and growing together in our vibrant communities.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -353,7 +356,7 @@ const LandingPage = () => {
                 onClick={() => navigate(user ? '/communities' : '/auth')}
                 className="bg-white text-primary hover:bg-white/90 shadow-lg px-8 py-3 text-lg font-semibold"
               >
-                {user ? 'Explore Communities' : 'Start Learning Today'}
+                {user ? 'Find Your Community' : 'Start Connecting Today'}
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button 
