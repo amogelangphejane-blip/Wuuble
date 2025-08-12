@@ -28,6 +28,7 @@ const App = () => (
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
+      themes={["light", "dark", "system", "theme-ocean", "theme-forest", "theme-sunset", "theme-purple"]}
     >
       <AuthProvider>
         <TooltipProvider>
