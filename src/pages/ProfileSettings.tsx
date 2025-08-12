@@ -4,16 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, User } from 'lucide-react';
+import { ArrowLeft, Save, User, Camera } from 'lucide-react';
 import { ProfilePictureUpload } from '@/components/ProfilePictureUpload';
-import { StorageTest } from '@/components/StorageTest';
-import { StorageSetup } from '@/components/StorageSetup';
-import { AvatarDebugTest } from '@/components/AvatarDebugTest';
-import { StoragePolicyTest } from '@/components/StoragePolicyTest';
 
 interface UserProfile {
   user_id: string;
@@ -56,7 +51,7 @@ const ProfileSettings = () => {
         .eq('user_id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      if (error && error.code !== 'PGRST116') {
         throw error;
       }
 
@@ -117,7 +112,6 @@ const ProfileSettings = () => {
         throw error;
       }
 
-      // Update local state
       setProfile({
         ...profile,
         display_name: displayName.trim() || null,
@@ -186,67 +180,92 @@ const ProfileSettings = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
           <p className="text-muted-foreground mt-2">
-            Manage your profile information and preferences
+            Manage your profile information and avatar
           </p>
         </div>
 
-        {/* Storage Setup Section */}
-        <StorageSetup />
-
-        {/* Profile Picture Section */}
-        <ProfilePictureUpload 
-          currentAvatarUrl={profile?.avatar_url}
-          onAvatarUpdate={handleAvatarUpdate}
-        />
-
-        {/* Storage Test Section - Temporary for debugging */}
-        <StorageTest />
-
-        <Separator />
-
-        {/* Profile Information */}
+        {/* Main Profile Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <User className="w-5 h-5" />
-              <span>Profile Information</span>
+              <span>Your Profile</span>
             </CardTitle>
             <CardDescription>
-              Update your display name and bio
+              Update your display name, bio, and profile picture
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="display-name">Display Name</Label>
-              <Input
-                id="display-name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Enter your display name"
-                maxLength={50}
+          <CardContent className="space-y-6">
+            {/* Profile Picture Section */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Camera className="w-4 h-4" />
+                <Label className="text-sm font-medium">Profile Picture</Label>
+              </div>
+              <ProfilePictureUpload 
+                currentAvatarUrl={profile?.avatar_url}
+                onAvatarUpdate={handleAvatarUpdate}
               />
-              <p className="text-sm text-muted-foreground">
-                This is how other users will see your name in communities and posts.
-              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <textarea
-                id="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell others about yourself..."
-                maxLength={200}
-                rows={3}
-                className="w-full px-3 py-2 text-sm border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-none"
-              />
-              <p className="text-sm text-muted-foreground">
-                {bio.length}/200 characters
-              </p>
+            {/* Profile Information */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="display-name">Display Name</Label>
+                <Input
+                  id="display-name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Enter your display name"
+                  maxLength={50}
+                />
+                <p className="text-sm text-muted-foreground">
+                  This is how other users will see your name in communities and posts.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell others about yourself..."
+                  maxLength={200}
+                  rows={3}
+                  className="w-full px-3 py-2 text-sm border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-none"
+                />
+                <p className="text-sm text-muted-foreground">
+                  {bio.length}/200 characters
+                </p>
+              </div>
             </div>
 
-            <div className="flex justify-end">
+            {/* Account Info */}
+            <div className="pt-4 border-t space-y-4">
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  value={user?.email || ''}
+                  disabled
+                  className="bg-muted text-muted-foreground"
+                />
+              </div>
+              
+              {profile && (
+                <div className="space-y-2">
+                  <Label>Member Since</Label>
+                  <Input
+                    value={new Date(profile.created_at).toLocaleDateString()}
+                    disabled
+                    className="bg-muted text-muted-foreground"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end pt-4">
               <Button
                 onClick={handleSave}
                 disabled={saving}
@@ -258,43 +277,6 @@ const ProfileSettings = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Account Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Information</CardTitle>
-            <CardDescription>
-              Your account details (read-only)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                value={user?.email || ''}
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            
-            {profile && (
-              <div className="space-y-2">
-                <Label>Member Since</Label>
-                <Input
-                  value={new Date(profile.created_at).toLocaleDateString()}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Debug Test Component */}
-        <AvatarDebugTest />
-
-        {/* Storage Policy Test Component */}
-        <StoragePolicyTest />
       </div>
     </div>
   );
