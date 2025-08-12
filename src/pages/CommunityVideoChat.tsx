@@ -151,7 +151,7 @@ const CommunityVideoChat = () => {
     );
   }
 
-  // Show video chat interface with Azar-style design
+  // Show video chat interface with modern design
   if (showVideoChat) {
     return (
       <div className="relative h-screen w-full">
@@ -188,13 +188,13 @@ const CommunityVideoChat = () => {
           </Button>
         </div>
 
-        {/* Azar-style Video Chat Component */}
+        {/* Connect-style Video Chat Component */}
         <VideoChat />
       </div>
     );
   }
 
-  // Show pre-chat screen with enhanced Azar-inspired styling
+  // Show pre-chat screen with enhanced modern styling
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900/20 via-black to-pink-900/20">
       <ModernHeader />
@@ -213,7 +213,7 @@ const CommunityVideoChat = () => {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          {/* Community Video Chat Header with Azar-style gradients */}
+          {/* Community Video Chat Header with modern gradients */}
           <div className="text-center mb-8">
             <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-purple-500/25">
               <Video className="w-12 h-12 text-white" />
@@ -222,7 +222,7 @@ const CommunityVideoChat = () => {
               {community.name} Video Chat
             </h1>
             <p className="text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
-              Connect with fellow community members through immersive video chat. Meet new people, share experiences, and build meaningful connections in the Azar-style experience.
+              Connect with fellow community members through immersive video chat. Meet new people, share experiences, and build meaningful connections in the modern experience.
             </p>
           </div>
 
@@ -285,7 +285,7 @@ const CommunityVideoChat = () => {
             </Card>
           </div>
 
-          {/* Action Section with Azar-style gradients */}
+          {/* Action Section with modern gradients */}
           <Card className="text-center bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-purple-500/10 border-purple-500/20 backdrop-blur-md">
             <CardContent className="py-16">
               {isMember ? (

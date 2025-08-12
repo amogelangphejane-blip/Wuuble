@@ -161,27 +161,25 @@ const LandingPage = () => {
                 }}
               >
                 <Play className="mr-2 w-5 h-5" />
-                See How It Works
+                Start Chat
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Azar Video Chat Feature Section */}
+      {/* Connect Video Chat Feature Section */}
       <section className="py-20 bg-gradient-to-br from-purple-900/10 via-black/50 to-pink-900/10 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-500/5 via-transparent to-pink-500/5"></div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <Badge className="mb-6 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border-purple-500/30 px-4 py-2 text-sm font-medium">
-                ✨ NEW: Azar-Style Video Chat
-              </Badge>
+
               <h2 className="text-4xl lg:text-6xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent mb-6">
                 Meet Amazing People Instantly
               </h2>
               <p className="text-xl text-white/80 max-w-3xl mx-auto leading-relaxed">
-                Experience the thrill of immersive random video connections. Swipe, chat, and discover incredible people from around the world with our Azar-inspired interface.
+                Experience the thrill of immersive random video connections. Swipe, chat, and discover incredible people from around the world with our modern interface.
               </p>
             </div>
             
@@ -219,7 +217,7 @@ const LandingPage = () => {
                 
                 <Button 
                   size="lg"
-                  onClick={() => navigate('/azar-video-call')}
+                  onClick={() => navigate('/connect-video-call')}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold shadow-2xl shadow-purple-500/25 hover:shadow-purple-500/40 transition-all px-12 py-6 text-xl w-full sm:w-auto rounded-full transform hover:scale-105"
                 >
                   <Play className="mr-3 w-6 h-6" />
