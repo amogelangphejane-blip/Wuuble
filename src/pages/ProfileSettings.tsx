@@ -14,6 +14,7 @@ import { StorageTest } from '@/components/StorageTest';
 import { StorageSetup } from '@/components/StorageSetup';
 import { AvatarDebugTest } from '@/components/AvatarDebugTest';
 import { StoragePolicyTest } from '@/components/StoragePolicyTest';
+import { ProfileAvatarDiagnostic } from '@/components/ProfileAvatarDiagnostic';
 
 interface UserProfile {
   user_id: string;
@@ -198,6 +199,11 @@ const ProfileSettings = () => {
           currentAvatarUrl={profile?.avatar_url}
           onAvatarUpdate={handleAvatarUpdate}
         />
+
+        {/* Comprehensive Avatar System Diagnostic */}
+        <ProfileAvatarDiagnostic />
+
+        <Separator />
 
         {/* Storage Test Section - Temporary for debugging */}
         <StorageTest />
