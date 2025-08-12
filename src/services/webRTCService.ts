@@ -45,6 +45,11 @@ export class WebRTCService {
     }
   }
 
+  // Alias for backward compatibility and clearer naming
+  async initializeMedia(): Promise<MediaStream> {
+    return this.initializeLocalMedia();
+  }
+
   createPeerConnection(): RTCPeerConnection {
     if (this.peerConnection) {
       this.peerConnection.close();
