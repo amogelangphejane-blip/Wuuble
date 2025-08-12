@@ -1,15 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, User, AlertTriangle } from 'lucide-react';
+import { Upload, X, User } from 'lucide-react';
 import { validateAvatarUrl } from '@/lib/utils';
-import { checkStorageReady } from '@/utils/setupStorage';
 
 interface ProfilePictureUploadProps {
   currentAvatarUrl?: string | null;
@@ -20,26 +18,9 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [storageReady, setStorageReady] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
-
-  // Check if storage is properly configured
-  useEffect(() => {
-    const checkStorageSetup = async () => {
-      if (!user) return;
-      
-      const isReady = await checkStorageReady();
-      setStorageReady(isReady);
-      
-      if (!isReady) {
-        console.warn('Profile pictures storage bucket is missing');
-      }
-    };
-
-    checkStorageSetup();
-  }, [user]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -73,7 +54,6 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
       setPreviewUrl(e.target?.result as string);
     };
     reader.onerror = () => {
-      console.error('Failed to read file for preview');
       toast({
         title: "Preview failed",
         description: "Could not generate image preview. You can still upload the file.",
@@ -88,17 +68,9 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
 
     setUploading(true);
     try {
-      console.log('Starting profile picture upload for user:', user.id);
-      console.log('File details:', {
-        name: selectedFile.name,
-        size: selectedFile.size,
-        type: selectedFile.type
-      });
-
       // Generate unique filename with proper extension handling
       const fileExt = selectedFile.name.split('.').pop() || 'jpg';
       const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
-      console.log('Generated filename:', fileName);
 
       // Upload file to Supabase storage
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -109,28 +81,15 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
         });
 
       if (uploadError) {
-        console.error('Upload error details:', uploadError);
-        
-        // Provide more specific error messages
-        if (uploadError.message.includes('Bucket not found')) {
-          throw new Error('Storage not configured. Please set up storage buckets first.');
-        } else if (uploadError.message.includes('Policy')) {
-          throw new Error('Upload permission denied. Please check storage policies.');
-        } else {
-          throw uploadError;
-        }
+        console.error('Upload error:', uploadError);
+        throw new Error('Failed to upload image. Please try again.');
       }
-
-      console.log('Upload successful:', uploadData);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('profile-pictures')
         .getPublicUrl(fileName);
 
-      console.log('Generated public URL:', publicUrl);
-
-      // Validate the public URL
       if (!publicUrl || publicUrl.trim() === '') {
         throw new Error('Failed to generate public URL for uploaded file');
       }
@@ -145,34 +104,21 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
         .eq('user_id', user.id);
 
       if (updateError) {
-        console.error('Profile update error:', updateError);
         throw updateError;
       }
 
-      console.log('Profile updated successfully');
-
-      // Remove old avatar if it exists and is different
+      // Clean up old avatar if it exists and is different
       if (currentAvatarUrl && currentAvatarUrl !== publicUrl) {
         try {
-          // Extract the storage path from the public URL
-          // URL format: https://[project].supabase.co/storage/v1/object/public/profile-pictures/[path]
           const urlParts = currentAvatarUrl.split('/storage/v1/object/public/profile-pictures/');
           if (urlParts.length > 1) {
             const storagePath = urlParts[1];
-            console.log('Attempting to delete old avatar:', storagePath);
-            
-            const { error: deleteError } = await supabase.storage
+            await supabase.storage
               .from('profile-pictures')
               .remove([storagePath]);
-            
-            if (deleteError) {
-              console.warn('Failed to delete old avatar:', deleteError);
-              // Don't throw here, as the main upload was successful
-            }
           }
         } catch (deleteError) {
-          console.warn('Error during old avatar cleanup:', deleteError);
-          // Don't throw here, as the main upload was successful
+          console.warn('Could not delete old avatar:', deleteError);
         }
       }
 
@@ -191,7 +137,7 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
       console.error('Error uploading avatar:', error);
       toast({
         title: "Upload failed",
-        description: "Failed to upload profile picture. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to upload profile picture. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -219,22 +165,15 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
 
       // Remove file from storage
       try {
-        // Extract the storage path from the public URL
         const urlParts = currentAvatarUrl.split('/storage/v1/object/public/profile-pictures/');
         if (urlParts.length > 1) {
           const storagePath = urlParts[1];
-          console.log('Attempting to delete avatar:', storagePath);
-          
-          const { error: deleteError } = await supabase.storage
+          await supabase.storage
             .from('profile-pictures')
             .remove([storagePath]);
-          
-          if (deleteError) {
-            console.warn('Failed to delete avatar from storage:', deleteError);
-          }
         }
       } catch (deleteError) {
-        console.warn('Error during avatar deletion:', deleteError);
+        console.warn('Could not delete avatar from storage:', deleteError);
       }
 
       onAvatarUpdate(null);
@@ -263,102 +202,81 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Profile Picture
-          {storageReady === false && (
-            <AlertTriangle className="w-4 h-4 text-yellow-500" />
-          )}
-        </CardTitle>
-        <CardDescription>
-          Upload a profile picture to personalize your account
-          {storageReady === false && (
-            <span className="block mt-1 text-yellow-600 font-medium">
-              ⚠️ Storage setup required - use the Storage Setup section above
-            </span>
-          )}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center space-x-4">
-          <Avatar className="w-20 h-20">
-            <AvatarImage 
-              src={previewUrl || validateAvatarUrl(currentAvatarUrl)} 
-              alt="Profile picture"
-              onError={(e) => {
-                console.warn('Profile avatar failed to load:', previewUrl || currentAvatarUrl);
-              }}
-            />
-            <AvatarFallback className="text-2xl">
-              <User />
-            </AvatarFallback>
-          </Avatar>
+    <div className="flex items-center space-x-4">
+      <Avatar className="w-20 h-20">
+        <AvatarImage 
+          src={previewUrl || validateAvatarUrl(currentAvatarUrl)} 
+          alt="Profile picture"
+        />
+        <AvatarFallback className="text-2xl">
+          <User />
+        </AvatarFallback>
+      </Avatar>
+      
+      <div className="flex-1 space-y-2">
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="avatar-upload" className="sr-only">
+            Upload avatar
+          </Label>
+          <Input
+            id="avatar-upload"
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            disabled={uploading}
+            className="hidden"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Choose Image
+          </Button>
           
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="avatar-upload" className="sr-only">
-                Upload avatar
-              </Label>
-              <Input
-                id="avatar-upload"
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                disabled={uploading}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading || storageReady === false}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Choose Image
-              </Button>
-              
-              {currentAvatarUrl && !selectedFile && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleRemove}
-                  disabled={uploading}
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Remove
-                </Button>
-              )}
-            </div>
-            
-            {selectedFile && (
-              <div className="flex items-center space-x-2">
-                <Button
-                  onClick={handleUpload}
-                  disabled={uploading || storageReady === false}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {uploading ? 'Uploading...' : 'Upload'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={uploading}
-                >
-                  Cancel
-                </Button>
-              </div>
-            )}
-            
-            <p className="text-sm text-muted-foreground">
-              Recommended: Square image, at least 200x200px. Max 5MB.
-              <br />
-              Supported formats: JPEG, PNG, WebP
-            </p>
-          </div>
+          {currentAvatarUrl && !selectedFile && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRemove}
+              disabled={uploading}
+            >
+              <X className="w-4 h-4 mr-2" />
+              Remove
+            </Button>
+          )}
         </div>
-      </CardContent>
-    </Card>
+        
+        {selectedFile && (
+          <div className="flex items-center space-x-2">
+            <Button
+              size="sm"
+              onClick={handleUpload}
+              disabled={uploading}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {uploading ? 'Uploading...' : 'Upload'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCancel}
+              disabled={uploading}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+        
+        <p className="text-xs text-muted-foreground">
+          Square image recommended, max 5MB. Supports JPEG, PNG, WebP.
+        </p>
+      </div>
+    </div>
   );
 };
