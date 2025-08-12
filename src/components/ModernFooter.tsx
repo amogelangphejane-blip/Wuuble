@@ -49,7 +49,7 @@ export const ModernFooter = () => {
                   <GraduationCap className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-                  LearnHub
+                  wobble
                 </span>
               </div>
               <p className="text-sm text-muted-foreground mb-6 max-w-sm">
@@ -60,7 +60,7 @@ export const ModernFooter = () => {
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Mail className="w-4 h-4" />
-                  <span>hello@learnhub.com</span>
+                  <span>hello@wobble.com</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Phone className="w-4 h-4" />
@@ -149,7 +149,7 @@ export const ModernFooter = () => {
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
             {/* Copyright */}
             <div className="text-sm text-muted-foreground">
-              © {currentYear} LearnHub. All rights reserved.
+              © {currentYear} wobble. All rights reserved.
             </div>
 
             {/* Social Links */}

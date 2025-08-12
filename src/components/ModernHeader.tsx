@@ -108,7 +108,7 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              LearnHub
+              wobble
             </span>
           </div>
 

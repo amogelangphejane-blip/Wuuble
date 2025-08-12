@@ -63,7 +63,7 @@ const LandingPage = () => {
       name: "Sarah Chen",
       role: "Software Engineer",
       avatar: "SC",
-      content: "LearnHub transformed my career. The community support and quality content made all the difference in my learning journey.",
+      content: "wobble transformed my career. The community support and quality content made all the difference in my learning journey.",
       rating: 5
     },
     {
@@ -298,7 +298,7 @@ const LandingPage = () => {
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               See what our community members have to say about their 
-              learning experience on LearnHub.
+              learning experience on wobble.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -345,7 +345,7 @@ const LandingPage = () => {
             </h2>
             <p className="text-lg text-white/90 mb-8">
               Join thousands of learners who are already growing their skills 
-              and advancing their careers with LearnHub.
+              and advancing their careers with wobble.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
