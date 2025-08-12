@@ -257,6 +257,27 @@ export const VideoChat = () => {
                             <p className="text-lg text-muted-foreground font-medium">Finding someone awesome...</p>
                             <p className="text-sm text-muted-foreground/70 mt-2">This will only take a moment</p>
                           </>
+                        ) : cameraPermission === 'denied' ? (
+                          <>
+                            <div className="w-20 h-20 bg-destructive/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                              <Shield className="w-10 h-10 text-destructive" />
+                            </div>
+                            <p className="text-lg text-foreground font-medium mb-2">Camera Access Required</p>
+                            <p className="text-sm text-muted-foreground mb-4 max-w-md text-center">
+                              To start video chatting, please allow camera and microphone access in your browser
+                            </p>
+                            <div className="bg-muted/50 rounded-lg p-4 max-w-md">
+                              <p className="text-xs text-muted-foreground text-center">
+                                💡 <strong>Tip:</strong> Look for the camera icon in your browser's address bar and click "Allow"
+                              </p>
+                            </div>
+                          </>
+                        ) : cameraPermission === 'pending' ? (
+                          <>
+                            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+                            <p className="text-lg text-muted-foreground font-medium">Setting up camera...</p>
+                            <p className="text-sm text-muted-foreground/70 mt-2">Please allow access when prompted</p>
+                          </>
                         ) : (
                           <>
                             <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-glow">
@@ -336,17 +357,32 @@ export const VideoChat = () => {
                   </div>
                   {cameraPermission === 'denied' && (
                     <div className="absolute inset-0 bg-destructive/20 flex items-center justify-center">
-                      <div className="text-center">
-                                                 <Shield className="w-8 h-8 text-destructive mx-auto mb-2" />
-                         <p className="text-sm text-destructive font-medium">Camera Blocked</p>
-                         <Button
-                           variant="outline"
-                           size="sm"
-                           onClick={startChat}
-                           className="mt-2"
-                         >
-                           Enable
-                         </Button>
+                      <div className="text-center p-4">
+                        <Shield className="w-12 h-12 text-destructive mx-auto mb-3" />
+                        <p className="text-sm text-destructive font-medium mb-2">Camera Access Blocked</p>
+                        <p className="text-xs text-destructive/80 mb-4 max-w-48">
+                          Click the camera icon in your browser's address bar to allow access
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={startChat}
+                          className="mt-2 border-destructive text-destructive hover:bg-destructive hover:text-white"
+                        >
+                          <Video className="w-4 h-4 mr-2" />
+                          Try Again
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {cameraPermission === 'pending' && (
+                    <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                      <div className="text-center p-4">
+                        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                        <p className="text-sm text-primary font-medium mb-2">Requesting Camera Access</p>
+                        <p className="text-xs text-primary/80 max-w-48">
+                          Please allow camera and microphone access when prompted by your browser
+                        </p>
                       </div>
                     </div>
                   )}
@@ -359,10 +395,10 @@ export const VideoChat = () => {
           <div className="flex flex-col items-center space-y-4">
             {/* Primary Actions */}
             <div className="flex items-center justify-center">
-              {connectionStatus === 'disconnected' && cameraPermission !== 'denied' ? (
+              {connectionStatus === 'disconnected' && cameraPermission === 'granted' ? (
                 <Button
                   onClick={startChat}
-                  disabled={isSearching || cameraPermission !== 'granted'}
+                  disabled={isSearching}
                   size="lg"
                   className="bg-gradient-primary hover:shadow-glow text-white font-semibold px-12 py-4 rounded-full text-lg transition-all duration-300 transform hover:scale-105 border-0"
                 >
@@ -371,8 +407,6 @@ export const VideoChat = () => {
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
                       Connecting...
                     </>
-                  ) : cameraPermission === 'pending' ? (
-                    'Getting Ready...'
                   ) : (
                     <>
                       <Video className="w-5 h-5 mr-3" />
@@ -380,15 +414,29 @@ export const VideoChat = () => {
                     </>
                   )}
                 </Button>
-              ) : cameraPermission === 'denied' ? (
+              ) : connectionStatus === 'disconnected' && cameraPermission === 'pending' ? (
                 <Button
-                  onClick={startChat}
+                  disabled
                   size="lg"
-                  className="bg-gradient-primary hover:shadow-glow text-white font-semibold px-12 py-4 rounded-full text-lg transition-all duration-300 transform hover:scale-105 border-0"
+                  className="bg-gradient-primary/60 text-white font-semibold px-12 py-4 rounded-full text-lg border-0 cursor-not-allowed"
                 >
-                  <Video className="w-5 h-5 mr-3" />
-                  Enable Camera
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
+                  Getting Ready...
                 </Button>
+              ) : connectionStatus === 'disconnected' && cameraPermission === 'denied' ? (
+                <div className="text-center">
+                  <Button
+                    onClick={startChat}
+                    size="lg"
+                    className="bg-gradient-primary hover:shadow-glow text-white font-semibold px-12 py-4 rounded-full text-lg transition-all duration-300 transform hover:scale-105 border-0 mb-3"
+                  >
+                    <Video className="w-5 h-5 mr-3" />
+                    Enable Camera
+                  </Button>
+                  <p className="text-xs text-muted-foreground max-w-md">
+                    Camera access is required for video chat. Please allow access when prompted.
+                  </p>
+                </div>
               ) : connectionStatus === 'connected' || connectionStatus === 'reconnecting' ? (
                 <div className="flex items-center space-x-3">
                   <Button

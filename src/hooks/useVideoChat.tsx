@@ -139,9 +139,52 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
         }
       }, useMockSignaling);
 
-      // Initialize local media
-      await webRTCServiceRef.current.initializeMedia();
-      setCameraPermission('granted');
+      // Initialize local media with better error handling
+      try {
+        await webRTCServiceRef.current.initializeMedia();
+        setCameraPermission('granted');
+      } catch (mediaError: any) {
+        console.error('Media initialization failed:', mediaError);
+        
+        // Handle specific camera/microphone errors
+        if (mediaError.name === 'NotAllowedError' || mediaError.name === 'PermissionDeniedError') {
+          setCameraPermission('denied');
+          toast({
+            title: "Camera Access Blocked",
+            description: "Please allow camera and microphone access in your browser settings, then click 'Enable Camera' to try again.",
+            variant: "destructive"
+          });
+        } else if (mediaError.name === 'NotFoundError' || mediaError.name === 'DevicesNotFoundError') {
+          setCameraPermission('denied');
+          toast({
+            title: "No Camera Found",
+            description: "No camera or microphone detected. Please check your device connections.",
+            variant: "destructive"
+          });
+        } else if (mediaError.name === 'NotReadableError' || mediaError.name === 'TrackStartError') {
+          setCameraPermission('denied');
+          toast({
+            title: "Camera In Use",
+            description: "Your camera might be in use by another application. Please close other apps and try again.",
+            variant: "destructive"
+          });
+        } else if (mediaError.name === 'OverconstrainedError' || mediaError.name === 'ConstraintNotSatisfiedError') {
+          setCameraPermission('denied');
+          toast({
+            title: "Camera Settings Issue",
+            description: "Camera settings are not supported. Try refreshing the page.",
+            variant: "destructive"
+          });
+        } else {
+          setCameraPermission('denied');
+          toast({
+            title: "Camera Access Failed",
+            description: "Unable to access camera. Please check your browser permissions and try again.",
+            variant: "destructive"
+          });
+        }
+        return; // Don't proceed if media initialization failed
+      }
 
       // Connect to signaling server
       await signalingServiceRef.current.connect();
@@ -155,7 +198,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
       setCameraPermission('denied');
       toast({
         title: "Setup Failed",
-        description: "Could not access camera/microphone or connect to server.",
+        description: "Could not connect to server. Please check your internet connection and try again.",
         variant: "destructive"
       });
     }
@@ -240,15 +283,52 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
 
   // Start chat
   const startChat = useCallback(async () => {
+    // Reset camera permission state for retry
+    if (cameraPermission === 'denied') {
+      setCameraPermission('pending');
+    }
+
     if (!signalingServiceRef.current) {
       await initializeServices();
+      return; // initializeServices will handle the media setup
     }
 
     if (cameraPermission !== 'granted') {
       try {
+        setCameraPermission('pending');
         await webRTCServiceRef.current?.initializeMedia();
         setCameraPermission('granted');
-      } catch (error) {
+        
+        toast({
+          title: "Camera Ready! 📹",
+          description: "Camera and microphone access granted successfully.",
+        });
+      } catch (mediaError: any) {
+        console.error('Media retry failed:', mediaError);
+        
+        // Handle specific camera/microphone errors for retry
+        if (mediaError.name === 'NotAllowedError' || mediaError.name === 'PermissionDeniedError') {
+          setCameraPermission('denied');
+          toast({
+            title: "Camera Still Blocked",
+            description: "Please click the camera icon in your browser's address bar and allow camera access, then try again.",
+            variant: "destructive"
+          });
+        } else if (mediaError.name === 'NotFoundError' || mediaError.name === 'DevicesNotFoundError') {
+          setCameraPermission('denied');
+          toast({
+            title: "No Camera Found",
+            description: "Please connect a camera and microphone, then try again.",
+            variant: "destructive"
+          });
+        } else {
+          setCameraPermission('denied');
+          toast({
+            title: "Camera Access Failed",
+            description: "Please refresh the page and try again.",
+            variant: "destructive"
+          });
+        }
         return;
       }
     }
