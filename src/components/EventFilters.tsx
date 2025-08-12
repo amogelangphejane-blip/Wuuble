@@ -206,16 +206,16 @@ export const EventFiltersComponent = ({
       <div className="space-y-3">
         <label className="text-sm font-medium">My RSVP Status</label>
         <Select
-          value={filters.rsvpStatus || ''}
+          value={filters.rsvpStatus || 'all'}
           onValueChange={(value) => 
-            updateFilters({ rsvpStatus: value as EventFilters['rsvpStatus'] || undefined })
+            updateFilters({ rsvpStatus: value === 'all' ? undefined : value as EventFilters['rsvpStatus'] })
           }
         >
           <SelectTrigger>
             <SelectValue placeholder="Filter by RSVP status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Events</SelectItem>
+            <SelectItem value="all">All Events</SelectItem>
             <SelectItem value="going">Events I'm Going To</SelectItem>
             <SelectItem value="maybe">Events I'm Interested In</SelectItem>
             <SelectItem value="not_going">Events I'm Not Going To</SelectItem>
@@ -227,16 +227,16 @@ export const EventFiltersComponent = ({
       <div className="space-y-3">
         <label className="text-sm font-medium">Event Visibility</label>
         <Select
-          value={filters.visibility || ''}
+          value={filters.visibility || 'all'}
           onValueChange={(value) => 
-            updateFilters({ visibility: value as EventFilters['visibility'] || undefined })
+            updateFilters({ visibility: value === 'all' ? undefined : value as EventFilters['visibility'] })
           }
         >
           <SelectTrigger>
             <SelectValue placeholder="Filter by visibility" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Events</SelectItem>
+            <SelectItem value="all">All Events</SelectItem>
             <SelectItem value="public">Public Events</SelectItem>
             <SelectItem value="members_only">Members Only</SelectItem>
             <SelectItem value="private">Private Events</SelectItem>
