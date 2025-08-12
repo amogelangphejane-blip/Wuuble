@@ -35,7 +35,7 @@ interface UserInfo {
   isOnline: boolean;
 }
 
-export const AzarVideoChat = () => {
+export const ConnectVideoChat = () => {
   const {
     connectionStatus,
     isSearching,

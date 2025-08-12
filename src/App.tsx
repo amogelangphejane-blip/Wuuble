@@ -16,7 +16,7 @@ import EnhancedCommunityCalendar from "./pages/EnhancedCommunityCalendar";
 import CommunityClassroom from "./pages/CommunityClassroom";
 import CommunityMembers from "./pages/CommunityMembers";
 import ProfileSettings from "./pages/ProfileSettings";
-import AzarVideoCall from "./pages/AzarVideoCall";
+import ConnectVideoCall from "./pages/ConnectVideoCall";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,7 +38,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/chat" element={<Chat />} />
-              <Route path="/azar-video-call" element={<AzarVideoCall />} />
+              <Route path="/connect-video-call" element={<ConnectVideoCall />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/communities" element={<Communities />} />
               <Route path="/communities/:id" element={<CommunityDetail />} />
