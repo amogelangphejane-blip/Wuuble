@@ -50,6 +50,297 @@ export type Database = {
         }
         Relationships: []
       }
+      community_events: {
+        Row: {
+          id: string
+          community_id: string
+          user_id: string
+          title: string
+          description: string | null
+          event_date: string
+          start_time: string | null
+          end_time: string | null
+          location: string | null
+          is_virtual: boolean
+          max_attendees: number | null
+          cover_image_url: string | null
+          category_id: string | null
+          recurring_type: string
+          recurring_end_date: string | null
+          tags: string[] | null
+          visibility: string
+          requires_approval: boolean
+          external_url: string | null
+          timezone: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          community_id: string
+          user_id: string
+          title: string
+          description?: string | null
+          event_date: string
+          start_time?: string | null
+          end_time?: string | null
+          location?: string | null
+          is_virtual?: boolean
+          max_attendees?: number | null
+          cover_image_url?: string | null
+          category_id?: string | null
+          recurring_type?: string
+          recurring_end_date?: string | null
+          tags?: string[] | null
+          visibility?: string
+          requires_approval?: boolean
+          external_url?: string | null
+          timezone?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          community_id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          event_date?: string
+          start_time?: string | null
+          end_time?: string | null
+          location?: string | null
+          is_virtual?: boolean
+          max_attendees?: number | null
+          cover_image_url?: string | null
+          category_id?: string | null
+          recurring_type?: string
+          recurring_end_date?: string | null
+          tags?: string[] | null
+          visibility?: string
+          requires_approval?: boolean
+          external_url?: string | null
+          timezone?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_events_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "community_events_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "event_categories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      event_categories: {
+        Row: {
+          id: string
+          name: string
+          color: string
+          icon: string | null
+          community_id: string | null
+          is_default: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          color?: string
+          icon?: string | null
+          community_id?: string | null
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          color?: string
+          icon?: string | null
+          community_id?: string | null
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_categories_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      event_rsvps: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string
+          status: string
+          response_note: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          user_id: string
+          status?: string
+          response_note?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          user_id?: string
+          status?: string
+          response_note?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "community_events"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      event_notifications: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string
+          notification_type: string
+          scheduled_for: string
+          sent_at: string | null
+          message: string | null
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          user_id: string
+          notification_type: string
+          scheduled_for: string
+          sent_at?: string | null
+          message?: string | null
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          user_id?: string
+          notification_type?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          message?: string | null
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "community_events"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      user_event_preferences: {
+        Row: {
+          id: string
+          user_id: string
+          default_reminder_time: number
+          email_notifications: boolean
+          push_notifications: boolean
+          preferred_categories: string[] | null
+          auto_rsvp_own_events: boolean
+          timezone: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          default_reminder_time?: number
+          email_notifications?: boolean
+          push_notifications?: boolean
+          preferred_categories?: string[] | null
+          auto_rsvp_own_events?: boolean
+          timezone?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          default_reminder_time?: number
+          email_notifications?: boolean
+          push_notifications?: boolean
+          preferred_categories?: string[] | null
+          auto_rsvp_own_events?: boolean
+          timezone?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      event_shares: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string
+          platform: string
+          shared_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          user_id: string
+          platform: string
+          shared_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          user_id?: string
+          platform?: string
+          shared_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_shares_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "community_events"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       community_members: {
         Row: {
           community_id: string
