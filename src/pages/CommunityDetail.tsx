@@ -623,6 +623,14 @@ const CommunityDetail = () => {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start"
+                    onClick={() => navigate(`/communities/${id}/group-call`)}
+                  >
+                    <Users className="mr-2 w-4 h-4" />
+                    Start Group Call
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
                     onClick={() => navigate(`/communities/${id}/calendar`)}
                   >
                     <Calendar className="mr-2 w-4 h-4" />

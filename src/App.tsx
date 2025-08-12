@@ -17,6 +17,7 @@ import CommunityClassroom from "./pages/CommunityClassroom";
 import CommunityMembers from "./pages/CommunityMembers";
 import ProfileSettings from "./pages/ProfileSettings";
 import ConnectVideoCall from "./pages/ConnectVideoCall";
+import CommunityGroupCall from "./pages/CommunityGroupCall";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,8 @@ const App = () => (
               <Route path="/communities" element={<Communities />} />
               <Route path="/communities/:id" element={<CommunityDetail />} />
               <Route path="/communities/:id/video-chat" element={<CommunityVideoChat />} />
+              <Route path="/communities/:id/group-call" element={<CommunityGroupCall />} />
+              <Route path="/communities/:id/group-call/:callId" element={<CommunityGroupCall />} />
               {/* Enhanced calendar route - new default */}
               <Route path="/communities/:id/calendar" element={<EnhancedCommunityCalendar />} />
               {/* Legacy calendar route for backward compatibility */}
