@@ -16,7 +16,6 @@ import {
   LogOut, 
   Menu, 
   X,
-  GraduationCap,
   MessageCircle
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -104,8 +103,12 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
             className="flex items-center space-x-2 cursor-pointer group"
             onClick={() => navigate('/')}
           >
-            <div className="w-8 h-8 bg-gradient-hero rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-              <GraduationCap className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 flex items-center justify-center">
+              <img 
+                src="/wobble-logo.svg" 
+                alt="Wobble Logo" 
+                className="w-8 h-8 group-hover:scale-110 transition-transform duration-200 drop-shadow-sm"
+              />
             </div>
             <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
               wobble
