@@ -10,6 +10,7 @@ import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import Communities from "./pages/Communities";
 import CommunityDetail from "./pages/CommunityDetail";
+import CommunityVideoChat from "./pages/CommunityVideoChat";
 import CommunityCalendar from "./pages/CommunityCalendar";
 import EnhancedCommunityCalendar from "./pages/EnhancedCommunityCalendar";
 import CommunityClassroom from "./pages/CommunityClassroom";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/communities" element={<Communities />} />
               <Route path="/communities/:id" element={<CommunityDetail />} />
+              <Route path="/communities/:id/video-chat" element={<CommunityVideoChat />} />
               {/* Enhanced calendar route - new default */}
               <Route path="/communities/:id/calendar" element={<EnhancedCommunityCalendar />} />
               {/* Legacy calendar route for backward compatibility */}
