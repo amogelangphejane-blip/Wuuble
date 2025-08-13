@@ -52,6 +52,15 @@ interface CommunityMember {
   } | null;
 }
 
+interface OngoingCall {
+  id: string;
+  title: string;
+  current_participants: number;
+  max_participants: number;
+  started_at: string;
+  creator_id: string;
+}
+
 const CommunityDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -66,6 +75,7 @@ const CommunityDetail = () => {
   const [joiningLeaving, setJoiningLeaving] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('discussions');
+  const [ongoingCall, setOngoingCall] = useState<OngoingCall | null>(null);
 
   const [editingCommunity, setEditingCommunity] = useState({
     name: '',
@@ -85,6 +95,41 @@ const CommunityDetail = () => {
       fetchCommunityDetails();
     }
   }, [id, user]);
+
+  // Poll for ongoing calls every 10 seconds
+  useEffect(() => {
+    if (!id || !user || !isMember) return;
+
+    const interval = setInterval(() => {
+      fetchOngoingCall();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [id, user, isMember]);
+
+  const fetchOngoingCall = async () => {
+    if (!id || !user) return;
+
+    try {
+      const { data: call, error } = await supabase
+        .from('community_group_calls')
+        .select('id, title, current_participants, max_participants, started_at, creator_id')
+        .eq('community_id', id)
+        .eq('status', 'active')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching ongoing call:', error);
+        return;
+      }
+
+      setOngoingCall(call);
+    } catch (error) {
+      console.error('Error fetching ongoing call:', error);
+    }
+  };
 
   const fetchCommunityDetails = async () => {
     if (!id || !user) return;
@@ -177,6 +222,11 @@ const CommunityDetail = () => {
         setMembers([]);
       } else {
         setMembers(membersData || []);
+      }
+
+      // Fetch ongoing call if user is a member
+      if (isMember) {
+        await fetchOngoingCall();
       }
 
     } catch (error: any) {
@@ -621,14 +671,32 @@ const CommunityDetail = () => {
                     <Video className="mr-2 w-4 h-4" />
                     Start Video Chat
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => navigate(`/communities/${id}/group-call`)}
-                  >
-                    <Users className="mr-2 w-4 h-4" />
-                    Start Group Call
-                  </Button>
+                  {ongoingCall ? (
+                    <Button 
+                      className="w-full justify-start bg-green-600 hover:bg-green-700 text-white border-green-600"
+                      onClick={() => navigate(`/communities/${id}/group-call/${ongoingCall.id}`)}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center">
+                          <Users className="mr-2 w-4 h-4" />
+                          Join Group Call
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                          <span className="text-sm">{ongoingCall.current_participants}</span>
+                        </div>
+                      </div>
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => navigate(`/communities/${id}/group-call`)}
+                    >
+                      <Users className="mr-2 w-4 h-4" />
+                      Start Group Call
+                    </Button>
+                  )}
                   <Button 
                     variant="outline" 
                     className="w-full justify-start"
