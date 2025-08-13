@@ -613,6 +613,13 @@ const CommunityDetail = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <Button 
+                    className="w-full justify-start"
+                    onClick={() => navigate(`/communities/${id}/chat`)}
+                  >
+                    <MessageCircle className="mr-2 w-4 h-4" />
+                    Open Chat
+                  </Button>
+                  <Button 
                     variant="outline" 
                     className="w-full justify-start"
                     onClick={() => navigate(`/communities/${id}/video-chat`)}
