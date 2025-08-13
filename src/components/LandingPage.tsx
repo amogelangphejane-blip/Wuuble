@@ -156,9 +156,7 @@ const LandingPage = () => {
                 size="lg"
                 variant="outline"
                 className="border-2 hover:bg-secondary px-8 py-3 text-lg"
-                onClick={() => {
-                  document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' });
-                }}
+                onClick={() => navigate('/connect-video-call')}
               >
                 <Play className="mr-2 w-5 h-5" />
                 Start Chat
