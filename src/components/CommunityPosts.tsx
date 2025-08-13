@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { validateAvatarUrl } from '@/lib/utils';
+import { PostImageUpload } from '@/components/PostImageUpload';
 
 interface CommunityPostLike {
   id: string;
@@ -49,6 +50,7 @@ interface CommunityPostComment {
 interface CommunityPost {
   id: string;
   content: string;
+  image_url: string | null;
   created_at: string;
   user_id: string;
   profiles: {
@@ -70,6 +72,7 @@ interface CommunityPostsProps {
 export const CommunityPosts = ({ communityId, communityName }: CommunityPostsProps) => {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [newPost, setNewPost] = useState('');
+  const [newPostImage, setNewPostImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -88,6 +91,7 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
         .select(`
           id,
           content,
+          image_url,
           created_at,
           user_id,
           profiles!community_posts_user_id_fkey (
@@ -172,7 +176,7 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
 
   // Create a new post
   const createPost = async () => {
-    if (!newPost.trim() || !user) return;
+    if ((!newPost.trim() && !newPostImage) || !user) return;
 
     setPosting(true);
     try {
@@ -183,6 +187,7 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
             community_id: communityId,
             user_id: user.id,
             content: newPost.trim(),
+            image_url: newPostImage,
           }
         ]);
 
@@ -197,6 +202,7 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
       }
 
       setNewPost('');
+      setNewPostImage(null);
       await fetchPosts(); // Refresh posts
       
       // Scroll to top after posting
@@ -514,10 +520,15 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
                 className="min-h-[60px] resize-none"
                 disabled={posting}
               />
+              <PostImageUpload
+                onImageUploaded={setNewPostImage}
+                currentImageUrl={newPostImage}
+                disabled={posting}
+              />
               <div className="flex justify-end">
                 <Button
                   onClick={createPost}
-                  disabled={!newPost.trim() || posting}
+                  disabled={(!newPost.trim() && !newPostImage) || posting}
                   size="sm"
                 >
                   <Send className="h-4 w-4 mr-2" />
@@ -562,9 +573,22 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
                           </span>
                         </div>
                         
-                        <div className="text-sm whitespace-pre-wrap break-words">
-                          {post.content}
-                        </div>
+                        {post.content && (
+                          <div className="text-sm whitespace-pre-wrap break-words mb-3">
+                            {post.content}
+                          </div>
+                        )}
+                        
+                        {post.image_url && (
+                          <div className="mt-2">
+                            <img
+                              src={post.image_url}
+                              alt="Post image"
+                              className="max-w-full max-h-96 rounded-lg border border-border object-cover cursor-pointer"
+                              onClick={() => window.open(post.image_url!, '_blank')}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 
