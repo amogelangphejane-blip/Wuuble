@@ -445,6 +445,174 @@ export type Database = {
         }
         Relationships: []
       }
+      community_group_calls: {
+        Row: {
+          id: string
+          community_id: string
+          creator_id: string
+          title: string
+          description: string | null
+          status: string
+          max_participants: number
+          current_participants: number
+          is_recording: boolean
+          recording_url: string | null
+          started_at: string
+          ended_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          community_id: string
+          creator_id: string
+          title?: string
+          description?: string | null
+          status?: string
+          max_participants?: number
+          current_participants?: number
+          is_recording?: boolean
+          recording_url?: string | null
+          started_at?: string
+          ended_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          community_id?: string
+          creator_id?: string
+          title?: string
+          description?: string | null
+          status?: string
+          max_participants?: number
+          current_participants?: number
+          is_recording?: boolean
+          recording_url?: string | null
+          started_at?: string
+          ended_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_group_calls_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_group_calls_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      community_group_call_participants: {
+        Row: {
+          id: string
+          call_id: string
+          user_id: string
+          joined_at: string
+          left_at: string | null
+          is_muted: boolean
+          is_video_enabled: boolean
+          is_screen_sharing: boolean
+          role: string
+          connection_quality: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          call_id: string
+          user_id: string
+          joined_at?: string
+          left_at?: string | null
+          is_muted?: boolean
+          is_video_enabled?: boolean
+          is_screen_sharing?: boolean
+          role?: string
+          connection_quality?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          call_id?: string
+          user_id?: string
+          joined_at?: string
+          left_at?: string | null
+          is_muted?: boolean
+          is_video_enabled?: boolean
+          is_screen_sharing?: boolean
+          role?: string
+          connection_quality?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_group_call_participants_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "community_group_calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_group_call_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      community_group_call_events: {
+        Row: {
+          id: string
+          call_id: string
+          user_id: string | null
+          event_type: string
+          event_data: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          call_id: string
+          user_id?: string | null
+          event_type: string
+          event_data?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          call_id?: string
+          user_id?: string | null
+          event_type?: string
+          event_data?: Json | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_group_call_events_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "community_group_calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_group_call_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
