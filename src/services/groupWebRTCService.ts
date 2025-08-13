@@ -21,6 +21,7 @@ export interface GroupWebRTCEvents {
   onLocalStreamReady?: (stream: MediaStream) => void;
   onDataChannelMessage?: (participantId: string, message: any) => void;
   onConnectionQualityChanged?: (participantId: string, quality: string) => void;
+  onIceCandidate?: (participantId: string, candidate: RTCIceCandidateInit) => void;
   onError?: (error: string) => void;
 }
 
@@ -149,6 +150,13 @@ export class GroupWebRTCService {
       if (peerConn) {
         peerConn.remoteStream = remoteStream;
         this.events.onRemoteStream?.(participantId, remoteStream);
+      }
+    };
+
+    // Handle ICE candidates
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        this.events.onIceCandidate?.(participantId, event.candidate.toJSON());
       }
     };
 

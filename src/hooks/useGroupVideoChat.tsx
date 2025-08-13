@@ -29,6 +29,7 @@ export interface UseGroupVideoChatReturn {
   callStatus: GroupCallStatus;
   isConnecting: boolean;
   isConnected: boolean;
+  servicesReady: boolean;
   cameraPermission: 'pending' | 'granted' | 'denied';
   
   // Participants
@@ -81,6 +82,7 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
 
   // State
   const [callStatus, setCallStatus] = useState<GroupCallStatus>('disconnected');
+  const [servicesReady, setServicesReady] = useState(false);
   const [cameraPermission, setCameraPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
   const [participants, setParticipants] = useState<GroupParticipant[]>([]);
   const [localParticipant, setLocalParticipant] = useState<GroupParticipant | null>(null);
@@ -172,6 +174,9 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
             setUnreadMessages(prev => prev + 1);
           }
         },
+        onIceCandidate: (participantId, candidate) => {
+          signalingServiceRef.current?.sendGroupIceCandidate(candidate, participantId);
+        },
         onError: (error) => {
           toast({
             title: "Connection Error",
@@ -190,8 +195,9 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       // Initialize signaling service
       const signalingEvents: GroupSignalingEvents = {
         onParticipantJoined: async (participantId, participantData) => {
-          // Create peer connection for new participant
+          // Add participant to WebRTC service
           if (webRTCServiceRef.current) {
+            webRTCServiceRef.current.addParticipant(participantData);
             await webRTCServiceRef.current.createPeerConnection(participantId, participantData.userId, true);
             const offer = await webRTCServiceRef.current.createOffer(participantId);
             signalingServiceRef.current?.sendGroupOffer(offer, participantId);
@@ -237,6 +243,7 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       );
 
       await signalingServiceRef.current.connect();
+      setServicesReady(true);
 
     } catch (error) {
       console.error('Failed to initialize services:', error);
@@ -246,7 +253,7 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
         variant: "destructive"
       });
     }
-  }, [user, webRTCConfig, useMockSignaling, participants, toast]);
+  }, [user, webRTCConfig, useMockSignaling, toast]);
 
   // Start a new group call
   const startCall = useCallback(async (callTitle?: string) => {
@@ -568,21 +575,23 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
     return () => {
       webRTCServiceRef.current?.cleanup();
       signalingServiceRef.current?.disconnect();
+      setServicesReady(false);
     };
   }, [user, initializeServices]);
 
   // Auto-join call if callId is provided
   useEffect(() => {
-    if (initialCallId && isConnected && !currentCall) {
+    if (initialCallId && servicesReady && !currentCall) {
       joinCall(initialCallId);
     }
-  }, [initialCallId, isConnected, currentCall, joinCall]);
+  }, [initialCallId, servicesReady, currentCall, joinCall]);
 
   return {
     // Connection state
     callStatus,
     isConnecting,
     isConnected,
+    servicesReady,
     cameraPermission,
     
     // Participants
