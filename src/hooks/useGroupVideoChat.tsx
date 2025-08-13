@@ -255,12 +255,50 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
     }
   }, [user, webRTCConfig, useMockSignaling, toast]);
 
+  // Helper function to check if user is a community member
+  const checkCommunityMembership = useCallback(async (): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const { data, error } = await supabase
+        .from('community_members')
+        .select('id')
+        .eq('community_id', communityId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking community membership:', error);
+        return false;
+      }
+
+      return !!data;
+    } catch (error) {
+      console.error('Error checking community membership:', error);
+      return false;
+    }
+  }, [user, communityId]);
+
   // Start a new group call
   const startCall = useCallback(async (callTitle?: string) => {
-    if (!user || !webRTCServiceRef.current || !signalingServiceRef.current) return;
+    if (!user || !webRTCServiceRef.current || !signalingServiceRef.current || !localParticipant) {
+      console.error('Services or user data not ready');
+      toast({
+        title: "Setup Error",
+        description: "Please wait for the services to initialize and try again",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       setCallStatus('connecting');
+
+      // Check community membership first
+      const isMember = await checkCommunityMembership();
+      if (!isMember) {
+        throw new Error('You must be a member of this community to start group calls. Please join the community first.');
+      }
 
       // Initialize local media
       setCameraPermission('pending');
@@ -280,7 +318,13 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Provide better error messages for common issues
+        if (error.code === '42501') {
+          throw new Error('You must be a member of this community to start group calls. Please join the community first.');
+        }
+        throw error;
+      }
 
       setCurrentCall(newCall);
 
@@ -292,13 +336,18 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       });
 
       // Add self as participant in database
-      await supabase
+      const { error: participantError } = await supabase
         .from('community_group_call_participants')
         .insert({
           call_id: newCall.id,
           user_id: user.id,
           role: 'host'
         });
+
+      if (participantError) {
+        console.warn('Failed to add participant record:', participantError);
+        // Don't fail the entire call for this
+      }
 
       setCallStatus('connected');
       toast({
@@ -325,14 +374,28 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
         });
       }
     }
-  }, [user, communityId, maxParticipants, localParticipant, toast]);
+  }, [user, communityId, maxParticipants, localParticipant, toast, checkCommunityMembership]);
 
   // Join an existing group call
   const joinCall = useCallback(async (callId: string) => {
-    if (!user || !webRTCServiceRef.current || !signalingServiceRef.current) return;
+    if (!user || !webRTCServiceRef.current || !signalingServiceRef.current || !localParticipant) {
+      console.error('Services or user data not ready');
+      toast({
+        title: "Setup Error",
+        description: "Please wait for the services to initialize and try again",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       setCallStatus('connecting');
+
+      // Check community membership first
+      const isMember = await checkCommunityMembership();
+      if (!isMember) {
+        throw new Error('You must be a member of this community to join group calls. Please join the community first.');
+      }
 
       // Get call details
       const { data: call, error: callError } = await supabase
@@ -341,8 +404,19 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
         .eq('id', callId)
         .single();
 
-      if (callError || !call) {
+      if (callError) {
+        if (callError.code === '42501') {
+          throw new Error('You must be a member of this community to join group calls. Please join the community first.');
+        }
         throw new Error('Call not found or access denied');
+      }
+
+      if (!call) {
+        throw new Error('Call not found or has ended');
+      }
+
+      if (call.status !== 'active') {
+        throw new Error('This call has ended or is no longer active');
       }
 
       setCurrentCall(call);
@@ -357,13 +431,18 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       signalingServiceRef.current.joinGroup(groupId, localParticipant);
 
       // Add self as participant in database
-      await supabase
+      const { error: participantError } = await supabase
         .from('community_group_call_participants')
         .insert({
           call_id: callId,
           user_id: user.id,
           role: 'participant'
         });
+
+      if (participantError) {
+        console.warn('Failed to add participant record:', participantError);
+        // Don't fail the entire call for this
+      }
 
       setCallStatus('connected');
       toast({
@@ -390,7 +469,7 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
         });
       }
     }
-  }, [user, communityId, localParticipant, toast]);
+  }, [user, communityId, localParticipant, toast, checkCommunityMembership]);
 
   // End the call
   const endCall = useCallback(async () => {
