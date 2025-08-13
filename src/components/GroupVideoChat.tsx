@@ -34,12 +34,10 @@ import {
   Share
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import TeamsChat from '@/components/TeamsChat';
 
 interface GroupVideoChatProps extends UseGroupVideoChatOptions {
   onExit?: () => void;
   className?: string;
-  communityId?: string;
 }
 
 interface ParticipantVideoProps {
@@ -577,16 +575,55 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
         </div>
       </div>
 
-      {/* Enhanced Teams Chat Panel */}
+      {/* Chat Panel */}
       {isChatVisible && (
         <div className="absolute inset-0 z-40 bg-black/50 backdrop-blur-sm">
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl h-96">
-            <TeamsChat
-              communityId={communityId}
-              className="h-full rounded-t-3xl overflow-hidden"
-              isInVideoCall={true}
-              onClose={() => setIsChatVisible(false)}
-            />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-96">
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-lg">Group Chat</h3>
+                <Button variant="ghost" size="sm" onClick={() => setIsChatVisible(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <ScrollArea className="p-4 max-h-64">
+              {messages.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>No messages yet. Start the conversation!</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {messages.map((message) => (
+                    <div key={message.id} className="flex flex-col">
+                      <div className="text-xs text-gray-500 mb-1">
+                        {message.participantName}
+                      </div>
+                      <div className="bg-gray-100 px-3 py-2 rounded-lg max-w-xs">
+                        {message.text}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+            
+            <div className="p-4 border-t">
+              <div className="flex gap-2">
+                <Input
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  placeholder="Type a message..."
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className="flex-1"
+                />
+                <Button onClick={handleSendMessage} size="sm">
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
