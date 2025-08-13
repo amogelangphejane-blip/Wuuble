@@ -65,12 +65,6 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
       href: '/communities',
       icon: Users,
       active: location.pathname.startsWith('/communities')
-    },
-    {
-      label: 'Chat',
-      href: '/chat',
-      icon: MessageCircle,
-      active: location.pathname === '/chat'
     }
   ];
 
