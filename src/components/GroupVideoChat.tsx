@@ -544,7 +544,10 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
               variant="ghost"
               size="lg"
               className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 text-white relative"
-              onClick={() => setIsChatVisible(true)}
+              onClick={() => {
+                setIsChatVisible(true);
+                markMessagesAsRead();
+              }}
             >
               <MessageCircle className="w-6 h-6" />
               {unreadMessages > 0 && (
