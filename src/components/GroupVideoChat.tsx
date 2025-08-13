@@ -31,9 +31,71 @@ import {
   Crown,
   X,
   Copy,
-  Share
+  Share,
+  ArrowLeft
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+
+interface SpeakingIndicatorProps {
+  isSpeaking: boolean;
+  className?: string;
+}
+
+const SpeakingIndicator: React.FC<SpeakingIndicatorProps> = ({ isSpeaking, className = "" }) => {
+  const colors = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444'];
+  
+  return (
+    <div className={`flex items-center gap-1 ${className}`}>
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={i}
+          className={`w-1 rounded-full transition-all duration-150 ${
+            isSpeaking 
+              ? 'animate-pulse bg-green-400' 
+              : 'bg-gray-400'
+          }`}
+          style={{
+            height: isSpeaking ? `${8 + Math.random() * 16}px` : '4px',
+            backgroundColor: isSpeaking ? colors[i % colors.length] : undefined,
+            animationDelay: `${i * 100}ms`
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+interface NotificationBannerProps {
+  message: string;
+  isVisible: boolean;
+  onClose: () => void;
+}
+
+const NotificationBanner: React.FC<NotificationBannerProps> = ({ message, isVisible, onClose }) => {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onClose]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top duration-300">
+      <Card className="bg-black/80 backdrop-blur-md border-white/20 text-white">
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-green-400" />
+            <span className="text-sm">{message}</span>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 interface GroupVideoChatProps extends UseGroupVideoChatOptions {
   onExit?: () => void;
@@ -47,6 +109,7 @@ interface ParticipantVideoProps {
   isLocal?: boolean;
   isScreenShare?: boolean;
   isFocused?: boolean;
+  isSpeaking?: boolean;
   onFocus?: () => void;
   onParticipantAction?: (action: string, participantId: string) => void;
   canManageParticipants?: boolean;
@@ -58,12 +121,16 @@ const ParticipantVideo: React.FC<ParticipantVideoProps> = ({
   isLocal = false,
   isScreenShare = false,
   isFocused = false,
+  isSpeaking = false,
   onFocus,
   onParticipantAction,
   canManageParticipants = false
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (videoRef.current && stream) {
@@ -80,6 +147,41 @@ const ParticipantVideo: React.FC<ParticipantVideoProps> = ({
 
   const handleParticipantAction = (action: string) => {
     onParticipantAction?.(action, participant.id);
+    setShowQuickActions(false);
+  };
+
+  const handleMouseDown = () => {
+    if (!canManageParticipants || isLocal) return;
+    
+    longPressTimer.current = setTimeout(() => {
+      setIsLongPressing(true);
+      setShowQuickActions(true);
+    }, 500);
+  };
+
+  const handleMouseUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    setIsLongPressing(false);
+  };
+
+  const handleTouchStart = () => {
+    if (!canManageParticipants || isLocal) return;
+    
+    longPressTimer.current = setTimeout(() => {
+      setIsLongPressing(true);
+      setShowQuickActions(true);
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    setIsLongPressing(false);
   };
 
   return (
@@ -87,10 +189,16 @@ const ParticipantVideo: React.FC<ParticipantVideoProps> = ({
       className={`
         relative bg-gray-900 rounded-lg overflow-hidden cursor-pointer transition-all duration-200
         ${isFocused ? 'ring-2 ring-primary' : 'hover:ring-1 hover:ring-gray-400'}
+        ${isSpeaking ? 'ring-2 ring-green-400 ring-opacity-75' : ''}
+        ${isLongPressing ? 'ring-2 ring-blue-400 scale-95' : ''}
         ${isScreenShare ? 'col-span-2' : ''}
       `}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       onClick={onFocus}
     >
       {/* Video Element */}
@@ -135,6 +243,11 @@ const ParticipantVideo: React.FC<ParticipantVideoProps> = ({
             <span className="text-white font-medium text-sm truncate">
               {participant.displayName} {isLocal && '(You)'}
             </span>
+            
+            {/* Speaking Indicator */}
+            {participant.isAudioEnabled && (
+              <SpeakingIndicator isSpeaking={isSpeaking} className="ml-1" />
+            )}
             
             {/* Role Badge */}
             {participant.role !== 'participant' && (
@@ -194,7 +307,7 @@ const ParticipantVideo: React.FC<ParticipantVideoProps> = ({
       </div>
 
       {/* Focus/Maximize Button */}
-      {isHovered && !isLocal && (
+      {isHovered && !isLocal && !showQuickActions && (
         <Button
           variant="ghost"
           size="sm"
@@ -206,6 +319,47 @@ const ParticipantVideo: React.FC<ParticipantVideoProps> = ({
         >
           {isFocused ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </Button>
+      )}
+
+      {/* Quick Actions Overlay */}
+      {showQuickActions && !isLocal && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="flex gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-12 h-12 rounded-full bg-red-500/80 hover:bg-red-500 text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleParticipantAction('mute');
+              }}
+            >
+              <MicOff className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-12 h-12 rounded-full bg-blue-500/80 hover:bg-blue-500 text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleParticipantAction('promote');
+              }}
+            >
+              <Crown className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-12 h-12 rounded-full bg-gray-500/80 hover:bg-gray-500 text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowQuickActions(false);
+              }}
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -256,6 +410,12 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
   const [focusedParticipantId, setFocusedParticipantId] = useState<string | null>(null);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [speakingParticipants, setSpeakingParticipants] = useState<Set<string>>(new Set());
+  const [notification, setNotification] = useState<{ message: string; isVisible: boolean }>({
+    message: '',
+    isVisible: false
+  });
+  const [previousParticipantIds, setPreviousParticipantIds] = useState<Set<string>>(new Set());
 
   // Calculate grid layout
   const totalParticipants = participants.length + (localParticipant ? 1 : 0);
@@ -341,60 +501,189 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
     }
   };
 
+  // Mock speaking detection for demonstration
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const interval = setInterval(() => {
+      const allParticipants = [...participants, ...(localParticipant ? [localParticipant] : [])];
+      const speakingIds = new Set<string>();
+      
+      // Randomly make participants "speak"
+      allParticipants.forEach(participant => {
+        if (participant.isAudioEnabled && Math.random() < 0.3) {
+          speakingIds.add(participant.id);
+        }
+      });
+      
+      setSpeakingParticipants(speakingIds);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isConnected, participants, localParticipant]);
+
+  // Track participant changes for notifications
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const currentParticipantIds = new Set(participants.map(p => p.id));
+    
+    // Check for new participants (joined)
+    currentParticipantIds.forEach(id => {
+      if (!previousParticipantIds.has(id)) {
+        const participant = participants.find(p => p.id === id);
+        if (participant) {
+          setNotification({
+            message: `${participant.displayName} joined the call`,
+            isVisible: true
+          });
+        }
+      }
+    });
+
+    // Check for left participants
+    previousParticipantIds.forEach(id => {
+      if (!currentParticipantIds.has(id)) {
+        // We can't get the participant name since they've left
+        setNotification({
+          message: `Someone left the call`,
+          isVisible: true
+        });
+      }
+    });
+
+    setPreviousParticipantIds(currentParticipantIds);
+  }, [participants, previousParticipantIds, isConnected]);
+
   // Show pre-call screen if not connected
   if (!isConnected) {
     return (
-      <div className={`h-screen w-full bg-gradient-to-br from-purple-900/20 via-black to-pink-900/20 flex items-center justify-center ${className}`}>
-        <Card className="w-full max-w-md bg-black/40 backdrop-blur-md border-white/20 text-white">
-          <CardContent className="text-center py-12">
-            {cameraPermission === 'denied' ? (
-              <>
-                <Shield className="w-16 h-16 text-red-400 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Camera Access Required</h2>
-                <p className="text-white/80 mb-6">Please allow camera and microphone access to join the video call</p>
-                <Button onClick={callId ? handleJoinCall : handleStartCall} size="lg" className="bg-white/20 hover:bg-white/30">
-                  <Video className="w-5 h-5 mr-2" />
-                  Try Again
-                </Button>
-              </>
-            ) : isConnecting ? (
-              <>
-                <div className="animate-spin w-16 h-16 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
-                <h2 className="text-2xl font-bold mb-2">{callId ? 'Joining Call...' : 'Starting Call...'}</h2>
-                <p className="text-white/80">Setting up your video and audio</p>
-              </>
-            ) : (
-              <>
-                <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Users className="w-10 h-10 text-white" />
+      <div className={`h-screen w-full bg-gradient-to-br from-green-900/30 via-gray-900 to-gray-800 flex flex-col ${className}`}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 bg-green-600/90 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onExit}
+              className="text-white hover:bg-white/20"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-white font-medium">Group Call</h1>
+                <p className="text-white/70 text-sm">Community Video Call</p>
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/20"
+          >
+            <MoreVertical className="w-5 h-5" />
+          </Button>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          {cameraPermission === 'denied' ? (
+            <div className="text-center max-w-md">
+              <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Shield className="w-12 h-12 text-red-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-3">Camera Access Required</h2>
+              <p className="text-white/70 mb-8 leading-relaxed">
+                To join the video call, please allow access to your camera and microphone. 
+                This helps you connect with other community members.
+              </p>
+              <Button 
+                onClick={callId ? handleJoinCall : handleStartCall} 
+                size="lg" 
+                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full"
+              >
+                <Video className="w-5 h-5 mr-2" />
+                Allow Access
+              </Button>
+            </div>
+          ) : isConnecting ? (
+            <div className="text-center">
+              <div className="relative mb-8">
+                <div className="w-20 h-20 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Video className="w-8 h-8 text-green-600" />
                 </div>
-                <h2 className="text-2xl font-bold mb-2">
-                  {callId ? 'Join Group Video Call' : 'Start Group Video Call'}
-                </h2>
-                <p className="text-white/80 mb-6">
-                  {callId 
-                    ? 'Connect with community members in this group video call' 
-                    : 'Start a new group video call for your community'
-                  }
-                </p>
-                <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-3 mb-6 text-sm">
-                  <p className="text-blue-200">
-                    💡 You must be a member of this community to participate in group calls
-                  </p>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                {callId ? 'Joining call...' : 'Starting call...'}
+              </h2>
+              <p className="text-white/70">Setting up your video and audio</p>
+            </div>
+          ) : (
+            <div className="text-center max-w-md">
+              {/* Participant Avatars Preview */}
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+                    <Users className="w-10 h-10 text-white" />
+                  </div>
+                  {callId && (
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-gray-900">
+                      <span className="text-xs text-white font-bold">3</span>
+                    </div>
+                  )}
                 </div>
+              </div>
+
+              <h2 className="text-2xl font-bold text-white mb-3">
+                {callId ? 'Join Group Call' : 'Start Group Call'}
+              </h2>
+              
+              <p className="text-white/70 mb-8 leading-relaxed">
+                {callId 
+                  ? 'Connect with community members who are already in the call' 
+                  : 'Start a new group video call and invite community members to join'
+                }
+              </p>
+
+              {callId && (
+                <div className="bg-green-600/20 border border-green-600/30 rounded-lg p-4 mb-6">
+                  <div className="flex items-center gap-3 text-green-200">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-sm">Call in progress • 3 participants</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
                 <Button 
                   onClick={callId ? handleJoinCall : handleStartCall}
                   disabled={isConnecting}
                   size="lg"
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-3"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-4 rounded-full"
                 >
                   <Video className="w-5 h-5 mr-2" />
                   {callId ? 'Join Call' : 'Start Call'}
                 </Button>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                
+                {!callId && (
+                  <Button 
+                    variant="outline"
+                    size="lg"
+                    className="w-full border-white/20 text-white hover:bg-white/10 py-4 rounded-full"
+                  >
+                    <Users className="w-5 h-5 mr-2" />
+                    Audio Only
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -421,6 +710,7 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
               stream={localVideoRef.current?.srcObject as MediaStream}
               isLocal={true}
               isFocused={focusedParticipantId === localParticipant.id}
+              isSpeaking={speakingParticipants.has(localParticipant.id)}
               onFocus={() => setFocusedParticipantId(localParticipant.id)}
             />
           )}
@@ -433,6 +723,7 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
               stream={getParticipantStream(participant.id)}
               isScreenShare={participant.isScreenSharing}
               isFocused={focusedParticipantId === participant.id}
+              isSpeaking={speakingParticipants.has(participant.id)}
               onFocus={() => setFocusedParticipantId(participant.id)}
               onParticipantAction={handleParticipantAction}
               canManageParticipants={localParticipant?.role === 'host' || localParticipant?.role === 'moderator'}
@@ -575,6 +866,13 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Notification Banner */}
+      <NotificationBanner
+        message={notification.message}
+        isVisible={notification.isVisible}
+        onClose={() => setNotification({ message: '', isVisible: false })}
+      />
 
       {/* Enhanced Teams Chat Panel */}
       {isChatVisible && (
