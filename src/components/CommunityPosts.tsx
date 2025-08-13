@@ -180,13 +180,16 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
 
     setPosting(true);
     try {
+      // Ensure content is never empty string for database NOT NULL constraint
+      const content = newPost.trim() || (newPostImage ? '[Image]' : '');
+      
       const { error } = await supabase
         .from('community_posts')
         .insert([
           {
             community_id: communityId,
             user_id: user.id,
-            content: newPost.trim(),
+            content: content,
             image_url: newPostImage,
           }
         ]);
@@ -573,7 +576,7 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
                           </span>
                         </div>
                         
-                        {post.content && (
+                        {post.content && post.content !== '[Image]' && (
                           <div className="text-sm whitespace-pre-wrap break-words mb-3">
                             {post.content}
                           </div>
