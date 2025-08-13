@@ -34,7 +34,6 @@ import {
   Share
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import TeamsChat from '@/components/TeamsChat';
 
 interface GroupVideoChatProps extends UseGroupVideoChatOptions {
   onExit?: () => void;
@@ -580,13 +579,18 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
       {/* Enhanced Teams Chat Panel */}
       {isChatVisible && (
         <div className="absolute inset-0 z-40 bg-black/50 backdrop-blur-sm">
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl h-96">
-            <TeamsChat
-              communityId={communityId}
-              className="h-full rounded-t-3xl overflow-hidden"
-              isInVideoCall={true}
-              onClose={() => setIsChatVisible(false)}
-            />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl h-96 flex items-center justify-center">
+            <div className="text-center text-gray-600">
+              <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Chat feature has been removed</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => setIsChatVisible(false)}
+              >
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       )}

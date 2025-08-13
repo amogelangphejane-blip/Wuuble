@@ -11,7 +11,6 @@ import Auth from "./pages/Auth";
 import Communities from "./pages/Communities";
 import CommunityDetail from "./pages/CommunityDetail";
 import CommunityVideoChat from "./pages/CommunityVideoChat";
-import CommunityChat from "./pages/CommunityChat";
 import CommunityCalendar from "./pages/CommunityCalendar";
 import EnhancedCommunityCalendar from "./pages/EnhancedCommunityCalendar";
 import CommunityClassroom from "./pages/CommunityClassroom";
@@ -44,7 +43,6 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/communities" element={<Communities />} />
               <Route path="/communities/:id" element={<CommunityDetail />} />
-              <Route path="/communities/:id/chat" element={<CommunityChat />} />
               <Route path="/communities/:id/video-chat" element={<CommunityVideoChat />} />
               <Route path="/communities/:id/group-call" element={<CommunityGroupCall />} />
               <Route path="/communities/:id/group-call/:callId" element={<CommunityGroupCall />} />
