@@ -376,6 +376,11 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
                     : 'Start a new group video call for your community'
                   }
                 </p>
+                <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-3 mb-6 text-sm">
+                  <p className="text-blue-200">
+                    💡 You must be a member of this community to participate in group calls
+                  </p>
+                </div>
                 <Button 
                   onClick={callId ? handleJoinCall : handleStartCall}
                   disabled={isConnecting}
