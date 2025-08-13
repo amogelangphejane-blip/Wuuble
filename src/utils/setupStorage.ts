@@ -23,6 +23,7 @@ export async function setupStorageBuckets(): Promise<SetupResult[]> {
 
     const profileBucketExists = existingBuckets.some(b => b.id === 'profile-pictures');
     const communityBucketExists = existingBuckets.some(b => b.id === 'community-avatars');
+    const postImagesBucketExists = existingBuckets.some(b => b.id === 'community-post-images');
 
     // Step 2: Create profile-pictures bucket if needed
     if (!profileBucketExists) {
@@ -62,7 +63,26 @@ export async function setupStorageBuckets(): Promise<SetupResult[]> {
       results.push({ step: 'Community Avatars Bucket', success: true, message: 'Already exists' });
     }
 
-    // Step 4: Verify final setup
+    // Step 4: Create community-post-images bucket if needed
+    if (!postImagesBucketExists) {
+      results.push({ step: 'Post Images Bucket', success: true, message: 'Creating community-post-images bucket...' });
+      
+      const { error: postImagesBucketError } = await supabase.storage.createBucket('community-post-images', {
+        public: true,
+        fileSizeLimit: 10485760, // 10MB
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+      });
+
+      if (postImagesBucketError) {
+        results.push({ step: 'Post Images Bucket', success: false, message: `Failed to create: ${postImagesBucketError.message}` });
+      } else {
+        results.push({ step: 'Post Images Bucket', success: true, message: 'Created successfully' });
+      }
+    } else {
+      results.push({ step: 'Post Images Bucket', success: true, message: 'Already exists' });
+    }
+
+    // Step 5: Verify final setup
     const { data: finalBuckets, error: finalListError } = await supabase.storage.listBuckets();
     
     if (finalListError) {
@@ -70,8 +90,9 @@ export async function setupStorageBuckets(): Promise<SetupResult[]> {
     } else {
       const finalProfileExists = finalBuckets.some(b => b.id === 'profile-pictures');
       const finalCommunityExists = finalBuckets.some(b => b.id === 'community-avatars');
+      const finalPostImagesExists = finalBuckets.some(b => b.id === 'community-post-images');
       
-      if (finalProfileExists && finalCommunityExists) {
+      if (finalProfileExists && finalCommunityExists && finalPostImagesExists) {
         results.push({ step: 'Verification', success: true, message: 'Storage setup complete! Upload functionality is ready.' });
       } else {
         results.push({ step: 'Verification', success: false, message: 'Setup incomplete - some buckets are still missing' });
@@ -111,6 +132,22 @@ export async function checkCommunityStorageReady(): Promise<boolean> {
     }
     
     return buckets.some(b => b.id === 'community-avatars');
+  } catch (error) {
+    console.warn('Storage check failed:', error);
+    return false;
+  }
+}
+
+export async function checkPostImagesStorageReady(): Promise<boolean> {
+  try {
+    const { data: buckets, error } = await supabase.storage.listBuckets();
+    
+    if (error) {
+      console.warn('Cannot check storage buckets:', error);
+      return false;
+    }
+    
+    return buckets.some(b => b.id === 'community-post-images');
   } catch (error) {
     console.warn('Storage check failed:', error);
     return false;
