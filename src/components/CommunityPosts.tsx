@@ -273,8 +273,10 @@ export const CommunityPosts = ({ communityId, communityName = 'Community' }: Com
         break;
       case 'trending':
         filtered.sort((a, b) => {
-          const aScore = (a.like_count * 2 + a.comment_count) / Math.max(1, (Date.now() - new Date(a.created_at).getTime()) / (1000 * 60 * 60));
-          const bScore = (b.like_count * 2 + b.comment_count) / Math.max(1, (Date.now() - new Date(b.created_at).getTime()) / (1000 * 60 * 60));
+          const ageA = (Date.now() - new Date(a.created_at).getTime()) / (1000 * 60 * 60);
+          const ageB = (Date.now() - new Date(b.created_at).getTime()) / (1000 * 60 * 60);
+          const aScore = (a.like_count * 2 + a.comment_count) / Math.max(1, ageA);
+          const bScore = (b.like_count * 2 + b.comment_count) / Math.max(1, ageB);
           return bScore - aScore;
         });
         break;
@@ -827,7 +829,7 @@ export const CommunityPosts = ({ communityId, communityName = 'Community' }: Com
             </CardContent>
           </Card>
         ) : (
-                     filteredPosts.map((post, index) => (
+          filteredPosts.map((post, index) => (
                 <Card key={post.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     {/* Post Header */}
@@ -996,8 +998,7 @@ export const CommunityPosts = ({ communityId, communityName = 'Community' }: Com
                   </CardContent>
                 </Card>
               ))
-            )}
-          </div>
+        )}
       </div>
     </div>
   );
