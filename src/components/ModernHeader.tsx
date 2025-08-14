@@ -106,9 +106,9 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
             <img 
               src="/wobble-logo.svg" 
               alt="Wobble Logo" 
-              className="w-8 h-8 animate-wobble"
+              className="w-8 h-8"
             />
-            <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent animate-wobble">
+            <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
               wobble
             </span>
           </div>
