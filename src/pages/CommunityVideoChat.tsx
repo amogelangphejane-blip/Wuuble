@@ -15,6 +15,7 @@ import {
   Shield,
   Clock
 } from 'lucide-react';
+import { CommunityVideoCallIcon } from '@/components/CommunityVideoCallIcon';
 
 interface Community {
   id: string;
@@ -161,7 +162,7 @@ const CommunityVideoChat = () => {
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <Users className="w-5 h-5 text-white" />
+                  <CommunityVideoCallIcon size={20} color="white" />
                 </div>
                 <div>
                   <div className="font-bold text-sm">{community.name}</div>
@@ -216,7 +217,7 @@ const CommunityVideoChat = () => {
           {/* Community Video Chat Header with modern gradients */}
           <div className="text-center mb-8">
             <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-purple-500/25">
-              <Video className="w-12 h-12 text-white" />
+              <CommunityVideoCallIcon size={48} color="white" />
             </div>
             <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent mb-4">
               {community.name} Video Chat
@@ -291,7 +292,7 @@ const CommunityVideoChat = () => {
               {isMember ? (
                 <>
                   <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-purple-500/25">
-                    <Video className="w-10 h-10 text-white" />
+                    <CommunityVideoCallIcon size={40} color="white" />
                   </div>
                   <h2 className="text-3xl font-bold mb-4 text-white">Ready to connect?</h2>
                   <p className="text-white/70 mb-8 max-w-md mx-auto text-lg">
