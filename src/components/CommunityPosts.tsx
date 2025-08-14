@@ -94,7 +94,7 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
           image_url,
           created_at,
           user_id,
-          profiles!community_posts_user_id_fkey (
+          profiles:user_id (
             display_name,
             avatar_url
           )
@@ -115,60 +115,90 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
       // Fetch likes and comments for each post
       const postsWithInteractions = await Promise.all(
         (data || []).map(async (post) => {
-          // Fetch likes
-          const { data: likes } = await supabase
-            .from('community_post_likes')
-            .select(`
-              id,
-              user_id,
-              created_at,
-              profiles!community_post_likes_user_id_fkey (
-                display_name
-              )
-            `)
-            .eq('post_id', post.id);
+          try {
+            // Fetch likes - handle case where table might not exist
+            let likes = [];
+            try {
+              const { data: likesData } = await supabase
+                .from('community_post_likes')
+                .select(`
+                  id,
+                  user_id,
+                  created_at,
+                  profiles:user_id (
+                    display_name
+                  )
+                `)
+                .eq('post_id', post.id);
+              likes = likesData || [];
+            } catch (likesError) {
+              console.warn('Likes table not available:', likesError);
+            }
 
-          // Fetch comments
-          const { data: comments } = await supabase
-            .from('community_post_comments')
-            .select(`
-              id,
-              content,
-              created_at,
-              updated_at,
-              user_id,
-              parent_comment_id,
-              profiles!community_post_comments_user_id_fkey (
-                display_name,
-                avatar_url
-              )
-            `)
-            .eq('post_id', post.id)
-            .order('created_at', { ascending: true });
+            // Fetch comments - handle case where table might not exist
+            let comments = [];
+            try {
+              const { data: commentsData } = await supabase
+                .from('community_post_comments')
+                .select(`
+                  id,
+                  content,
+                  created_at,
+                  updated_at,
+                  user_id,
+                  parent_comment_id,
+                  profiles:user_id (
+                    display_name,
+                    avatar_url
+                  )
+                `)
+                .eq('post_id', post.id)
+                .order('created_at', { ascending: true });
+              comments = commentsData || [];
+            } catch (commentsError) {
+              console.warn('Comments table not available:', commentsError);
+            }
 
-          // Organize comments with replies
-          const topLevelComments = (comments || []).filter(c => !c.parent_comment_id);
-          const commentReplies = (comments || []).filter(c => c.parent_comment_id);
-          
-          const commentsWithReplies = topLevelComments.map(comment => ({
-            ...comment,
-            replies: commentReplies.filter(reply => reply.parent_comment_id === comment.id)
-          }));
+            // Organize comments with replies
+            const topLevelComments = comments.filter(c => !c.parent_comment_id);
+            const commentReplies = comments.filter(c => c.parent_comment_id);
+            
+            const commentsWithReplies = topLevelComments.map(comment => ({
+              ...comment,
+              replies: commentReplies.filter(reply => reply.parent_comment_id === comment.id)
+            }));
 
-          return {
-            ...post,
-            likes: likes || [],
-            comments: commentsWithReplies,
-            like_count: likes?.length || 0,
-            comment_count: comments?.length || 0,
-            user_has_liked: user ? (likes || []).some(like => like.user_id === user.id) : false
-          };
+            return {
+              ...post,
+              likes: likes,
+              comments: commentsWithReplies,
+              like_count: likes.length,
+              comment_count: comments.length,
+              user_has_liked: user ? likes.some(like => like.user_id === user.id) : false
+            };
+          } catch (postError) {
+            console.error('Error processing post interactions:', postError);
+            // Return post with empty interactions if there's an error
+            return {
+              ...post,
+              likes: [],
+              comments: [],
+              like_count: 0,
+              comment_count: 0,
+              user_has_liked: false
+            };
+          }
         })
       );
 
       setPosts(postsWithInteractions);
     } catch (error) {
       console.error('Error fetching posts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load community posts. Some features may not be available.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -240,7 +270,17 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
           .eq('post_id', postId)
           .eq('user_id', user.id);
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes('does not exist')) {
+            toast({
+              title: "Feature Not Available",
+              description: "Like functionality requires database setup. Please contact your administrator.",
+              variant: "destructive",
+            });
+            return;
+          }
+          throw error;
+        }
       } else {
         // Add like
         const { error } = await supabase
@@ -252,7 +292,17 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
             }
           ]);
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes('does not exist')) {
+            toast({
+              title: "Feature Not Available",
+              description: "Like functionality requires database setup. Please contact your administrator.",
+              variant: "destructive",
+            });
+            return;
+          }
+          throw error;
+        }
       }
 
       // Update local state
@@ -296,7 +346,17 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
           }
         ]);
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('does not exist')) {
+          toast({
+            title: "Feature Not Available",
+            description: "Comment functionality requires database setup. Please contact your administrator.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw error;
+      }
 
       // Clear input
       if (parentCommentId) {
@@ -333,7 +393,7 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
   useEffect(() => {
     fetchPosts();
 
-    // Set up real-time subscriptions
+    // Set up real-time subscriptions with error handling
     const postsChannel = supabase
       .channel(`community_posts_${communityId}`)
       .on(
@@ -350,40 +410,52 @@ export const CommunityPosts = ({ communityId, communityName }: CommunityPostsPro
       )
       .subscribe();
 
-    const likesChannel = supabase
-      .channel(`community_post_likes_${communityId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'community_post_likes',
-        },
-        () => {
-          fetchPosts();
-        }
-      )
-      .subscribe();
+    // Try to subscribe to likes channel, but don't fail if table doesn't exist
+    let likesChannel;
+    try {
+      likesChannel = supabase
+        .channel(`community_post_likes_${communityId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'community_post_likes',
+          },
+          () => {
+            fetchPosts();
+          }
+        )
+        .subscribe();
+    } catch (error) {
+      console.warn('Could not subscribe to likes channel:', error);
+    }
 
-    const commentsChannel = supabase
-      .channel(`community_post_comments_${communityId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'community_post_comments',
-        },
-        () => {
-          fetchPosts();
-        }
-      )
-      .subscribe();
+    // Try to subscribe to comments channel, but don't fail if table doesn't exist
+    let commentsChannel;
+    try {
+      commentsChannel = supabase
+        .channel(`community_post_comments_${communityId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'community_post_comments',
+          },
+          () => {
+            fetchPosts();
+          }
+        )
+        .subscribe();
+    } catch (error) {
+      console.warn('Could not subscribe to comments channel:', error);
+    }
 
     return () => {
       supabase.removeChannel(postsChannel);
-      supabase.removeChannel(likesChannel);
-      supabase.removeChannel(commentsChannel);
+      if (likesChannel) supabase.removeChannel(likesChannel);
+      if (commentsChannel) supabase.removeChannel(commentsChannel);
     };
   }, [communityId]);
 
