@@ -19,7 +19,6 @@ import {
   MessageCircle,
   Calendar,
   Video,
-  BookOpen,
   Star,
   MoreVertical
 } from 'lucide-react';
@@ -342,7 +341,7 @@ const CommunityDetail = () => {
     { id: 'discussions', label: 'Discussions', icon: MessageCircle },
     { id: 'members', label: 'Members', icon: Users },
     { id: 'events', label: 'Events', icon: Calendar },
-    { id: 'resources', label: 'Resources', icon: BookOpen }
+    { id: 'resources', label: 'Resources', icon: Video }
   ];
 
   if (authLoading || loading) {
@@ -644,7 +643,7 @@ const CommunityDetail = () => {
               {activeTab === 'resources' && (
                 <Card>
                   <CardContent className="text-center py-12">
-                    <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                    <Video className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-xl font-semibold mb-2">No resources yet</h3>
                     <p className="text-muted-foreground">
                       Learning resources and materials will be shared here.
