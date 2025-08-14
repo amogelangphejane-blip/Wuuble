@@ -103,6 +103,11 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
             className="flex items-center space-x-2 cursor-pointer group"
             onClick={() => navigate('/')}
           >
+            <img 
+              src="/wobble-logo.svg" 
+              alt="Wobble Logo" 
+              className="w-8 h-8 animate-wobble"
+            />
             <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent animate-wobble">
               wobble
             </span>
