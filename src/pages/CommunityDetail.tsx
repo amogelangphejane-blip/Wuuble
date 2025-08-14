@@ -532,9 +532,9 @@ const CommunityDetail = () => {
       {/* Main Content */}
       <section className="py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className={`grid gap-8 ${activeTab === 'discussions' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
             {/* Main Content Area */}
-            <div className="lg:col-span-2">
+            <div className={activeTab === 'discussions' ? '' : 'lg:col-span-2'}>
               {activeTab === 'discussions' && (
                 <div className="space-y-6">
                   {(isMember || isCreator) ? (
@@ -654,122 +654,22 @@ const CommunityDetail = () => {
               )}
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Quick Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => navigate(`/communities/${id}/video-chat`)}
-                  >
-                    <Video className="mr-2 w-4 h-4" />
-                    Start Video Chat
-                  </Button>
-                  {ongoingCall ? (
-                    <Button 
-                      className="w-full justify-start bg-green-600 hover:bg-green-700 text-white border-green-600"
-                      onClick={() => navigate(`/communities/${id}/group-call/${ongoingCall.id}`)}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center">
-                          <Users className="mr-2 w-4 h-4" />
-                          Join Group Call
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                          <span className="text-sm">{ongoingCall.current_participants}</span>
-                        </div>
-                      </div>
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start"
-                      onClick={() => navigate(`/communities/${id}/group-call`)}
-                    >
-                      <Users className="mr-2 w-4 h-4" />
-                      Start Group Call
-                    </Button>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => navigate(`/communities/${id}/calendar`)}
-                  >
-                    <Calendar className="mr-2 w-4 h-4" />
-                    View Events
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <BookOpen className="mr-2 w-4 h-4" />
-                    Share Resource
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Community Stats */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Community Stats</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Total Members</span>
-                    <span className="font-semibold">{members.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Created</span>
-                    <span className="font-semibold">
-                      {new Date(community.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Type</span>
-                    <Badge variant={community.is_private ? "secondary" : "default"}>
-                      {community.is_private ? 'Private' : 'Public'}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Recent Members */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Recent Members</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {members.slice(0, 5).map((member) => (
-                      <div key={member.id} className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage 
-                            src={validateAvatarUrl(member.profiles?.avatar_url)} 
-                            alt={member.profiles?.display_name || 'User avatar'}
-                            onError={() => console.warn('Member avatar failed to load:', member.profiles?.avatar_url)}
-                          />
-                          <AvatarFallback className="text-xs">
-                            {(member.profiles?.display_name || 'U').charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">
-                            {member.profiles?.display_name || 'Anonymous User'}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(member.joined_at).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Sidebar - Only show for non-discussions tabs */}
+            {activeTab !== 'discussions' && (
+              <div className="space-y-6">
+                {/* Sidebar content can be added here for other tabs if needed */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Tab Information</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      Additional information and actions for the {activeTab} tab.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         </div>
       </section>
