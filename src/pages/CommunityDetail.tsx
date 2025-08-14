@@ -20,13 +20,15 @@ import {
   Calendar,
   Video,
   Star,
-  MoreVertical
+  MoreVertical,
+  Zap
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
 import { CommunitySearch } from '@/components/CommunitySearch';
 import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
 import { ModernHeader } from '@/components/ModernHeader';
+import { QuickAccess } from '@/components/QuickAccess';
 import { validateAvatarUrl } from '@/lib/utils';
 
 interface Community {
@@ -341,7 +343,7 @@ const CommunityDetail = () => {
     { id: 'discussions', label: 'Discussions', icon: MessageCircle },
     { id: 'members', label: 'Members', icon: Users },
     { id: 'events', label: 'Events', icon: Calendar },
-    { id: 'resources', label: 'Resources', icon: Video }
+    { id: 'quick-access', label: 'Quick Access', icon: Zap }
   ];
 
   if (authLoading || loading) {
@@ -640,16 +642,13 @@ const CommunityDetail = () => {
                 </div>
               )}
 
-              {activeTab === 'resources' && (
-                <Card>
-                  <CardContent className="text-center py-12">
-                    <Video className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No resources yet</h3>
-                    <p className="text-muted-foreground">
-                      Learning resources and materials will be shared here.
-                    </p>
-                  </CardContent>
-                </Card>
+              {activeTab === 'quick-access' && (
+                <QuickAccess 
+                  communityId={community.id}
+                  communityName={community.name}
+                  isMember={isMember}
+                  isCreator={isCreator}
+                />
               )}
             </div>
 
