@@ -21,7 +21,9 @@ import {
   Video,
   Star,
   MoreVertical,
-  Zap
+  Zap,
+  Crown,
+  CreditCard
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
@@ -29,6 +31,8 @@ import { CommunitySearch } from '@/components/CommunitySearch';
 import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
 import { ModernHeader } from '@/components/ModernHeader';
 import { QuickAccess } from '@/components/QuickAccess';
+import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
+import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { validateAvatarUrl } from '@/lib/utils';
 
 interface Community {
@@ -339,10 +343,19 @@ const CommunityDetail = () => {
     }
   };
 
+  // Add subscription hook
+  const {
+    subscriptionPlans,
+    userSubscription,
+    subscriptionStatus,
+    hasActiveSubscription
+  } = useSubscriptions(id);
+
   const tabs = [
     { id: 'discussions', label: 'Discussions', icon: MessageCircle },
     { id: 'members', label: 'Members', icon: Users },
     { id: 'events', label: 'Events', icon: Calendar },
+    { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
     { id: 'quick-access', label: 'Quick Access', icon: Zap }
   ];
 
@@ -636,6 +649,86 @@ const CommunityDetail = () => {
                           <UserPlus className="mr-2 w-4 h-4" />
                           Join Community
                         </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'subscriptions' && (
+                <div className="space-y-6">
+                  {/* Subscription Status Card */}
+                  {hasActiveSubscription && (
+                    <Card className="border-green-200 bg-green-50">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-green-800">
+                          <Crown className="w-5 h-5" />
+                          Your Subscription
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <SubscriptionStatusIndicator 
+                          subscription={userSubscription}
+                          status={subscriptionStatus}
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Subscription Management Card */}
+                  <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+                    <CardContent className="text-center py-8">
+                      <CreditCard className="w-12 h-12 text-primary mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold mb-2">Subscription Management</h3>
+                      <p className="text-muted-foreground mb-6">
+                        {isCreator 
+                          ? "Manage subscription plans and view analytics for your community."
+                          : subscriptionPlans && subscriptionPlans.length > 0
+                            ? "View available subscription plans and manage your membership."
+                            : "This community doesn't have subscription plans yet."
+                        }
+                      </p>
+                      {(subscriptionPlans && subscriptionPlans.length > 0) || isCreator ? (
+                        <Button 
+                          onClick={() => navigate(`/communities/${id}/subscriptions`)}
+                          size="lg"
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          <Crown className="mr-2 w-5 h-5" />
+                          {isCreator ? 'Manage Subscriptions' : 'View Plans'}
+                        </Button>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">
+                          Check back later for subscription options
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Quick Stats for Creators */}
+                  {isCreator && subscriptionPlans && subscriptionPlans.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Star className="w-5 h-5" />
+                          Quick Stats
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                          <div>
+                            <div className="text-2xl font-bold text-primary">
+                              {subscriptionPlans.length}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Active Plans</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-green-600">
+                              {members.filter(m => hasActiveSubscription).length}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Subscribers</div>
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
                   )}

@@ -15,6 +15,7 @@ import CommunityCalendar from "./pages/CommunityCalendar";
 import EnhancedCommunityCalendar from "./pages/EnhancedCommunityCalendar";
 import CommunityClassroom from "./pages/CommunityClassroom";
 import CommunityMembers from "./pages/CommunityMembers";
+import CommunitySubscriptions from "./pages/CommunitySubscriptions";
 import ProfileSettings from "./pages/ProfileSettings";
 import ConnectVideoCall from "./pages/ConnectVideoCall";
 import CommunityGroupCall from "./pages/CommunityGroupCall";
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/communities/:id/calendar/legacy" element={<CommunityCalendar />} />
               <Route path="/communities/:id/classroom" element={<CommunityClassroom />} />
               <Route path="/communities/:id/members" element={<CommunityMembers />} />
+              <Route path="/communities/:id/subscriptions" element={<CommunitySubscriptions />} />
               <Route path="/profile" element={<ProfileSettings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
