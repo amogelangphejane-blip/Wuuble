@@ -187,7 +187,7 @@ const LandingPage = () => {
             <div className="inline-flex items-center mb-8">
               <Badge className="bg-white/80 text-gray-700 border border-purple-200 hover:border-purple-300 backdrop-blur-xl px-6 py-2 text-sm font-medium rounded-full transition-all duration-300 hover:scale-105 shadow-lg">
                 <Crown className="w-4 h-4 mr-2 text-yellow-600" />
-                Invitation Only • Elite Network • 10,000 Members
+                start chat
               </Badge>
             </div>
             
