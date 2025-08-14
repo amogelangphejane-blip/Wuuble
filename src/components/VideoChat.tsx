@@ -276,7 +276,7 @@ export const VideoChat = () => {
                         </>
                       ) : (
                         <>
-                          <Video className="w-5 h-5 mr-3" />
+                          <Video className="w-7 h-7 mr-3" />
                           Start Chatting
                         </>
                       )}
@@ -411,7 +411,7 @@ export const VideoChat = () => {
                 {isSearching ? (
                   <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  <Video className="w-7 h-7" />
+                  <Video className="w-8 h-8" />
                 )}
               </Button>
             )}

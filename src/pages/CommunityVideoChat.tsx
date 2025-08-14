@@ -302,7 +302,7 @@ const CommunityVideoChat = () => {
                     size="lg"
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-16 py-6 rounded-full text-xl transition-all duration-300 transform hover:scale-105 border-0 shadow-2xl shadow-purple-500/25"
                   >
-                    <Video className="w-6 h-6 mr-4" />
+                    <Video className="w-8 h-8 mr-4" />
                     Start Video Chat
                   </Button>
                   <div className="mt-6 text-sm text-white/60 flex items-center justify-center">
