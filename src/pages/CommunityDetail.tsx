@@ -668,7 +668,7 @@ const CommunityDetail = () => {
                     className="w-full justify-start"
                     onClick={() => navigate(`/communities/${id}/video-chat`)}
                   >
-                    <Video className="mr-2 w-4 h-4" />
+                    <Video className="mr-2 w-6 h-6" />
                     Start Video Chat
                   </Button>
                   {ongoingCall ? (
