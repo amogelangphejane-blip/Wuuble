@@ -95,10 +95,18 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 animate-wobble">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo removed per user request */}
+          {/* Logo */}
+          <div 
+            className="flex items-center space-x-2 cursor-pointer group"
+            onClick={() => navigate('/')}
+          >
+            <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent animate-wobble">
+              wobble
+            </span>
+          </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
