@@ -98,22 +98,7 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <div 
-            className="flex items-center space-x-2 cursor-pointer group"
-            onClick={() => navigate('/')}
-          >
-            <div className="w-8 h-8 flex items-center justify-center">
-              <img 
-                src="/wobble-logo.svg" 
-                alt="Wobble Logo" 
-                className="w-8 h-8 group-hover:scale-110 transition-transform duration-200 drop-shadow-sm"
-              />
-            </div>
-            <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              wobble
-            </span>
-          </div>
+          {/* Logo removed per user request */}
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
