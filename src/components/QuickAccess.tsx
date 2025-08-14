@@ -150,7 +150,7 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
 
   // Start a random video chat
   const startRandomVideoChat = () => {
-    navigate('/video-chat');
+    navigate('/chat');
   };
 
   useEffect(() => {
