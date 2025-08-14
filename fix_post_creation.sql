@@ -158,4 +158,15 @@ EXECUTE FUNCTION update_updated_at_column();
 
 -- 12. Enable realtime for community posts
 ALTER TABLE community_posts REPLICA IDENTITY FULL;
-ALTER PUBLICATION supabase_realtime ADD TABLE community_posts;
+
+-- Add table to realtime publication (ignore if already exists)
+DO $$
+BEGIN
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE community_posts;
+    EXCEPTION
+        WHEN duplicate_object THEN
+            -- Table is already in the publication, which is fine
+            RAISE NOTICE 'Table community_posts is already in supabase_realtime publication';
+    END;
+END $$;
