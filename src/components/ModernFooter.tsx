@@ -57,22 +57,18 @@ export const ModernFooter = () => {
                 </span>
               </div>
               <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-                Empowering learners worldwide through community-driven education and collaborative learning experiences.
+                Building meaningful connections and fostering personal growth through exclusive social communities and collaborative experiences.
               </p>
               
               {/* Contact Info */}
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Mail className="w-4 h-4" />
-                  <span>hello@wuuble.com</span>
+                  <span>wuuble@gmail.com</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Phone className="w-4 h-4" />
-                  <span>+1 (555) 123-4567</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span>San Francisco, CA</span>
+                  <span>+27 67 161 4671</span>
                 </div>
               </div>
             </div>

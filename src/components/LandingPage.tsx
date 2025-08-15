@@ -40,103 +40,103 @@ const LandingPage = () => {
 
   const exclusiveFeatures = [
     {
+      icon: <Users className="w-7 h-7" />,
+      title: "Social Connection Hub",
+      description: "Connect with like-minded individuals and build meaningful relationships through our exclusive social networking platform.",
+      badge: "Social"
+    },
+    {
       icon: <Crown className="w-7 h-7" />,
-      title: "Elite Communities",
-      description: "Join curated, invitation-only communities where exceptional individuals connect and thrive together.",
+      title: "Exclusive Groups",
+      description: "Join invitation-only groups where exceptional individuals collaborate, share insights, and grow together.",
       badge: "Exclusive"
     },
     {
-      icon: <Diamond className="w-7 h-7" />,
-      title: "Premium Connections",
-      description: "Experience meaningful relationships with verified, like-minded professionals and creators.",
-      badge: "Verified"
+      icon: <TrendingUp className="w-7 h-7" />,
+      title: "Personal Growth",
+      description: "Accelerate your personal and professional development through peer learning and mentorship opportunities.",
+      badge: "Growth"
     },
     {
-      icon: <Gem className="w-7 h-7" />,
-      title: "Luxury Experiences",
-      description: "Access premium events, masterclasses, and networking opportunities designed for success.",
-      badge: "VIP Only"
+      icon: <MessageCircle className="w-7 h-7" />,
+      title: "Meaningful Conversations",
+      description: "Engage in deep, purposeful discussions that inspire growth and foster lasting connections.",
+      badge: "Connect"
     },
     {
-      icon: <Award className="w-7 h-7" />,
-      title: "Achievement Network",
-      description: "Connect with high-achievers, entrepreneurs, and thought leaders in your field.",
-      badge: "Elite"
+      icon: <UserPlus className="w-7 h-7" />,
+      title: "Network Expansion",
+      description: "Expand your professional and personal network with curated connections and strategic introductions.",
+      badge: "Network"
     },
     {
-      icon: <Lock className="w-7 h-7" />,
-      title: "Private Sanctuary",
-      description: "Enjoy a secure, ad-free environment designed exclusively for meaningful discourse.",
-      badge: "Private"
-    },
-    {
-      icon: <Infinity className="w-7 h-7" />,
-      title: "Limitless Growth",
-      description: "Unlock unlimited potential through exclusive mentorship and collaborative opportunities.",
-      badge: "Unlimited"
+      icon: <Sparkles className="w-7 h-7" />,
+      title: "Growth Opportunities",
+      description: "Discover exclusive opportunities for collaboration, learning, and advancement within your field.",
+      badge: "Opportunity"
     }
   ];
 
   const premiumTestimonials = [
     {
-      name: "Alexandra Sterling",
-      role: "CEO, Tech Innovator",
-      avatar: "AS",
-      content: "Wuuble isn't just another social platform—it's where I've found my inner circle of exceptional minds. The quality of connections here is unparalleled.",
+      name: "Sarah Mitchell",
+      role: "Community Builder",
+      avatar: "SM",
+      content: "Wuuble transformed how I connect with others. The exclusive groups have introduced me to incredible people who've become lifelong friends and collaborators.",
       rating: 5,
-      company: "Fortune 500",
+      company: "Growth Network",
       verified: true
     },
     {
-      name: "Marcus Chen",
-      role: "Venture Capitalist",
-      avatar: "MC",
-      content: "The caliber of individuals on this platform is extraordinary. I've formed strategic partnerships that have transformed my investment portfolio.",
+      name: "David Chen",
+      role: "Personal Development Coach",
+      avatar: "DC",
+      content: "The growth opportunities here are unmatched. I've connected with mentors and peers who've accelerated my personal journey beyond what I thought possible.",
       rating: 5,
-      company: "Top VC Firm",
+      company: "Life Mastery",
       verified: true
     },
     {
-      name: "Dr. Sophia Rodriguez",
-      role: "Research Director",
-      avatar: "SR",
-      content: "Finally, a platform that understands the value of quality over quantity. The intellectual conversations here are genuinely inspiring.",
+      name: "Maria Rodriguez",
+      role: "Social Impact Leader",
+      avatar: "MR",
+      content: "The meaningful conversations and connections I've made through Wuuble have enriched both my personal and professional life. It's where authentic relationships flourish.",
       rating: 5,
-      company: "Leading University",
+      company: "Change Makers",
       verified: true
     }
   ];
 
   const exclusiveStats = [
-    { value: "10K+", label: "Elite Members", suffix: "Invitation Only" },
-    { value: "500+", label: "Premium Events", suffix: "Monthly" },
-    { value: "98%", label: "Success Rate", suffix: "Meaningful Connections" },
-    { value: "$2M+", label: "Network Value", suffix: "Combined Worth" }
+    { value: "50K+", label: "Active Connections", suffix: "Growing Daily" },
+    { value: "1,200+", label: "Exclusive Groups", suffix: "Active Communities" },
+    { value: "95%", label: "Growth Success", suffix: "Member Development" },
+    { value: "85%", label: "Long-term Bonds", suffix: "Lasting Friendships" }
   ];
 
   const membershipTiers = [
     {
-      title: "Visionary",
-      description: "For thought leaders and industry pioneers",
-      members: "Limited to 100",
-      value: "$10M+",
-      perks: ["Private CEO Circle", "Exclusive Events", "Direct Access"],
+      title: "Growth Leaders",
+      description: "For those dedicated to continuous learning and leadership",
+      members: "Limited to 200",
+      value: "Advanced",
+      perks: ["Leadership Circle", "Mentorship Programs", "Growth Workshops"],
       gradient: "from-yellow-400 via-amber-500 to-orange-600"
     },
     {
-      title: "Innovator", 
-      description: "For entrepreneurs and creative professionals",
-      members: "Limited to 500",
-      value: "$1M+",
-      perks: ["Startup Network", "Investor Access", "Mentorship"],
+      title: "Connection Builders", 
+      description: "For community creators and relationship builders",
+      members: "Limited to 800",
+      value: "Enhanced",
+      perks: ["Community Tools", "Event Hosting", "Collaboration Hub"],
       gradient: "from-purple-400 via-pink-500 to-rose-600"
     },
     {
-      title: "Catalyst",
-      description: "For high-achieving professionals",
-      members: "Limited to 2000",
-      value: "$250K+",
-      perks: ["Professional Network", "Skill Exchange", "Career Growth"],
+      title: "Social Connectors",
+      description: "For individuals seeking meaningful connections",
+      members: "Limited to 3000",
+      value: "Essential",
+      perks: ["Group Access", "Social Features", "Growth Resources"],
       gradient: "from-blue-400 via-cyan-500 to-teal-600"
     }
   ];
@@ -187,23 +187,23 @@ const LandingPage = () => {
             <h1 className="text-5xl sm:text-6xl lg:text-8xl font-bold mb-8 leading-tight">
               <span className="block text-gray-900 mb-4">Where</span>
               <span className="block bg-gradient-to-r from-purple-600 via-pink-600 to-amber-600 bg-clip-text text-transparent animate-gradient">
-                Excellence
+                Connections
               </span>
-              <span className="block text-gray-900">Connects</span>
+              <span className="block text-gray-900">Flourish</span>
             </h1>
             
             {/* Exclusive Badge */}
             <div className="inline-flex items-center mb-8">
               <Badge className="bg-white/80 text-gray-700 border border-purple-200 hover:border-purple-300 backdrop-blur-xl px-6 py-2 text-sm font-medium rounded-full transition-all duration-300 hover:scale-105 shadow-lg">
-                <Crown className="w-6 h-6 mr-2 text-yellow-600" />
-                start chat
+                <Users className="w-6 h-6 mr-2 text-purple-600" />
+                Join the Community
               </Badge>
             </div>
             
             {/* Sophisticated Subtitle */}
             <p className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed font-light">
-              An exclusive sanctuary for visionaries, innovators, and thought leaders. 
-              <span className="text-purple-600 font-medium"> Invitation required.</span>
+              Build meaningful relationships, join exclusive groups, and accelerate your personal growth through our vibrant social community. 
+              <span className="text-purple-600 font-medium"> Connect. Grow. Thrive.</span>
             </p>
             
             {/* Premium Stats */}
@@ -267,18 +267,18 @@ const LandingPage = () => {
         <div className="container mx-auto px-6 lg:px-8 relative">
           <div className="text-center mb-20">
             <Badge className="mb-6 bg-white/80 text-purple-700 border border-purple-200 backdrop-blur-xl px-4 py-2 text-sm rounded-full shadow-lg">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Premium Features
+              <Users className="w-4 h-4 mr-2" />
+              Social Features
             </Badge>
             <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-8">
-              Designed for the 
+              Built for 
               <span className="block bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mt-2">
-                Exceptional Few
+                Connection & Growth
               </span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Every feature crafted with meticulous attention to detail, 
-              creating an unparalleled social experience for discerning individuals.
+              Every feature designed to foster meaningful relationships, facilitate personal growth, 
+              and create exclusive communities where like-minded individuals thrive together.
             </p>
           </div>
           
@@ -322,13 +322,13 @@ const LandingPage = () => {
         <div className="container mx-auto px-6 lg:px-8 relative">
           <div className="text-center mb-20">
             <Badge className="mb-6 bg-white/80 text-amber-700 border border-amber-200 backdrop-blur-xl px-4 py-2 text-sm rounded-full shadow-lg">
-              <Crown className="w-4 h-4 mr-2" />
-              Membership Tiers
+              <Users className="w-4 h-4 mr-2" />
+              Community Tiers
             </Badge>
             <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-8">
-              Choose Your
+              Find Your
               <span className="block bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent mt-2">
-                Circle of Excellence
+                Growth Community
               </span>
             </h2>
           </div>
@@ -386,13 +386,13 @@ const LandingPage = () => {
         <div className="container mx-auto px-6 lg:px-8 relative">
           <div className="text-center mb-20">
             <Badge className="mb-6 bg-white/80 text-green-700 border border-green-200 backdrop-blur-xl px-4 py-2 text-sm rounded-full shadow-lg">
-              <Award className="w-4 h-4 mr-2" />
-              Member Testimonials
+              <Heart className="w-4 h-4 mr-2" />
+              Community Stories
             </Badge>
             <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-8">
-              Trusted by
+              Loved by
               <span className="block bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mt-2">
-                Industry Leaders
+                Our Community
               </span>
             </h2>
           </div>
@@ -458,16 +458,16 @@ const LandingPage = () => {
         <div className="container mx-auto px-6 lg:px-8 relative">
           <div className="text-center max-w-4xl mx-auto">
             <div className="mb-8">
-              <Crown className="w-16 h-16 text-yellow-600 mx-auto mb-6 animate-pulse" />
+              <Users className="w-16 h-16 text-purple-600 mx-auto mb-6 animate-pulse" />
               <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-8">
-                Ready to Join the
+                Ready to Build
                 <span className="block bg-gradient-to-r from-purple-600 via-pink-600 to-amber-600 bg-clip-text text-transparent mt-2">
-                  Elite Circle?
+                  Meaningful Connections?
                 </span>
               </h2>
               <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-                Applications are reviewed exclusively by our membership committee. 
-                <span className="text-purple-600 font-medium"> Limited spots available.</span>
+                Join thousands of individuals who are building lasting relationships and growing together. 
+                <span className="text-purple-600 font-medium"> Your community awaits.</span>
               </p>
             </div>
             
@@ -477,8 +477,8 @@ const LandingPage = () => {
                 onClick={() => navigate(user ? '/communities' : '/auth')}
                 className="group bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 px-12 py-6 text-lg font-semibold rounded-full border border-purple-200 hover:border-purple-300 backdrop-blur-xl transform hover:scale-105"
               >
-                <Diamond className="mr-3 w-5 h-5 text-pink-200 group-hover:rotate-12 transition-transform duration-300" />
-                {user ? 'Access Elite Network' : 'Apply for Membership'}
+                <Users className="mr-3 w-5 h-5 text-pink-200 group-hover:rotate-12 transition-transform duration-300" />
+                {user ? 'Join Your Community' : 'Start Connecting'}
                 <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
               </Button>
               
@@ -488,24 +488,24 @@ const LandingPage = () => {
                 className="group border-2 border-gray-300 hover:border-purple-500 text-gray-700 hover:text-purple-700 bg-white/80 hover:bg-purple-50 px-12 py-6 text-lg backdrop-blur-xl rounded-full transition-all duration-300 hover:scale-105 shadow-lg"
                 onClick={() => navigate('/communities')}
               >
-                <TrendingUp className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-                View Success Stories
+                <MessageCircle className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                Explore Groups
               </Button>
             </div>
             
-            {/* Urgency Indicators */}
+            {/* Community Indicators */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto text-center">
               <div className="flex items-center justify-center text-sm text-gray-600">
                 <Users className="w-4 h-4 mr-2 text-purple-600" />
-                <span>47 spots remaining</span>
+                <span>50K+ active members</span>
               </div>
               <div className="flex items-center justify-center text-sm text-gray-600">
-                <Zap className="w-4 h-4 mr-2 text-pink-600" />
-                <span>Applications close soon</span>
+                <TrendingUp className="w-4 h-4 mr-2 text-pink-600" />
+                <span>Growing daily</span>
               </div>
               <div className="flex items-center justify-center text-sm text-gray-600">
-                <Award className="w-4 h-4 mr-2 text-amber-600" />
-                <span>95% acceptance rate</span>
+                <Heart className="w-4 h-4 mr-2 text-amber-600" />
+                <span>Meaningful connections</span>
               </div>
             </div>
           </div>
