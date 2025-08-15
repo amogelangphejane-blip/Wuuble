@@ -21,11 +21,13 @@ import {
   Headphones,
   Settings,
   Star,
-  Activity
+  Activity,
+  Radio
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { validateAvatarUrl } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { LiveStreamFeature } from '@/components/LiveStreamFeature';
 
 interface OngoingCall {
   id: string;
@@ -346,6 +348,14 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
           )}
         </CardContent>
       </Card>
+
+      {/* Live Streaming Section */}
+      <LiveStreamFeature 
+        communityId={communityId}
+        communityName={communityName}
+        isMember={isMember}
+        isCreator={isCreator}
+      />
 
       {/* Quick Features Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
