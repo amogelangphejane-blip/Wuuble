@@ -53,7 +53,7 @@ const LoadingPage = ({ onLoadingComplete }: { onLoadingComplete: () => void }) =
             {/* Main Logo */}
             <div className="relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl p-4 md:p-6 animate-connect-pulse">
               <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
-                wobble
+                Wuuble
               </h1>
             </div>
           </div>

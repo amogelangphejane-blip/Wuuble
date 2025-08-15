@@ -47,13 +47,13 @@ export const ModernFooter = () => {
               >
                 <div className="w-8 h-8 flex items-center justify-center">
                   <img 
-                    src="/wobble-logo.svg" 
-                    alt="Wobble Logo" 
+                    src="/wuuble-logo.svg" 
+                    alt="Wuuble Logo" 
                     className="w-8 h-8 group-hover:scale-110 transition-transform duration-200 drop-shadow-sm"
                   />
                 </div>
                 <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-                  wobble
+                  Wuuble
                 </span>
               </div>
               <p className="text-sm text-muted-foreground mb-6 max-w-sm">
@@ -64,7 +64,7 @@ export const ModernFooter = () => {
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Mail className="w-4 h-4" />
-                  <span>hello@wobble.com</span>
+                  <span>hello@wuuble.com</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Phone className="w-4 h-4" />
@@ -153,7 +153,7 @@ export const ModernFooter = () => {
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
             {/* Copyright */}
             <div className="text-sm text-muted-foreground">
-              © {currentYear} wobble. All rights reserved.
+              © {currentYear} Wuuble. All rights reserved.
             </div>
 
             {/* Social Links */}
