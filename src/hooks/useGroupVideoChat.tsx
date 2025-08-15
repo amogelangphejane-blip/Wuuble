@@ -38,6 +38,7 @@ export interface UseGroupVideoChatReturn {
   participantStreams: Map<string, MediaStream>;
   
   // Media state
+  localStream: MediaStream | null;
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
   isScreenSharing: boolean;
@@ -65,6 +66,7 @@ export interface UseGroupVideoChatReturn {
   
   // Utils
   getParticipantStream: (participantId: string) => MediaStream | null;
+  getLocalStream: () => MediaStream | null;
   getCurrentCall: () => any;
 }
 
@@ -87,6 +89,7 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
   const [participants, setParticipants] = useState<GroupParticipant[]>([]);
   const [localParticipant, setLocalParticipant] = useState<GroupParticipant | null>(null);
   const [participantStreams, setParticipantStreams] = useState<Map<string, MediaStream>>(new Map());
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -132,11 +135,22 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       // Initialize WebRTC service
       const webRTCEvents: GroupWebRTCEvents = {
         onLocalStreamReady: (stream) => {
+          console.log('🎥 Local stream ready:', stream);
+          setLocalStream(stream);
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = stream;
           }
         },
         onRemoteStream: (participantId, stream) => {
+          console.log('🎥 Remote stream received:', {
+            participantId,
+            streamId: stream.id,
+            tracks: stream.getTracks().map(track => ({
+              kind: track.kind,
+              enabled: track.enabled,
+              readyState: track.readyState
+            }))
+          });
           setParticipantStreams(prev => new Map(prev.set(participantId, stream)));
         },
         onParticipantJoined: (participant) => {
@@ -523,6 +537,7 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
     
     setParticipants([]);
     setParticipantStreams(new Map());
+    setLocalStream(null);
     setMessages([]);
     setUnreadMessages(0);
     setCurrentCall(null);
@@ -664,6 +679,10 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
     return participantStreams.get(participantId) || null;
   }, [participantStreams]);
 
+  const getLocalStream = useCallback((): MediaStream | null => {
+    return localStream;
+  }, [localStream]);
+
   const getCurrentCall = useCallback(() => {
     return currentCall;
   }, [currentCall]);
@@ -710,6 +729,7 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
     participantStreams,
     
     // Media state
+    localStream,
     isVideoEnabled,
     isAudioEnabled,
     isScreenSharing,
@@ -737,6 +757,7 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
     
     // Utils
     getParticipantStream,
+    getLocalStream,
     getCurrentCall
   };
 };

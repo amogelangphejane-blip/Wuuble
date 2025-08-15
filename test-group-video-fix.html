@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Video Chat Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #333;
+        }
+        .success { background: #2d5a2d; }
+        .error { background: #5a2d2d; }
+        .info { background: #2d4a5a; }
+        .video-container {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        video {
+            width: 200px;
+            height: 150px;
+            background: #333;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background: #45a049; }
+        button:disabled { background: #666; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Group Video Chat Fix Test</h1>
+        
+        <div class="status info">
+            <h3>Test Instructions:</h3>
+            <ol>
+                <li>Open this page in two different browser tabs</li>
+                <li>Click "Start Local Video" in both tabs</li>
+                <li>You should see your camera feed in both tabs</li>
+                <li>Audio should work when speaking (unmuted)</li>
+            </ol>
+        </div>
+
+        <div class="status" id="status">
+            Status: Ready to test
+        </div>
+
+        <div>
+            <button onclick="startLocalVideo()">Start Local Video</button>
+            <button onclick="stopLocalVideo()">Stop Local Video</button>
+            <button onclick="toggleAudio()" id="audioBtn">Mute Audio</button>
+            <button onclick="testWebRTC()">Test WebRTC Support</button>
+        </div>
+
+        <div class="video-container">
+            <div>
+                <h4>Local Video</h4>
+                <video id="localVideo" autoplay muted playsinline></video>
+            </div>
+            <div>
+                <h4>Test Audio</h4>
+                <video id="testAudio" autoplay playsinline controls></video>
+            </div>
+        </div>
+
+        <div class="status" id="debugInfo">
+            <h4>Debug Information:</h4>
+            <pre id="debugOutput">No data yet...</pre>
+        </div>
+    </div>
+
+    <script>
+        let localStream = null;
+        let isAudioMuted = false;
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function updateDebug(info) {
+            const debugOutput = document.getElementById('debugOutput');
+            debugOutput.textContent = JSON.stringify(info, null, 2);
+        }
+
+        async function startLocalVideo() {
+            try {
+                updateStatus('Requesting camera and microphone access...', 'info');
+                
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 },
+                        frameRate: { ideal: 30, max: 60 }
+                    },
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 48000
+                    }
+                });
+
+                const localVideo = document.getElementById('localVideo');
+                const testAudio = document.getElementById('testAudio');
+                
+                localVideo.srcObject = localStream;
+                testAudio.srcObject = localStream;
+                testAudio.muted = false; // Allow audio playback for testing
+                
+                updateStatus('✅ Local video and audio started successfully!', 'success');
+                
+                const debugInfo = {
+                    streamId: localStream.id,
+                    tracks: localStream.getTracks().map(track => ({
+                        kind: track.kind,
+                        enabled: track.enabled,
+                        readyState: track.readyState,
+                        label: track.label
+                    })),
+                    constraints: {
+                        video: localVideo.videoWidth + 'x' + localVideo.videoHeight,
+                        audio: localStream.getAudioTracks().length > 0
+                    }
+                };
+                
+                updateDebug(debugInfo);
+                
+            } catch (error) {
+                updateStatus(`❌ Error: ${error.message}`, 'error');
+                console.error('Error accessing media devices:', error);
+            }
+        }
+
+        function stopLocalVideo() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+                
+                document.getElementById('localVideo').srcObject = null;
+                document.getElementById('testAudio').srcObject = null;
+                
+                updateStatus('Local video stopped', 'info');
+                updateDebug({ message: 'Stream stopped' });
+            }
+        }
+
+        function toggleAudio() {
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    audioTrack.enabled = !audioTrack.enabled;
+                    isAudioMuted = !audioTrack.enabled;
+                    
+                    const btn = document.getElementById('audioBtn');
+                    btn.textContent = isAudioMuted ? 'Unmute Audio' : 'Mute Audio';
+                    
+                    updateStatus(isAudioMuted ? 'Audio muted' : 'Audio unmuted', 'info');
+                }
+            }
+        }
+
+        function testWebRTC() {
+            const support = {
+                getUserMedia: !!navigator.mediaDevices?.getUserMedia,
+                RTCPeerConnection: !!window.RTCPeerConnection,
+                getDisplayMedia: !!navigator.mediaDevices?.getDisplayMedia,
+                webkitGetUserMedia: !!navigator.webkitGetUserMedia,
+                mozGetUserMedia: !!navigator.mozGetUserMedia
+            };
+            
+            updateDebug(support);
+            
+            const hasSupport = support.getUserMedia && support.RTCPeerConnection;
+            updateStatus(
+                hasSupport ? '✅ WebRTC is supported' : '❌ WebRTC not fully supported', 
+                hasSupport ? 'success' : 'error'
+            );
+        }
+
+        // Test WebRTC support on page load
+        window.onload = testWebRTC;
+    </script>
+</body>
+</html>
