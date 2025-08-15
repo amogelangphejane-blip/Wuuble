@@ -552,7 +552,11 @@ const CommunityDetail = () => {
               {activeTab === 'discussions' && (
                 <div className="space-y-6">
                   {(isMember || isCreator) ? (
-                    <CommunityPosts communityId={community.id} communityName={community.name} />
+                    <CommunityPosts 
+                      communityId={community.id} 
+                      communityName={community.name} 
+                      communityCreatorId={community.creator_id}
+                    />
                   ) : (
                     <Card className="text-center py-12">
                       <CardContent>
