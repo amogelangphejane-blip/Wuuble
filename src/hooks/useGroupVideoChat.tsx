@@ -105,7 +105,11 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
 
   // Initialize services
   const initializeServices = useCallback(async () => {
-    if (!user) return;
+    console.log('🚀 Initializing services...', { user: !!user, userId: user?.id });
+    if (!user) {
+      console.log('❌ No user found, skipping service initialization');
+      return;
+    }
 
     try {
       // Create participant data
@@ -122,6 +126,7 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
         role: 'participant' as const
       };
 
+      console.log('👤 Created participant data:', participantData);
       setLocalParticipant(participantData);
 
       // Initialize WebRTC service
@@ -243,10 +248,11 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       );
 
       await signalingServiceRef.current.connect();
+      console.log('✅ Services initialized successfully');
       setServicesReady(true);
 
     } catch (error) {
-      console.error('Failed to initialize services:', error);
+      console.error('❌ Failed to initialize services:', error);
       toast({
         title: "Setup Failed",
         description: "Could not initialize video call services",
@@ -677,7 +683,15 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
 
   // Auto-join call if callId is provided
   useEffect(() => {
+    console.log('🔄 Auto-join effect:', {
+      initialCallId,
+      servicesReady,
+      hasCurrentCall: !!currentCall,
+      shouldJoin: !!(initialCallId && servicesReady && !currentCall)
+    });
+    
     if (initialCallId && servicesReady && !currentCall) {
+      console.log('🎯 Auto-joining call:', initialCallId);
       joinCall(initialCallId);
     }
   }, [initialCallId, servicesReady, currentCall, joinCall]);
