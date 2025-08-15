@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useGroupVideoChat, UseGroupVideoChatOptions } from '@/hooks/useGroupVideoChat';
 import { GroupParticipant } from '@/services/groupWebRTCService';
+import { VideoDebugInfo } from './VideoDebugInfo';
 import { 
   Video, 
   VideoOff, 
@@ -134,9 +135,28 @@ const ParticipantVideo: React.FC<ParticipantVideoProps> = ({
 
   useEffect(() => {
     if (videoRef.current && stream) {
+      console.log(`🎥 Assigning stream to video element for participant ${participant.id}:`, {
+        streamId: stream.id,
+        tracks: stream.getTracks().map(track => ({
+          kind: track.kind,
+          enabled: track.enabled,
+          readyState: track.readyState
+        })),
+        isLocal
+      });
       videoRef.current.srcObject = stream;
+      
+      // Ensure video plays
+      if (!isLocal) {
+        videoRef.current.play().catch(error => {
+          console.warn(`Failed to play video for participant ${participant.id}:`, error);
+        });
+      }
+    } else if (videoRef.current && !stream) {
+      console.log(`🎥 Clearing stream for participant ${participant.id}`);
+      videoRef.current.srcObject = null;
     }
-  }, [stream]);
+  }, [stream, participant.id, isLocal]);
 
   const getGridItemClass = (totalParticipants: number) => {
     if (totalParticipants === 1) return "col-span-2 row-span-2";
@@ -208,6 +228,7 @@ const ParticipantVideo: React.FC<ParticipantVideoProps> = ({
         autoPlay
         playsInline
         muted={isLocal}
+        controls={false}
       />
 
       {/* Video Disabled Overlay */}
@@ -387,6 +408,7 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
     participants,
     localParticipant,
     participantStreams,
+    localStream,
     isVideoEnabled,
     isAudioEnabled,
     isScreenSharing,
@@ -406,6 +428,7 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
     kickParticipant,
     promoteToModerator,
     getParticipantStream,
+    getLocalStream,
     getCurrentCall
   } = useGroupVideoChat({ communityId, callId, ...options });
 
@@ -724,7 +747,7 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
           {localParticipant && (
             <ParticipantVideo
               participant={localParticipant}
-              stream={localVideoRef.current?.srcObject as MediaStream}
+              stream={localStream}
               isLocal={true}
               isFocused={focusedParticipantId === localParticipant.id}
               isSpeaking={speakingParticipants.has(localParticipant.id)}
@@ -951,6 +974,15 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Debug Info (temporary for testing) */}
+      <VideoDebugInfo
+        localStream={localStream}
+        participants={participants}
+        participantStreams={participantStreams}
+        isConnected={isConnected}
+        callStatus={callStatus}
+      />
     </div>
   );
 };
