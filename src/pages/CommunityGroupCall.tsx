@@ -10,7 +10,7 @@ console.log('🚀 CommunityGroupCall component loaded');
 const CommunityGroupCall: React.FC = () => {
   console.log('🎯 CommunityGroupCall component rendering');
   
-  const { communityId, callId } = useParams<{ communityId: string; callId?: string }>();
+  const { id: communityId, callId } = useParams<{ id: string; callId?: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
