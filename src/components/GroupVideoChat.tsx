@@ -372,6 +372,13 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
   className,
   ...options
 }) => {
+  console.log('🎥 GroupVideoChat rendered with:', { 
+    communityId, 
+    callId, 
+    hasOnExit: !!onExit,
+    options 
+  });
+
   const {
     callStatus,
     isConnecting,
@@ -401,6 +408,16 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
     getParticipantStream,
     getCurrentCall
   } = useGroupVideoChat({ communityId, callId, ...options });
+
+  console.log('🔄 GroupVideoChat state:', {
+    callStatus,
+    isConnecting,
+    isConnected,
+    cameraPermission,
+    participantsCount: participants.length,
+    hasLocalParticipant: !!localParticipant,
+    currentCallId: getCurrentCall()?.id
+  });
 
   const { toast } = useToast();
 
