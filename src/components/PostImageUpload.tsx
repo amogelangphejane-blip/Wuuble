@@ -181,17 +181,17 @@ export const PostImageUpload = ({
           size="sm"
           onClick={openFileDialog}
           disabled={disabled || uploading}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 h-10 px-4 bg-secondary/50 hover:bg-secondary border-border/50 hover:border-border text-foreground font-medium rounded-full transition-all duration-200 hover:shadow-sm"
         >
           {uploading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Uploading...
+              <span>Uploading...</span>
             </>
           ) : (
             <>
               <Image className="h-4 w-4" />
-              Add Image
+              <span>Add Image</span>
             </>
           )}
         </Button>

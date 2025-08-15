@@ -793,7 +793,7 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
       <Card className="border-0 shadow-sm">
         <CardContent className="p-6">
           <div className="flex gap-4">
-            <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+            <Avatar className="h-10 w-10 ring-2 ring-primary/20 flex-shrink-0">
               <AvatarImage 
                 src={validateAvatarUrl(user?.user_metadata?.avatar_url)} 
                 alt="You"
@@ -813,10 +813,10 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
                 disabled={posting}
               />
               
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <Select value={newPostCategory} onValueChange={setNewPostCategory}>
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-48 h-10">
                       <Tag className="h-4 w-4 mr-2" />
                       <SelectValue />
                     </SelectTrigger>
@@ -829,28 +829,30 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
                     </SelectContent>
                   </Select>
                   
-                  <PostImageUpload
-                    onImageUploaded={setNewPostImage}
-                    currentImageUrl={newPostImage}
-                    disabled={posting}
-                  />
+                  <div className="flex items-center">
+                    <PostImageUpload
+                      onImageUploaded={setNewPostImage}
+                      currentImageUrl={newPostImage}
+                      disabled={posting}
+                    />
+                  </div>
                 </div>
                 
                 <Button
                   onClick={createPost}
                   disabled={(!newPost.trim() && !newPostImage) || posting}
                   size="lg"
-                  className="px-8"
+                  className="px-6 py-2 h-10 flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-full shadow-md hover:shadow-lg transition-all duration-200 min-w-[100px]"
                 >
                   {posting ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Posting...
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Posting...</span>
                     </>
                   ) : (
                     <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Post
+                      <Send className="h-4 w-4" />
+                      <span>Post</span>
                     </>
                   )}
                 </Button>
