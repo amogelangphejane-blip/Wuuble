@@ -91,13 +91,42 @@ export const PostImageUpload = ({
         .getPublicUrl(data.path);
 
       const imageUrl = urlData.publicUrl;
-      setPreviewUrl(imageUrl);
-      onImageUploaded(imageUrl);
+      
+      // Validate the generated URL
+      if (!imageUrl || imageUrl.trim() === '') {
+        console.error('Failed to generate public URL for uploaded file');
+        toast({
+          title: "Upload error",
+          description: "Failed to generate public URL for the uploaded image",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      toast({
-        title: "Image uploaded",
-        description: "Your image has been uploaded successfully",
-      });
+      // Test if the URL is accessible by trying to load it
+      const img = new Image();
+      img.onload = () => {
+        console.log('Image URL verified successfully:', imageUrl);
+        setPreviewUrl(imageUrl);
+        onImageUploaded(imageUrl);
+        
+        toast({
+          title: "Image uploaded",
+          description: "Your image has been uploaded successfully",
+        });
+      };
+      
+      img.onerror = () => {
+        console.error('Generated URL is not accessible:', imageUrl);
+        toast({
+          title: "Upload error",
+          description: "The uploaded image is not accessible. This may be due to storage policy issues.",
+          variant: "destructive",
+        });
+      };
+      
+      // Set the source to trigger the load test
+      img.src = imageUrl;
 
     } catch (error) {
       console.error('Unexpected error:', error);
