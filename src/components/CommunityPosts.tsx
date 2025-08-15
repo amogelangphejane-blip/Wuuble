@@ -10,6 +10,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -38,7 +40,8 @@ import {
   ThumbsUp,
   Laugh,
   Angry,
-  Sad
+  Sad,
+  Trash2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { validateAvatarUrl } from '@/lib/utils';
@@ -101,6 +104,7 @@ interface CommunityPost {
 interface CommunityPostsProps {
   communityId: string;
   communityName?: string;
+  communityCreatorId?: string;
 }
 
 const POST_CATEGORIES = [
@@ -121,7 +125,7 @@ const REACTION_TYPES = [
   { type: 'sad', icon: '😢', label: 'Sad' },
 ];
 
-export const CommunityPosts = ({ communityId, communityName = 'Community' }: CommunityPostsProps) => {
+export const CommunityPosts = ({ communityId, communityName = 'Community', communityCreatorId }: CommunityPostsProps) => {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<CommunityPost[]>([]);
   const [newPost, setNewPost] = useState('');
@@ -139,6 +143,9 @@ export const CommunityPosts = ({ communityId, communityName = 'Community' }: Com
   const [activeTab, setActiveTab] = useState('all');
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
+  const [deletingPost, setDeletingPost] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -454,6 +461,54 @@ export const CommunityPosts = ({ communityId, communityName = 'Community' }: Com
         variant: "destructive",
       });
     }
+  };
+
+  // Delete a post
+  const deletePost = async (postId: string) => {
+    if (!user) return;
+
+    try {
+      setDeletingPost(postId);
+      
+      const { error } = await supabase
+        .from('community_posts')
+        .delete()
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      // Update local state by removing the deleted post
+      setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+      
+      toast({
+        title: "Success",
+        description: "Post deleted successfully",
+      });
+
+      setDeleteDialogOpen(false);
+      setPostToDelete(null);
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete post",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingPost(null);
+    }
+  };
+
+  // Check if user can delete a post (post author or community creator)
+  const canDeletePost = (post: CommunityPost) => {
+    if (!user) return false;
+    return post.user_id === user.id || user.id === communityCreatorId;
+  };
+
+  // Handle delete confirmation
+  const handleDeleteClick = (postId: string) => {
+    setPostToDelete(postId);
+    setDeleteDialogOpen(true);
   };
 
   // Handle Enter key press
@@ -878,9 +933,32 @@ export const CommunityPosts = ({ communityId, communityName = 'Community' }: Com
                             >
                               <Bookmark className={`h-4 w-4 ${bookmarkedPosts.has(post.id) ? 'fill-current' : ''}`} />
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(window.location.href)}>
+                                  <Share2 className="h-4 w-4 mr-2" />
+                                  Copy Link
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => toggleBookmark(post.id)}>
+                                  <Bookmark className="h-4 w-4 mr-2" />
+                                  {bookmarkedPosts.has(post.id) ? 'Remove Bookmark' : 'Bookmark'}
+                                </DropdownMenuItem>
+                                {canDeletePost(post) && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleDeleteClick(post.id)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete Post
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                         
@@ -1000,6 +1078,46 @@ export const CommunityPosts = ({ communityId, communityName = 'Community' }: Com
               ))
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Post</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setPostToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => postToDelete && deletePost(postToDelete)}
+              disabled={deletingPost === postToDelete}
+            >
+              {deletingPost === postToDelete ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
