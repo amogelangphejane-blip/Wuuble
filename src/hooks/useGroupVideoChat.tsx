@@ -306,6 +306,14 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       setCameraPermission('granted');
 
       // Create call in database
+      console.log('Creating group call in database...', {
+        community_id: communityId,
+        creator_id: user.id,
+        title: callTitle || 'Community Video Call',
+        max_participants: maxParticipants,
+        status: 'active'
+      });
+
       const { data: newCall, error } = await supabase
         .from('community_group_calls')
         .insert({
@@ -319,11 +327,15 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
         .single();
 
       if (error) {
+        console.error('Database error creating group call:', error);
         // Provide better error messages for common issues
         if (error.code === '42501') {
           throw new Error('You must be a member of this community to start group calls. Please join the community first.');
         }
-        throw error;
+        if (error.code === '42P01') {
+          throw new Error('Database tables are not set up. Please contact an administrator to configure group video calls.');
+        }
+        throw new Error(`Database error: ${error.message}`);
       }
 
       setCurrentCall(newCall);
@@ -398,6 +410,7 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       }
 
       // Get call details
+      console.log('Fetching call details for callId:', callId);
       const { data: call, error: callError } = await supabase
         .from('community_group_calls')
         .select('*')
@@ -405,10 +418,14 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
         .single();
 
       if (callError) {
+        console.error('Database error fetching call:', callError);
         if (callError.code === '42501') {
           throw new Error('You must be a member of this community to join group calls. Please join the community first.');
         }
-        throw new Error('Call not found or access denied');
+        if (callError.code === '42P01') {
+          throw new Error('Database tables are not set up. Please contact an administrator to configure group video calls.');
+        }
+        throw new Error(`Database error: ${callError.message}`);
       }
 
       if (!call) {
