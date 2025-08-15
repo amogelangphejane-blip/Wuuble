@@ -208,7 +208,16 @@ const Communities = () => {
       {/* Hero Section */}
       <section className="bg-gradient-hero relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 relative">
+        {/* Community hands image overlay */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+          style={{
+            backgroundImage: 'url(/assets/community-hands.jpg), url(/assets/community-hands-placeholder.svg)',
+            backgroundBlendMode: 'soft-light'
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/40"></div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
           <div className="text-center max-w-3xl mx-auto">
             <Badge className="mb-4 bg-white/20 text-white border-white/30 hover:bg-white/30">
               <Users className="w-4 h-4 mr-2" />
