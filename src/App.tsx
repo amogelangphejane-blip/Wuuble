@@ -55,14 +55,14 @@ const App = () => {
                   path="/communities/:id/group-call" 
                   element={(() => {
                     console.log('🎯 Group call route (no callId) matched');
-                    return <TestGroupCall />;
+                    return <CommunityGroupCall />;
                   })()} 
                 />
                 <Route 
                   path="/communities/:id/group-call/:callId" 
                   element={(() => {
                     console.log('🎯 Group call route (with callId) matched');
-                    return <TestGroupCall />;
+                    return <CommunityGroupCall />;
                   })()} 
                 />
                 {/* Enhanced calendar route - new default */}
