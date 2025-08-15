@@ -5,15 +5,29 @@ import { GroupVideoChat } from '@/components/GroupVideoChat';
 import { ModernHeader } from '@/components/ModernHeader';
 import { useToast } from '@/hooks/use-toast';
 
+console.log('🚀 CommunityGroupCall component loaded');
+
 const CommunityGroupCall: React.FC = () => {
+  console.log('🎯 CommunityGroupCall component rendering');
+  
   const { communityId, callId } = useParams<{ communityId: string; callId?: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
 
+  console.log('📊 CommunityGroupCall params and state:', {
+    communityId,
+    callId,
+    user: !!user,
+    authLoading,
+    pathname: window.location.pathname
+  });
+
   useEffect(() => {
+    console.log('🔄 Auth effect triggered:', { user: !!user, authLoading });
     if (!authLoading && !user) {
+      console.log('🔄 Redirecting to auth...');
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
@@ -23,15 +37,25 @@ const CommunityGroupCall: React.FC = () => {
     console.log('CommunityGroupCall loaded with:', { communityId, callId, user: !!user, authLoading });
     
     if (!communityId) {
+      console.log('❌ No communityId found');
       setError('Community ID is missing');
     }
   }, [communityId, callId, user, authLoading]);
 
   const handleExit = () => {
+    console.log('🚪 Exiting to community:', communityId);
     navigate(`/communities/${communityId}`);
   };
 
+  console.log('🎨 About to render, current state:', {
+    authLoading,
+    user: !!user,
+    communityId: !!communityId,
+    error
+  });
+
   if (authLoading) {
+    console.log('⏳ Rendering loading state');
     return (
       <div className="min-h-screen bg-gradient-bg">
         <ModernHeader />
@@ -46,6 +70,7 @@ const CommunityGroupCall: React.FC = () => {
   }
 
   if (!user || !communityId) {
+    console.log('❌ Rendering error state - missing user or communityId');
     return (
       <div className="min-h-screen bg-gradient-bg">
         <ModernHeader />
@@ -68,6 +93,7 @@ const CommunityGroupCall: React.FC = () => {
   }
 
   if (error) {
+    console.log('❌ Rendering error state:', error);
     return (
       <div className="min-h-screen bg-gradient-bg">
         <ModernHeader />
@@ -87,6 +113,7 @@ const CommunityGroupCall: React.FC = () => {
     );
   }
 
+  console.log('✅ Rendering GroupVideoChat component');
   return (
     <div className="min-h-screen">
       <GroupVideoChat
