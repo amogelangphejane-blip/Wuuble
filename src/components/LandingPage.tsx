@@ -82,7 +82,7 @@ const LandingPage = () => {
       name: "Alexandra Sterling",
       role: "CEO, Tech Innovator",
       avatar: "AS",
-      content: "Wobble isn't just another social platform—it's where I've found my inner circle of exceptional minds. The quality of connections here is unparalleled.",
+      content: "Wuuble isn't just another social platform—it's where I've found my inner circle of exceptional minds. The quality of connections here is unparalleled.",
       rating: 5,
       company: "Fortune 500",
       verified: true

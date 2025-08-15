@@ -104,12 +104,12 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
             onClick={() => navigate('/')}
           >
             <img 
-              src="/wobble-logo.svg" 
-              alt="Wobble Logo" 
+              src="/wuuble-logo.svg" 
+              alt="Wuuble Logo" 
               className="w-8 h-8"
             />
             <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              wobble
+              Wuuble
             </span>
           </div>
 
