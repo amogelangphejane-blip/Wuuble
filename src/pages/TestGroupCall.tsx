@@ -6,7 +6,7 @@ console.log('🧪 TestGroupCall component loaded');
 const TestGroupCall: React.FC = () => {
   console.log('🧪 TestGroupCall component rendering');
   
-  const { communityId, callId } = useParams<{ communityId: string; callId?: string }>();
+  const { id: communityId, callId } = useParams<{ id: string; callId?: string }>();
   
   console.log('🧪 TestGroupCall params:', { communityId, callId, pathname: window.location.pathname });
   
