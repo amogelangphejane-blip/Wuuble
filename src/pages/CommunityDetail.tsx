@@ -23,7 +23,8 @@ import {
   MoreVertical,
   Zap,
   Crown,
-  CreditCard
+  CreditCard,
+  Radio
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
@@ -31,6 +32,7 @@ import { CommunitySearch } from '@/components/CommunitySearch';
 import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
 import { ModernHeader } from '@/components/ModernHeader';
 import { QuickAccess } from '@/components/QuickAccess';
+import { LiveStreamFeature } from '@/components/LiveStreamFeature';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { validateAvatarUrl } from '@/lib/utils';
@@ -356,7 +358,8 @@ const CommunityDetail = () => {
     { id: 'members', label: 'Members', icon: Users },
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
-    { id: 'quick-access', label: 'Quick Access', icon: Zap }
+    { id: 'quick-access', label: 'Quick Access', icon: Zap },
+    { id: 'live-streaming', label: 'Live Streaming', icon: Radio }
   ];
 
   if (authLoading || loading) {
@@ -741,6 +744,15 @@ const CommunityDetail = () => {
 
               {activeTab === 'quick-access' && (
                 <QuickAccess 
+                  communityId={community.id}
+                  communityName={community.name}
+                  isMember={isMember}
+                  isCreator={isCreator}
+                />
+              )}
+
+              {activeTab === 'live-streaming' && (
+                <LiveStreamFeature 
                   communityId={community.id}
                   communityName={community.name}
                   isMember={isMember}
