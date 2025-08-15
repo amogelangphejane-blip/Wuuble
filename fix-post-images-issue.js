@@ -1,4 +1,4 @@
-import { supabase } from './src/integrations/supabase/client.js';
+import { supabase } from './src/integrations/supabase/client';
 
 async function fixPostImagesIssue() {
   console.log('🔧 Fixing post images disappearing issue...\n');
