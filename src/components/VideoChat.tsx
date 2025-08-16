@@ -38,6 +38,14 @@ interface UserPreferences {
   interests: string[];
   location: string;
   language: string;
+  videoFilters: {
+    enabled: boolean;
+    preset: string;
+    customSettings: {
+      skinSmoothing: number;
+      brightness: number;
+    };
+  };
 }
 
 interface UserInfo {
@@ -62,6 +70,8 @@ export const VideoChat = () => {
     remoteVideoRef,
     messages,
     unreadMessages,
+    isVideoFiltersEnabled,
+    filterConfig,
     startChat,
     endChat,
     nextPartner,
@@ -69,7 +79,10 @@ export const VideoChat = () => {
     toggleVideo,
     toggleAudio,
     toggleRemoteAudio,
-    markMessagesAsRead
+    markMessagesAsRead,
+    toggleVideoFilters,
+    updateFilterConfig,
+    setFilterPreset
   } = useVideoChat({ useMockSignaling: true });
 
   // UI States
@@ -78,6 +91,7 @@ export const VideoChat = () => {
   const [showUserInfo, setShowUserInfo] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const [showVideoFilters, setShowVideoFilters] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
@@ -88,7 +102,15 @@ export const VideoChat = () => {
     ageRange: '18-25',
     interests: [],
     location: 'global',
-    language: 'en'
+    language: 'en',
+    videoFilters: {
+      enabled: false,
+      preset: 'light',
+      customSettings: {
+        skinSmoothing: 30,
+        brightness: 5
+      }
+    }
   });
 
   // Report states
@@ -113,6 +135,56 @@ export const VideoChat = () => {
   });
 
   const { toast } = useToast();
+
+  // Load filter preferences on mount
+  useEffect(() => {
+    const savedPreferences = localStorage.getItem('videoChat_preferences');
+    if (savedPreferences) {
+      try {
+        const parsed = JSON.parse(savedPreferences);
+        if (parsed.videoFilters) {
+          setPreferences(prev => ({
+            ...prev,
+            videoFilters: parsed.videoFilters
+          }));
+          
+          // Apply saved filter settings
+          if (parsed.videoFilters.enabled) {
+            setFilterPreset(parsed.videoFilters.preset);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load preferences:', error);
+      }
+    }
+  }, [setFilterPreset]);
+
+  // Save filter preferences when they change
+  useEffect(() => {
+    const savePreferences = () => {
+      localStorage.setItem('videoChat_preferences', JSON.stringify(preferences));
+    };
+    
+    const timeoutId = setTimeout(savePreferences, 500); // Debounce saves
+    return () => clearTimeout(timeoutId);
+  }, [preferences]);
+
+  // Update preferences when filter settings change
+  useEffect(() => {
+    if (filterConfig) {
+      setPreferences(prev => ({
+        ...prev,
+        videoFilters: {
+          ...prev.videoFilters,
+          enabled: isVideoFiltersEnabled,
+          customSettings: {
+            skinSmoothing: filterConfig.skinSmoothing?.intensity || 0,
+            brightness: filterConfig.brightness?.value || 0
+          }
+        }
+      }));
+    }
+  }, [isVideoFiltersEnabled, filterConfig]);
 
   // Touch/Swipe handlers
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -480,6 +552,16 @@ export const VideoChat = () => {
             {isRemoteAudioEnabled ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
           </Button>
 
+          {/* Video Filters Toggle */}
+          <Button
+            variant="ghost"
+            size="lg"
+            className={`w-14 h-14 rounded-full ${isVideoFiltersEnabled ? 'bg-purple-500/30 text-purple-300' : 'bg-white/20 hover:bg-white/30 text-white'} border border-white/30`}
+            onClick={() => setShowVideoFilters(true)}
+          >
+            <Sparkles className="w-6 h-6" />
+          </Button>
+
           {/* Filters Button */}
           <Button
             variant="ghost"
@@ -716,6 +798,140 @@ export const VideoChat = () => {
               >
                 <Flag className="w-4 h-4" />
                 <span>Submit Report</span>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Video Filters Dialog */}
+      <Dialog open={showVideoFilters} onOpenChange={setShowVideoFilters}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Sparkles className="w-5 h-5" />
+              <span>Video Filters</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Filter Toggle */}
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="filters-toggle" className="text-sm font-medium">
+                  Enable Video Filters
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Apply smooth skin and beauty filters to your video
+                </p>
+              </div>
+              <Switch
+                id="filters-toggle"
+                checked={isVideoFiltersEnabled}
+                onCheckedChange={toggleVideoFilters}
+              />
+            </div>
+
+            {/* Filter Presets */}
+            {isVideoFiltersEnabled && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Filter Intensity</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFilterPreset('light')}
+                    className={filterConfig?.skinSmoothing?.intensity === 30 ? 'border-primary bg-primary/5' : ''}
+                  >
+                    Light
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFilterPreset('medium')}
+                    className={filterConfig?.skinSmoothing?.intensity === 50 ? 'border-primary bg-primary/5' : ''}
+                  >
+                    Medium
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFilterPreset('strong')}
+                    className={filterConfig?.skinSmoothing?.intensity === 75 ? 'border-primary bg-primary/5' : ''}
+                  >
+                    Strong
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFilterPreset('none')}
+                    className={!isVideoFiltersEnabled ? 'border-primary bg-primary/5' : ''}
+                  >
+                    None
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Advanced Settings */}
+            {isVideoFiltersEnabled && filterConfig && (
+              <div className="space-y-4">
+                <Label className="text-sm font-medium">Advanced Settings</Label>
+                
+                {/* Skin Smoothing Intensity */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Skin Smoothing</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {filterConfig.skinSmoothing?.intensity || 0}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={filterConfig.skinSmoothing?.intensity || 0}
+                    onChange={(e) => updateFilterConfig({
+                      skinSmoothing: {
+                        ...filterConfig.skinSmoothing,
+                        intensity: parseInt(e.target.value)
+                      }
+                    })}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+
+                {/* Brightness */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Brightness</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {filterConfig.brightness?.value || 0}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-50"
+                    max="50"
+                    value={filterConfig.brightness?.value || 0}
+                    onChange={(e) => updateFilterConfig({
+                      brightness: {
+                        enabled: true,
+                        value: parseInt(e.target.value)
+                      }
+                    })}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowVideoFilters(false)}
+              >
+                Close
               </Button>
             </div>
           </div>

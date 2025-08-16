@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { WebRTCService, defaultWebRTCConfig, WebRTCConfig } from '@/services/webRTCService';
 import { SignalingService, createSignalingService, SignalingMessage } from '@/services/signalingService';
+import { FilterConfig, VideoFilterService } from '@/services/videoFilterService';
 import { useToast } from '@/hooks/use-toast';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
@@ -34,6 +35,10 @@ export interface UseVideoChatReturn {
   localVideoRef: React.RefObject<HTMLVideoElement>;
   remoteVideoRef: React.RefObject<HTMLVideoElement>;
   
+  // Video filter state
+  isVideoFiltersEnabled: boolean;
+  filterConfig: FilterConfig | null;
+  
   // Chat state
   messages: ChatMessage[];
   unreadMessages: number;
@@ -47,6 +52,11 @@ export interface UseVideoChatReturn {
   toggleAudio: () => void;
   toggleRemoteAudio: () => void;
   markMessagesAsRead: () => void;
+  
+  // Video filter actions
+  toggleVideoFilters: () => void;
+  updateFilterConfig: (config: Partial<FilterConfig>) => void;
+  setFilterPreset: (preset: string) => void;
   
   // Utils
   getConnectionQualityIcon: () => React.ReactNode;
@@ -73,6 +83,10 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isRemoteAudioEnabled, setIsRemoteAudioEnabled] = useState(true);
 
+  // Video filter state
+  const [isVideoFiltersEnabled, setIsVideoFiltersEnabled] = useState(false);
+  const [filterConfig, setFilterConfig] = useState<FilterConfig | null>(null);
+
   // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -95,6 +109,11 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
       // Initialize WebRTC service
       webRTCServiceRef.current = new WebRTCService(webRTCConfig, {
         onLocalStream: (stream) => {
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = stream;
+          }
+        },
+        onFilteredStream: (stream) => {
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = stream;
           }
@@ -428,6 +447,52 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
     setUnreadMessages(0);
   }, []);
 
+  // Toggle video filters
+  const toggleVideoFilters = useCallback(() => {
+    const newState = !isVideoFiltersEnabled;
+    setIsVideoFiltersEnabled(newState);
+    webRTCServiceRef.current?.enableVideoFilters(newState);
+    
+    if (newState) {
+      // Initialize filter config if not already set
+      const currentConfig = webRTCServiceRef.current?.getFilterConfig();
+      if (currentConfig) {
+        setFilterConfig(currentConfig);
+      } else {
+        // Set default light skin smoothing
+        const defaultConfig = VideoFilterService.getPresets().light;
+        setFilterConfig(defaultConfig);
+        webRTCServiceRef.current?.updateFilterConfig(defaultConfig);
+      }
+    }
+  }, [isVideoFiltersEnabled]);
+
+  // Update filter configuration
+  const updateFilterConfig = useCallback((config: Partial<FilterConfig>) => {
+    if (!isVideoFiltersEnabled) return;
+    
+    const newConfig = filterConfig ? { ...filterConfig, ...config } : config as FilterConfig;
+    setFilterConfig(newConfig);
+    webRTCServiceRef.current?.updateFilterConfig(newConfig);
+  }, [isVideoFiltersEnabled, filterConfig]);
+
+  // Set filter preset
+  const setFilterPreset = useCallback((preset: string) => {
+    const presets = VideoFilterService.getPresets();
+    if (presets[preset]) {
+      const presetConfig = presets[preset];
+      setFilterConfig(presetConfig);
+      webRTCServiceRef.current?.updateFilterConfig(presetConfig);
+      
+      // Enable filters if preset is not 'none'
+      const shouldEnable = preset !== 'none';
+      if (shouldEnable !== isVideoFiltersEnabled) {
+        setIsVideoFiltersEnabled(shouldEnable);
+        webRTCServiceRef.current?.enableVideoFilters(shouldEnable);
+      }
+    }
+  }, [isVideoFiltersEnabled]);
+
   // Get connection quality icon
   const getConnectionQualityIcon = useCallback(() => {
     // This would return actual icon components based on quality
@@ -499,6 +564,10 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
     localVideoRef,
     remoteVideoRef,
     
+    // Video filter state
+    isVideoFiltersEnabled,
+    filterConfig,
+    
     // Chat state
     messages,
     unreadMessages,
@@ -512,6 +581,11 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
     toggleAudio,
     toggleRemoteAudio,
     markMessagesAsRead,
+    
+    // Video filter actions
+    toggleVideoFilters,
+    updateFilterConfig,
+    setFilterPreset,
     
     // Utils
     getConnectionQualityIcon,
