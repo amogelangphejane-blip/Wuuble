@@ -327,31 +327,62 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
       // Store the stream reference
       mediaStreamRef.current = stream;
       
-      // Wait for video element to be ready and assign stream
-      if (videoRef.current) {
-        console.log('📺 Assigning stream to video element...');
-        videoRef.current.srcObject = stream;
-        
-        // Add event listeners for video element
-        videoRef.current.onloadedmetadata = () => {
-          console.log('✅ Video metadata loaded');
-          if (videoRef.current) {
-            videoRef.current.play().catch(e => {
+              // Wait for video element to be ready and assign stream
+        if (videoRef.current) {
+          console.log('📺 Assigning stream to video element...');
+          const videoElement = videoRef.current;
+          
+          // Clear any existing srcObject first
+          videoElement.srcObject = null;
+          
+          // Set up event listeners before assigning stream
+          videoElement.onloadedmetadata = () => {
+            console.log('✅ Video metadata loaded');
+            videoElement.play().catch(e => {
               console.error('❌ Video play failed:', e);
             });
-          }
-        };
-        
-        videoRef.current.onplay = () => {
-          console.log('▶️ Video started playing');
-        };
-        
-        videoRef.current.onerror = (e) => {
-          console.error('❌ Video element error:', e);
-        };
-      } else {
-        console.warn('⚠️ Video element not found');
-      }
+          };
+          
+          videoElement.onplay = () => {
+            console.log('▶️ Video started playing');
+          };
+          
+          videoElement.onerror = (e) => {
+            console.error('❌ Video element error:', e);
+          };
+          
+          videoElement.onloadstart = () => {
+            console.log('📹 Video load started');
+          };
+          
+          videoElement.oncanplay = () => {
+            console.log('✅ Video can play');
+          };
+          
+          // Assign the stream
+          videoElement.srcObject = stream;
+          
+          // Force autoplay if needed
+          setTimeout(() => {
+            if (videoElement.paused) {
+              console.log('🔄 Video is paused, attempting to play...');
+              videoElement.play().catch(e => {
+                console.error('❌ Delayed video play failed:', e);
+              });
+            }
+          }, 100);
+          
+        } else {
+          console.warn('⚠️ Video element not found - this might be the issue!');
+          // Try to find video element in DOM as fallback
+          setTimeout(() => {
+            const fallbackVideo = document.querySelector('video[data-livestream]');
+            if (fallbackVideo) {
+              console.log('🔄 Found fallback video element');
+              fallbackVideo.srcObject = stream;
+            }
+          }, 500);
+        }
 
       // Update stream status to live
       console.log('💾 Updating stream status in database...');
@@ -1088,6 +1119,7 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
               <div className="lg:col-span-3 relative bg-black overflow-hidden">
                 <video 
                   ref={videoRef}
+                  data-livestream="true"
                   className="w-full h-full object-cover"
                   autoPlay
                   muted={selectedStream.creator_id !== user?.id}
@@ -1097,6 +1129,48 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
                   onCanPlay={() => console.log('✅ Video can play')}
                   onError={(e) => console.error('❌ Video error:', e)}
                 />
+                
+                {/* Video Feed Troubleshooting Overlay */}
+                {selectedStream?.creator_id === user?.id && !mediaStreamRef.current && (
+                  <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
+                    <div className="text-white text-center p-8">
+                      <div className="text-6xl mb-4">📹</div>
+                      <h3 className="text-xl font-bold mb-4">Video Feed Not Active</h3>
+                      <p className="text-gray-300 mb-6">
+                        Your camera feed is not showing. This could be due to:
+                      </p>
+                      <div className="text-left space-y-2 mb-6">
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-400">•</span>
+                          <span>Camera permissions not granted</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-400">•</span>
+                          <span>Camera is being used by another application</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-400">•</span>
+                          <span>Browser doesn't support camera access</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-400">•</span>
+                          <span>HTTPS required for camera access</span>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <Button 
+                          onClick={() => startStreaming(selectedStream.id)}
+                          className="bg-red-500 hover:bg-red-600"
+                        >
+                          🔄 Retry Camera Access
+                        </Button>
+                        <div className="text-sm text-gray-400">
+                          Check browser console (F12) for detailed error messages
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Live Reactions Overlay */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
