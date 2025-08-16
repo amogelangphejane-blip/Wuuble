@@ -24,7 +24,8 @@ import {
   Zap,
   Crown,
   CreditCard,
-  Radio
+  Radio,
+  Info
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
@@ -33,6 +34,7 @@ import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
 import { ModernHeader } from '@/components/ModernHeader';
 import { QuickAccess } from '@/components/QuickAccess';
 import { LiveStreamFeature } from '@/components/LiveStreamFeature';
+import { CommunityAbout } from '@/components/CommunityAbout';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { validateAvatarUrl } from '@/lib/utils';
@@ -359,7 +361,8 @@ const CommunityDetail = () => {
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
     { id: 'quick-access', label: 'Quick Access', icon: Zap },
-    { id: 'live-streaming', label: 'Live Streaming', icon: Radio }
+    { id: 'live-streaming', label: 'Live Streaming', icon: Radio },
+    { id: 'about', label: 'About', icon: Info }
   ];
 
   if (authLoading || loading) {
@@ -753,6 +756,15 @@ const CommunityDetail = () => {
 
               {activeTab === 'live-streaming' && (
                 <LiveStreamFeature 
+                  communityId={community.id}
+                  communityName={community.name}
+                  isMember={isMember}
+                  isCreator={isCreator}
+                />
+              )}
+
+              {activeTab === 'about' && (
+                <CommunityAbout 
                   communityId={community.id}
                   communityName={community.name}
                   isMember={isMember}
