@@ -37,6 +37,7 @@ import { QuickAccess } from '@/components/QuickAccess';
 import { LiveStreamFeature } from '@/components/LiveStreamFeature';
 import { CommunityAbout } from '@/components/CommunityAbout';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
+import { CommunitySettings } from '@/components/CommunitySettings';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { validateAvatarUrl } from '@/lib/utils';
 
@@ -84,17 +85,10 @@ const CommunityDetail = () => {
   const [loading, setLoading] = useState(true);
   const [joiningLeaving, setJoiningLeaving] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deletingCommunity, setDeletingCommunity] = useState(false);
   const [activeTab, setActiveTab] = useState('discussions');
   const [ongoingCall, setOngoingCall] = useState<OngoingCall | null>(null);
 
-  const [editingCommunity, setEditingCommunity] = useState({
-    name: '',
-    description: '',
-    avatar_url: null as string | null,
-    is_private: false
-  });
+
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -208,13 +202,7 @@ const CommunityDetail = () => {
       setCommunity(communityData);
       setIsCreator(communityData.creator_id === user.id);
 
-      // Initialize editing state
-      setEditingCommunity({
-        name: communityData.name,
-        description: communityData.description,
-        avatar_url: communityData.avatar_url,
-        is_private: communityData.is_private
-      });
+
 
       // Fetch all members (this should work if we have access to the community)
       const { data: membersData, error: membersError } = await supabase
@@ -319,73 +307,9 @@ const CommunityDetail = () => {
     }
   };
 
-  const updateCommunity = async () => {
-    if (!user || !community || !isCreator) return;
 
-    try {
-      const { error } = await supabase
-        .from('communities')
-        .update({
-          name: editingCommunity.name,
-          description: editingCommunity.description,
-          avatar_url: editingCommunity.avatar_url,
-          is_private: editingCommunity.is_private
-        })
-        .eq('id', community.id);
 
-      if (error) throw error;
 
-      toast({
-        title: "Success!",
-        description: "Community updated successfully"
-      });
-
-      setSettingsDialogOpen(false);
-      fetchCommunityDetails();
-    } catch (error) {
-      console.error('Error updating community:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update community";
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const deleteCommunity = async () => {
-    if (!user || !community || !isCreator) return;
-
-    try {
-      setDeletingCommunity(true);
-      
-      const { error } = await supabase
-        .from('communities')
-        .delete()
-        .eq('id', community.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success!",
-        description: "Community deleted successfully"
-      });
-
-      // Navigate back to communities list
-      navigate('/communities');
-    } catch (error) {
-      console.error('Error deleting community:', error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete community";
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setDeletingCommunity(false);
-      setDeleteDialogOpen(false);
-    }
-  };
 
   // Add subscription hook
   const {
@@ -834,144 +758,19 @@ const CommunityDetail = () => {
       </section>
 
       {/* Settings Dialog */}
-      {isCreator && (
-        <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Community Settings</DialogTitle>
-              <DialogDescription>
-                Update your community information and settings.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Community Name</label>
-                <input
-                  type="text"
-                  value={editingCommunity.name}
-                  onChange={(e) => setEditingCommunity({ ...editingCommunity, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <textarea
-                  value={editingCommunity.description}
-                  onChange={(e) => setEditingCommunity({ ...editingCommunity, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px] resize-none"
-                />
-              </div>
-              <div className="space-y-2">
-                <CommunityAvatarUpload
-                  communityId={id}
-                  currentAvatarUrl={editingCommunity.avatar_url}
-                  onAvatarUpdate={(avatarUrl) => setEditingCommunity({ ...editingCommunity, avatar_url: avatarUrl })}
-                  size="lg"
-                  showLabel={true}
-                />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button 
-                onClick={updateCommunity}
-                className="flex-1"
-              >
-                Update Community
-              </Button>
-              <Button 
-                onClick={() => setSettingsDialogOpen(false)}
-                variant="outline"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
-            
-            {/* Danger Zone */}
-            <div className="border-t pt-6 mt-6">
-              <h3 className="text-lg font-semibold text-red-600 mb-2">Danger Zone</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Once you delete a community, there is no going back. This will permanently delete the community and all its content including posts, events, and member data.
-              </p>
-              <Button 
-                onClick={() => setDeleteDialogOpen(true)}
-                variant="destructive"
-                className="w-full"
-              >
-                <Trash2 className="mr-2 w-4 h-4" />
-                Delete Community
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+      {isCreator && community && (
+        <CommunitySettings
+          community={community}
+          isOpen={settingsDialogOpen}
+          onClose={() => setSettingsDialogOpen(false)}
+          onUpdate={fetchCommunityDetails}
+          onDelete={() => navigate('/communities')}
+          isCreator={isCreator}
+          userId={user?.id || ''}
+        />
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-red-600">Delete Community</DialogTitle>
-            <DialogDescription>
-              Are you absolutely sure you want to delete "{community?.name}"? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <h4 className="font-semibold text-red-800 mb-2">This will permanently delete:</h4>
-              <ul className="text-sm text-red-700 space-y-1">
-                <li>• The community and all its settings</li>
-                <li>• All community posts and discussions</li>
-                <li>• All community events</li>
-                <li>• All member data and relationships</li>
-                <li>• Any uploaded images and files</li>
-              </ul>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Type the community name <strong>"{community?.name}"</strong> to confirm deletion:
-            </p>
-            <input
-              type="text"
-              placeholder={`Type "${community?.name}" here`}
-              className="w-full mt-2 px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-              onChange={(e) => {
-                const deleteButton = document.getElementById('delete-confirm-button') as HTMLButtonElement;
-                if (deleteButton) {
-                  deleteButton.disabled = e.target.value !== community?.name;
-                }
-              }}
-            />
-          </div>
-          <div className="flex gap-3">
-            <Button 
-              onClick={() => setDeleteDialogOpen(false)}
-              variant="outline"
-              className="flex-1"
-              disabled={deletingCommunity}
-            >
-              Cancel
-            </Button>
-            <Button 
-              id="delete-confirm-button"
-              onClick={deleteCommunity}
-              variant="destructive"
-              className="flex-1"
-              disabled={true} // Initially disabled until name is typed
-            >
-              {deletingCommunity ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="mr-2 w-4 h-4" />
-                  Delete Forever
-                </>
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 };
