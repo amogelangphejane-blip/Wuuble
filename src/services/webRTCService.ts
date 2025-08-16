@@ -4,6 +4,7 @@ export interface WebRTCConfig {
     video: MediaTrackConstraints;
     audio: MediaTrackConstraints;
   };
+  enableVideoFilters?: boolean;
 }
 
 export interface PeerConnectionEvents {
@@ -14,19 +15,32 @@ export interface PeerConnectionEvents {
   onDataChannelMessage?: (message: any) => void;
   onDataChannelOpen?: () => void;
   onDataChannelClose?: () => void;
+  onFilteredStream?: (stream: MediaStream) => void;
 }
+
+import { VideoFilterService, FilterConfig } from './videoFilterService';
 
 export class WebRTCService {
   private peerConnection: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
   private remoteStream: MediaStream | null = null;
+  private filteredStream: MediaStream | null = null;
   private dataChannel: RTCDataChannel | null = null;
   private config: WebRTCConfig;
   private events: PeerConnectionEvents;
+  private videoFilterService: VideoFilterService | null = null;
+  private localVideoElement: HTMLVideoElement | null = null;
 
   constructor(config: WebRTCConfig, events: PeerConnectionEvents = {}) {
     this.config = config;
     this.events = events;
+    
+    // Initialize video filter service if enabled
+    if (config.enableVideoFilters) {
+      this.videoFilterService = new VideoFilterService();
+      // Adjust performance based on device capabilities
+      this.videoFilterService.adjustPerformance();
+    }
   }
 
   async initializeLocalMedia(): Promise<MediaStream> {
@@ -38,6 +52,12 @@ export class WebRTCService {
       
       this.localStream = stream;
       this.events.onLocalStream?.(stream);
+      
+      // Set up video filtering if enabled
+      if (this.config.enableVideoFilters && this.videoFilterService) {
+        this.setupVideoFiltering(stream);
+      }
+      
       return stream;
     } catch (error) {
       console.error('Failed to get local media:', error);
@@ -50,6 +70,53 @@ export class WebRTCService {
     return this.initializeLocalMedia();
   }
 
+  private setupVideoFiltering(stream: MediaStream): void {
+    if (!this.videoFilterService) return;
+
+    // Create a video element to process the stream
+    this.localVideoElement = document.createElement('video');
+    this.localVideoElement.srcObject = stream;
+    this.localVideoElement.autoplay = true;
+    this.localVideoElement.muted = true;
+    this.localVideoElement.playsInline = true;
+
+    // Wait for video to be ready and start filtering
+    this.localVideoElement.onloadedmetadata = () => {
+      if (this.videoFilterService && this.localVideoElement) {
+        this.filteredStream = this.videoFilterService.startProcessing(this.localVideoElement);
+        this.events.onFilteredStream?.(this.filteredStream);
+      }
+    };
+  }
+
+  public enableVideoFilters(enabled: boolean): void {
+    if (!this.videoFilterService) {
+      if (enabled) {
+        this.videoFilterService = new VideoFilterService();
+        this.videoFilterService.adjustPerformance();
+        if (this.localStream) {
+          this.setupVideoFiltering(this.localStream);
+        }
+      }
+      return;
+    }
+
+    if (enabled && this.localStream && !this.filteredStream) {
+      this.setupVideoFiltering(this.localStream);
+    } else if (!enabled && this.filteredStream) {
+      this.videoFilterService.stopProcessing();
+      this.filteredStream = null;
+    }
+  }
+
+  public updateFilterConfig(config: Partial<FilterConfig>): void {
+    this.videoFilterService?.updateConfig(config);
+  }
+
+  public getFilterConfig(): FilterConfig | null {
+    return this.videoFilterService?.getConfig() || null;
+  }
+
   createPeerConnection(): RTCPeerConnection {
     if (this.peerConnection) {
       this.peerConnection.close();
@@ -59,10 +126,11 @@ export class WebRTCService {
       iceServers: this.config.iceServers
     });
 
-    // Add local stream tracks
-    if (this.localStream) {
-      this.localStream.getTracks().forEach(track => {
-        this.peerConnection!.addTrack(track, this.localStream!);
+    // Add local stream tracks (use filtered stream if available)
+    const streamToUse = this.filteredStream || this.localStream;
+    if (streamToUse) {
+      streamToUse.getTracks().forEach(track => {
+        this.peerConnection!.addTrack(track, streamToUse!);
       });
     }
 
@@ -197,6 +265,10 @@ export class WebRTCService {
     return this.localStream;
   }
 
+  getFilteredStream(): MediaStream | null {
+    return this.filteredStream;
+  }
+
   getRemoteStream(): MediaStream | null {
     return this.remoteStream;
   }
@@ -225,6 +297,21 @@ export class WebRTCService {
       this.localStream = null;
     }
 
+    if (this.filteredStream) {
+      this.filteredStream.getTracks().forEach(track => track.stop());
+      this.filteredStream = null;
+    }
+
+    if (this.videoFilterService) {
+      this.videoFilterService.cleanup();
+      this.videoFilterService = null;
+    }
+
+    if (this.localVideoElement) {
+      this.localVideoElement.srcObject = null;
+      this.localVideoElement = null;
+    }
+
     this.remoteStream = null;
   }
 }
@@ -248,5 +335,6 @@ export const defaultWebRTCConfig: WebRTCConfig = {
       autoGainControl: true,
       sampleRate: 48000
     }
-  }
+  },
+  enableVideoFilters: true
 };
