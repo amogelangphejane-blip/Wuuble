@@ -50,6 +50,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { validateAvatarUrl } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { CameraTestModal } from './CameraTestModal';
 
 interface LiveStream {
   id: string;
@@ -284,30 +285,107 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
     }
   };
 
-  // Start streaming with modern setup
+  // Start streaming with enhanced error handling and debugging
   const startStreaming = async (streamId: string) => {
     try {
+      console.log('🎥 Starting stream...', { streamId });
+      
+      // Check if browser supports media devices
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Your browser does not support camera access. Please use a modern browser like Chrome, Firefox, or Safari.');
+      }
+
+      // Check if we're in a secure context (HTTPS required for camera access)
+      if (!window.isSecureContext) {
+        console.warn('⚠️ Not in secure context - camera access might be blocked');
+      }
+
+      console.log('📹 Requesting camera and microphone access...');
+      
       // Request camera and microphone access with better constraints
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30 },
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
+          frameRate: { ideal: 30, min: 15 },
           facingMode: 'user'
         }, 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          sampleRate: 44100
         }
       });
       
+      console.log('✅ Media stream obtained:', {
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length,
+        active: stream.active
+      });
+
+      // Store the stream reference
       mediaStreamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      
+              // Wait for video element to be ready and assign stream
+        if (videoRef.current) {
+          console.log('📺 Assigning stream to video element...');
+          const videoElement = videoRef.current;
+          
+          // Clear any existing srcObject first
+          videoElement.srcObject = null;
+          
+          // Set up event listeners before assigning stream
+          videoElement.onloadedmetadata = () => {
+            console.log('✅ Video metadata loaded');
+            videoElement.play().catch(e => {
+              console.error('❌ Video play failed:', e);
+            });
+          };
+          
+          videoElement.onplay = () => {
+            console.log('▶️ Video started playing');
+          };
+          
+          videoElement.onerror = (e) => {
+            console.error('❌ Video element error:', e);
+          };
+          
+          videoElement.onloadstart = () => {
+            console.log('📹 Video load started');
+          };
+          
+          videoElement.oncanplay = () => {
+            console.log('✅ Video can play');
+          };
+          
+          // Assign the stream
+          videoElement.srcObject = stream;
+          
+          // Force autoplay if needed
+          setTimeout(() => {
+            if (videoElement.paused) {
+              console.log('🔄 Video is paused, attempting to play...');
+              videoElement.play().catch(e => {
+                console.error('❌ Delayed video play failed:', e);
+              });
+            }
+          }, 100);
+          
+        } else {
+          console.warn('⚠️ Video element not found - this might be the issue!');
+          // Try to find video element in DOM as fallback
+          setTimeout(() => {
+            const fallbackVideo = document.querySelector('video[data-livestream]');
+            if (fallbackVideo) {
+              console.log('🔄 Found fallback video element');
+              fallbackVideo.srcObject = stream;
+            }
+          }, 500);
+        }
 
       // Update stream status to live
+      console.log('💾 Updating stream status in database...');
       await supabase
         .from('live_streams')
         .update({ 
@@ -317,6 +395,8 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
         .eq('id', streamId);
 
       setIsStreaming(true);
+      console.log('🎉 Stream started successfully!');
+      
       toast({
         title: "🔴 You're Live!",
         description: "Your stream is now broadcasting to the community"
@@ -324,10 +404,33 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
 
       fetchStreams();
     } catch (error: any) {
-      console.error('Error starting stream:', error);
+      console.error('❌ Error starting stream:', error);
+      
+      let errorMessage = "Failed to start stream";
+      let errorDescription = "Please try again";
+
+      if (error.name === 'NotAllowedError') {
+        errorMessage = "Camera Access Denied";
+        errorDescription = "Please allow camera and microphone access in your browser settings";
+      } else if (error.name === 'NotFoundError') {
+        errorMessage = "No Camera Found";
+        errorDescription = "Please connect a camera and microphone to your device";
+      } else if (error.name === 'NotReadableError') {
+        errorMessage = "Camera Busy";
+        errorDescription = "Your camera might be in use by another application";
+      } else if (error.name === 'OverconstrainedError') {
+        errorMessage = "Camera Settings Not Supported";
+        errorDescription = "Your camera doesn't support the required settings";
+      } else if (error.name === 'SecurityError') {
+        errorMessage = "Security Error";
+        errorDescription = "Camera access blocked. Please use HTTPS or check browser settings";
+      } else if (error.message) {
+        errorDescription = error.message;
+      }
+
       toast({
-        title: "❌ Camera Access Required",
-        description: "Please allow camera and microphone access to start streaming",
+        title: `❌ ${errorMessage}`,
+        description: errorDescription,
         variant: "destructive"
       });
     }
@@ -377,6 +480,8 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
     if (!user) return;
 
     try {
+      console.log('👥 Joining stream as viewer:', stream.id);
+      
       // Add user as viewer
       await supabase
         .from('stream_viewers')
@@ -390,6 +495,14 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
       fetchStreamChat(stream.id);
       fetchStreamQuestions(stream.id);
       fetchActivePoll(stream.id);
+      
+      // If this is the stream creator, automatically start streaming
+      if (stream.creator_id === user.id && stream.status === 'live') {
+        console.log('🎬 Auto-starting stream for creator');
+        setTimeout(() => {
+          startStreaming(stream.id);
+        }, 500); // Small delay to ensure modal is fully rendered
+      }
     } catch (error: any) {
       console.error('Error joining stream:', error);
     }
@@ -796,22 +909,37 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
                 </div>
               </div>
             </div>
-            <div className="bg-gray-50 p-6 flex gap-4">
-              <Button 
-                onClick={createStream}
-                disabled={!newStream.title.trim()}
-                className="flex-1 h-12 text-lg bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600"
-              >
-                <Radio className="w-5 h-5 mr-2" />
-                {newStream.scheduled_start_time ? '📅 Schedule Stream' : '🔴 Go Live Now'}
-              </Button>
-              <Button 
-                onClick={() => setCreateStreamDialogOpen(false)}
-                variant="outline"
-                className="flex-1 h-12 text-lg"
-              >
-                Cancel
-              </Button>
+            <div className="bg-gray-50 p-6 space-y-4">
+              {/* Camera Test Button */}
+              <div className="flex justify-center">
+                <CameraTestModal 
+                  trigger={
+                    <Button variant="outline" size="sm">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Test Camera & Microphone
+                    </Button>
+                  }
+                />
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <Button 
+                  onClick={createStream}
+                  disabled={!newStream.title.trim()}
+                  className="flex-1 h-12 text-lg bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600"
+                >
+                  <Radio className="w-5 h-5 mr-2" />
+                  {newStream.scheduled_start_time ? '📅 Schedule Stream' : '🔴 Go Live Now'}
+                </Button>
+                <Button 
+                  onClick={() => setCreateStreamDialogOpen(false)}
+                  variant="outline"
+                  className="flex-1 h-12 text-lg"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -991,11 +1119,58 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
               <div className="lg:col-span-3 relative bg-black overflow-hidden">
                 <video 
                   ref={videoRef}
+                  data-livestream="true"
                   className="w-full h-full object-cover"
                   autoPlay
                   muted={selectedStream.creator_id !== user?.id}
                   playsInline
+                  controls={false}
+                  onLoadStart={() => console.log('📹 Video load started')}
+                  onCanPlay={() => console.log('✅ Video can play')}
+                  onError={(e) => console.error('❌ Video error:', e)}
                 />
+                
+                {/* Video Feed Troubleshooting Overlay */}
+                {selectedStream?.creator_id === user?.id && !mediaStreamRef.current && (
+                  <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
+                    <div className="text-white text-center p-8">
+                      <div className="text-6xl mb-4">📹</div>
+                      <h3 className="text-xl font-bold mb-4">Video Feed Not Active</h3>
+                      <p className="text-gray-300 mb-6">
+                        Your camera feed is not showing. This could be due to:
+                      </p>
+                      <div className="text-left space-y-2 mb-6">
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-400">•</span>
+                          <span>Camera permissions not granted</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-400">•</span>
+                          <span>Camera is being used by another application</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-400">•</span>
+                          <span>Browser doesn't support camera access</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-400">•</span>
+                          <span>HTTPS required for camera access</span>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <Button 
+                          onClick={() => startStreaming(selectedStream.id)}
+                          className="bg-red-500 hover:bg-red-600"
+                        >
+                          🔄 Retry Camera Access
+                        </Button>
+                        <div className="text-sm text-gray-400">
+                          Check browser console (F12) for detailed error messages
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Live Reactions Overlay */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
