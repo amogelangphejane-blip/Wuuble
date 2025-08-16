@@ -1,72 +1,37 @@
--- Enhanced Live Streaming Database Schema
--- Supports Instagram Live-like features including polls, Q&A, reactions, and enhanced chat
+-- Migration: Enhance Live Streams with Instagram Live-like Features
+-- Date: 2025-01-27
+-- Description: Adds polls, Q&A, enhanced chat, reactions, and more interactive features
 
--- Create live_streams table (enhanced)
-CREATE TABLE IF NOT EXISTS live_streams (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  community_id UUID NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
-  creator_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  description TEXT,
-  status TEXT CHECK (status IN ('scheduled', 'live', 'ended', 'cancelled')) DEFAULT 'scheduled',
-  scheduled_start_time TIMESTAMPTZ,
-  actual_start_time TIMESTAMPTZ,
-  end_time TIMESTAMPTZ,
-  viewer_count INTEGER DEFAULT 0,
-  max_viewers INTEGER DEFAULT 1000,
-  peak_viewers INTEGER DEFAULT 0,
-  total_messages INTEGER DEFAULT 0,
-  total_reactions INTEGER DEFAULT 0,
-  thumbnail_url TEXT,
-  stream_key TEXT,
-  rtmp_url TEXT,
-  metadata JSONB DEFAULT '{}',
-  settings JSONB DEFAULT '{"qa_mode": false, "polls_enabled": true, "reactions_enabled": true, "chat_moderation": false}',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- First, let's add new columns to existing live_streams table
+ALTER TABLE live_streams ADD COLUMN IF NOT EXISTS peak_viewers INTEGER DEFAULT 0;
+ALTER TABLE live_streams ADD COLUMN IF NOT EXISTS total_messages INTEGER DEFAULT 0;
+ALTER TABLE live_streams ADD COLUMN IF NOT EXISTS total_reactions INTEGER DEFAULT 0;
+ALTER TABLE live_streams ADD COLUMN IF NOT EXISTS settings JSONB DEFAULT '{"qa_mode": false, "polls_enabled": true, "reactions_enabled": true, "chat_moderation": false}';
 
--- Create stream_viewers table (enhanced)
-CREATE TABLE IF NOT EXISTS stream_viewers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  stream_id UUID NOT NULL REFERENCES live_streams(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  joined_at TIMESTAMPTZ DEFAULT NOW(),
-  left_at TIMESTAMPTZ,
-  is_active BOOLEAN DEFAULT TRUE,
-  watch_time_seconds INTEGER DEFAULT 0,
-  last_seen TIMESTAMPTZ DEFAULT NOW(),
-  device_info JSONB DEFAULT '{}',
-  UNIQUE(stream_id, user_id)
-);
+-- Enhance stream_viewers table
+ALTER TABLE stream_viewers ADD COLUMN IF NOT EXISTS watch_time_seconds INTEGER DEFAULT 0;
+ALTER TABLE stream_viewers ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE stream_viewers ADD COLUMN IF NOT EXISTS device_info JSONB DEFAULT '{}';
 
--- Create stream_chat table (enhanced with new features)
-CREATE TABLE IF NOT EXISTS stream_chat (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  stream_id UUID NOT NULL REFERENCES live_streams(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  message TEXT NOT NULL,
-  message_type TEXT CHECK (message_type IN ('text', 'emoji', 'system', 'question')) DEFAULT 'text',
-  reply_to_id UUID REFERENCES stream_chat(id) ON DELETE SET NULL,
-  is_pinned BOOLEAN DEFAULT FALSE,
-  is_deleted BOOLEAN DEFAULT FALSE,
-  is_highlighted BOOLEAN DEFAULT FALSE,
-  metadata JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Enhance stream_chat table
+ALTER TABLE stream_chat ADD COLUMN IF NOT EXISTS message_type TEXT DEFAULT 'text';
+ALTER TABLE stream_chat ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT FALSE;
+ALTER TABLE stream_chat ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE stream_chat ADD COLUMN IF NOT EXISTS is_highlighted BOOLEAN DEFAULT FALSE;
+ALTER TABLE stream_chat ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}';
+ALTER TABLE stream_chat ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
--- Create stream_reactions table (new)
-CREATE TABLE IF NOT EXISTS stream_reactions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  stream_id UUID NOT NULL REFERENCES live_streams(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  reaction_type TEXT NOT NULL, -- emoji or reaction name
-  position_x FLOAT, -- x position on screen (0-100)
-  position_y FLOAT, -- y position on screen (0-100)
-  duration_ms INTEGER DEFAULT 3000,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Update message_type constraint
+ALTER TABLE stream_chat DROP CONSTRAINT IF EXISTS stream_chat_message_type_check;
+ALTER TABLE stream_chat ADD CONSTRAINT stream_chat_message_type_check 
+  CHECK (message_type IN ('text', 'emoji', 'system', 'question'));
+
+-- Enhance stream_reactions table
+ALTER TABLE stream_reactions DROP CONSTRAINT IF EXISTS stream_reactions_reaction_type_check;
+ALTER TABLE stream_reactions DROP CONSTRAINT IF EXISTS stream_reactions_stream_id_user_id_reaction_type_key;
+ALTER TABLE stream_reactions ADD COLUMN IF NOT EXISTS position_x FLOAT;
+ALTER TABLE stream_reactions ADD COLUMN IF NOT EXISTS position_y FLOAT;
+ALTER TABLE stream_reactions ADD COLUMN IF NOT EXISTS duration_ms INTEGER DEFAULT 3000;
 
 -- Create stream_questions table (new for Q&A)
 CREATE TABLE IF NOT EXISTS stream_questions (
@@ -154,22 +119,9 @@ CREATE TABLE IF NOT EXISTS stream_analytics (
   timestamp TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_live_streams_community_status ON live_streams(community_id, status);
-CREATE INDEX IF NOT EXISTS idx_live_streams_creator ON live_streams(creator_id);
-CREATE INDEX IF NOT EXISTS idx_live_streams_created_at ON live_streams(created_at DESC);
-
-CREATE INDEX IF NOT EXISTS idx_stream_viewers_stream ON stream_viewers(stream_id);
-CREATE INDEX IF NOT EXISTS idx_stream_viewers_user ON stream_viewers(user_id);
-CREATE INDEX IF NOT EXISTS idx_stream_viewers_active ON stream_viewers(stream_id, is_active);
-
-CREATE INDEX IF NOT EXISTS idx_stream_chat_stream ON stream_chat(stream_id);
-CREATE INDEX IF NOT EXISTS idx_stream_chat_created_at ON stream_chat(stream_id, created_at);
+-- Add new indexes
 CREATE INDEX IF NOT EXISTS idx_stream_chat_pinned ON stream_chat(stream_id, is_pinned);
 CREATE INDEX IF NOT EXISTS idx_stream_chat_type ON stream_chat(stream_id, message_type);
-
-CREATE INDEX IF NOT EXISTS idx_stream_reactions_stream ON stream_reactions(stream_id);
-CREATE INDEX IF NOT EXISTS idx_stream_reactions_created_at ON stream_reactions(created_at);
 
 CREATE INDEX IF NOT EXISTS idx_stream_questions_stream ON stream_questions(stream_id);
 CREATE INDEX IF NOT EXISTS idx_stream_questions_answered ON stream_questions(stream_id, is_answered);
@@ -189,15 +141,7 @@ CREATE INDEX IF NOT EXISTS idx_stream_moderators_stream ON stream_moderators(str
 CREATE INDEX IF NOT EXISTS idx_stream_analytics_stream ON stream_analytics(stream_id);
 CREATE INDEX IF NOT EXISTS idx_stream_analytics_timestamp ON stream_analytics(timestamp);
 
--- Triggers for automatic updates
-CREATE OR REPLACE FUNCTION update_live_streams_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ language 'plpgsql';
-
+-- Enhanced trigger functions
 CREATE OR REPLACE FUNCTION update_stream_viewer_count()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -279,27 +223,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create triggers
-DROP TRIGGER IF EXISTS trigger_update_live_streams_updated_at ON live_streams;
-CREATE TRIGGER trigger_update_live_streams_updated_at
-  BEFORE UPDATE ON live_streams
-  FOR EACH ROW EXECUTE FUNCTION update_live_streams_updated_at();
-
-DROP TRIGGER IF EXISTS trigger_update_stream_viewer_count_insert ON stream_viewers;
-CREATE TRIGGER trigger_update_stream_viewer_count_insert
-  AFTER INSERT ON stream_viewers
-  FOR EACH ROW EXECUTE FUNCTION update_stream_viewer_count();
-
-DROP TRIGGER IF EXISTS trigger_update_stream_viewer_count_update ON stream_viewers;
-CREATE TRIGGER trigger_update_stream_viewer_count_update
-  AFTER UPDATE ON stream_viewers
-  FOR EACH ROW EXECUTE FUNCTION update_stream_viewer_count();
-
-DROP TRIGGER IF EXISTS trigger_update_stream_viewer_count_delete ON stream_viewers;
-CREATE TRIGGER trigger_update_stream_viewer_count_delete
-  AFTER DELETE ON stream_viewers
-  FOR EACH ROW EXECUTE FUNCTION update_stream_viewer_count();
-
+-- Drop and recreate triggers with new functions
 DROP TRIGGER IF EXISTS trigger_update_stream_message_count ON stream_chat;
 CREATE TRIGGER trigger_update_stream_message_count
   AFTER INSERT ON stream_chat
@@ -315,13 +239,7 @@ CREATE TRIGGER trigger_update_poll_vote_count
   AFTER INSERT ON stream_poll_votes
   FOR EACH ROW EXECUTE FUNCTION update_poll_vote_count();
 
--- Row Level Security (RLS) Policies
-
--- Enable RLS on all tables
-ALTER TABLE live_streams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE stream_viewers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE stream_chat ENABLE ROW LEVEL SECURITY;
-ALTER TABLE stream_reactions ENABLE ROW LEVEL SECURITY;
+-- Enable RLS on new tables
 ALTER TABLE stream_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stream_polls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stream_poll_votes ENABLE ROW LEVEL SECURITY;
@@ -329,86 +247,7 @@ ALTER TABLE stream_highlights ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stream_moderators ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stream_analytics ENABLE ROW LEVEL SECURITY;
 
--- Live Streams Policies
-CREATE POLICY "Users can view streams in their communities" ON live_streams
-  FOR SELECT USING (
-    community_id IN (
-      SELECT community_id FROM community_members 
-      WHERE user_id = auth.uid() AND status = 'approved'
-    )
-  );
-
-CREATE POLICY "Users can create streams in their communities" ON live_streams
-  FOR INSERT WITH CHECK (
-    creator_id = auth.uid() AND
-    community_id IN (
-      SELECT community_id FROM community_members 
-      WHERE user_id = auth.uid() AND status = 'approved'
-    )
-  );
-
-CREATE POLICY "Stream creators can update their streams" ON live_streams
-  FOR UPDATE USING (creator_id = auth.uid());
-
-CREATE POLICY "Stream creators can delete their streams" ON live_streams
-  FOR DELETE USING (creator_id = auth.uid());
-
--- Stream Viewers Policies
-CREATE POLICY "Users can manage their own viewer status" ON stream_viewers
-  FOR ALL USING (user_id = auth.uid());
-
-CREATE POLICY "Stream creators can view all viewers" ON stream_viewers
-  FOR SELECT USING (
-    stream_id IN (SELECT id FROM live_streams WHERE creator_id = auth.uid())
-  );
-
--- Stream Chat Policies
-CREATE POLICY "Users can view chat in accessible streams" ON stream_chat
-  FOR SELECT USING (
-    stream_id IN (
-      SELECT ls.id FROM live_streams ls
-      JOIN community_members cm ON ls.community_id = cm.community_id
-      WHERE cm.user_id = auth.uid() AND cm.status = 'approved'
-    )
-  );
-
-CREATE POLICY "Users can send messages in accessible streams" ON stream_chat
-  FOR INSERT WITH CHECK (
-    user_id = auth.uid() AND
-    stream_id IN (
-      SELECT ls.id FROM live_streams ls
-      JOIN community_members cm ON ls.community_id = cm.community_id
-      WHERE cm.user_id = auth.uid() AND cm.status = 'approved'
-    )
-  );
-
-CREATE POLICY "Users can update their own messages" ON stream_chat
-  FOR UPDATE USING (user_id = auth.uid());
-
-CREATE POLICY "Stream creators can update any message in their stream" ON stream_chat
-  FOR UPDATE USING (
-    stream_id IN (SELECT id FROM live_streams WHERE creator_id = auth.uid())
-  );
-
--- Stream Reactions Policies
-CREATE POLICY "Users can view reactions in accessible streams" ON stream_reactions
-  FOR SELECT USING (
-    stream_id IN (
-      SELECT ls.id FROM live_streams ls
-      JOIN community_members cm ON ls.community_id = cm.community_id
-      WHERE cm.user_id = auth.uid() AND cm.status = 'approved'
-    )
-  );
-
-CREATE POLICY "Users can send reactions in accessible streams" ON stream_reactions
-  FOR INSERT WITH CHECK (
-    user_id = auth.uid() AND
-    stream_id IN (
-      SELECT ls.id FROM live_streams ls
-      JOIN community_members cm ON ls.community_id = cm.community_id
-      WHERE cm.user_id = auth.uid() AND cm.status = 'approved'
-    )
-  );
+-- RLS Policies for new tables
 
 -- Stream Questions Policies
 CREATE POLICY "Users can view questions in accessible streams" ON stream_questions
@@ -517,17 +356,10 @@ CREATE POLICY "Stream creators can view analytics for their streams" ON stream_a
 CREATE POLICY "System can insert analytics" ON stream_analytics
   FOR INSERT WITH CHECK (true); -- Allow system inserts
 
--- Grant necessary permissions
-GRANT ALL ON live_streams TO authenticated;
-GRANT ALL ON stream_viewers TO authenticated;
-GRANT ALL ON stream_chat TO authenticated;
-GRANT ALL ON stream_reactions TO authenticated;
+-- Grant permissions on new tables
 GRANT ALL ON stream_questions TO authenticated;
 GRANT ALL ON stream_polls TO authenticated;
 GRANT ALL ON stream_poll_votes TO authenticated;
 GRANT ALL ON stream_highlights TO authenticated;
 GRANT ALL ON stream_moderators TO authenticated;
 GRANT ALL ON stream_analytics TO authenticated;
-
--- Grant sequence permissions
-GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;
