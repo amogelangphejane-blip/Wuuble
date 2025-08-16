@@ -327,6 +327,19 @@ export const VideoChat = () => {
                       <Sparkles className="w-5 h-5 animate-pulse" />
                       <span className="text-sm">{onlineUsers.toLocaleString()} people online</span>
                     </div>
+                    
+                    {/* Settings Button - Available while searching */}
+                    <div className="mt-6">
+                      <Button
+                        onClick={() => setShowFilters(true)}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white/10 hover:bg-white/20 text-white border-white/30 px-6 py-2 rounded-full transition-all duration-300"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Adjust Preferences
+                      </Button>
+                    </div>
                   </>
                 ) : connectionStatus === 'reconnecting' ? (
                   <>
@@ -341,24 +354,37 @@ export const VideoChat = () => {
                     </div>
                     <h2 className="text-2xl font-bold mb-2">Ready to meet someone new?</h2>
                     <p className="text-lg opacity-90 mb-6">Tap the button below to start chatting</p>
-                    <Button
-                      onClick={startChat}
-                      disabled={isSearching}
-                      size="lg"
-                      className="bg-white/20 hover:bg-white/30 text-white font-semibold px-12 py-4 rounded-full text-lg transition-all duration-300 transform hover:scale-105 border border-white/30"
-                    >
-                      {isSearching ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
-                          Connecting...
-                        </>
-                      ) : (
-                        <>
-                          <Video className="w-5 h-5 mr-3" />
-                          Start Chatting
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex flex-col items-center space-y-4">
+                      <Button
+                        onClick={startChat}
+                        disabled={isSearching}
+                        size="lg"
+                        className="bg-white/20 hover:bg-white/30 text-white font-semibold px-12 py-4 rounded-full text-lg transition-all duration-300 transform hover:scale-105 border border-white/30"
+                      >
+                        {isSearching ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
+                            Connecting...
+                          </>
+                        ) : (
+                          <>
+                            <Video className="w-5 h-5 mr-3" />
+                            Start Chatting
+                          </>
+                        )}
+                      </Button>
+                      
+                      {/* Settings Button - Always visible */}
+                      <Button
+                        onClick={() => setShowFilters(true)}
+                        variant="outline"
+                        size="lg"
+                        className="bg-white/10 hover:bg-white/20 text-white border-white/30 px-8 py-3 rounded-full transition-all duration-300"
+                      >
+                        <Settings className="w-5 h-5 mr-2" />
+                        Preferences & Filters
+                      </Button>
+                    </div>
                   </>
                 )}
               </div>
@@ -396,6 +422,29 @@ export const VideoChat = () => {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         />
+      )}
+
+      {/* Settings Button - Always accessible when not connected */}
+      {!partnerConnected && (
+        <div className="absolute top-4 left-4 z-20 flex space-x-2">
+          <Button
+            onClick={() => setShowFilters(true)}
+            variant="ghost"
+            size="lg"
+            className="w-14 h-14 rounded-full bg-white/20 hover:bg-white/30 text-white border border-white/30 transition-all duration-300"
+          >
+            <Settings className="w-6 h-6" />
+          </Button>
+          
+          <Button
+            onClick={() => setShowVideoFilters(true)}
+            variant="ghost"
+            size="lg"
+            className={`w-14 h-14 rounded-full ${isVideoFiltersEnabled ? 'bg-purple-500/30 text-purple-300' : 'bg-white/20 hover:bg-white/30 text-white'} border border-white/30 transition-all duration-300`}
+          >
+            <Sparkles className="w-6 h-6" />
+          </Button>
+        </div>
       )}
 
       {/* Top Bar - User Info Card */}
