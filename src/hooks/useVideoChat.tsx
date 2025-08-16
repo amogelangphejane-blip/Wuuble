@@ -57,6 +57,8 @@ export interface UseVideoChatReturn {
   toggleVideoFilters: () => void;
   updateFilterConfig: (config: Partial<FilterConfig>) => void;
   setFilterPreset: (preset: string) => void;
+  toggleIndividualFilter: (filterType: keyof FilterConfig) => void;
+  updateFilterIntensity: (filterType: keyof FilterConfig, value: number) => void;
   
   // Utils
   getConnectionQualityIcon: () => React.ReactNode;
@@ -460,7 +462,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
         setFilterConfig(currentConfig);
       } else {
         // Set default light skin smoothing
-        const defaultConfig = VideoFilterService.getPresets().light;
+        const defaultConfig = VideoFilterService.getPresetConfigs().light;
         setFilterConfig(defaultConfig);
         webRTCServiceRef.current?.updateFilterConfig(defaultConfig);
       }
@@ -478,7 +480,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
 
   // Set filter preset
   const setFilterPreset = useCallback((preset: string) => {
-    const presets = VideoFilterService.getPresets();
+    const presets = VideoFilterService.getPresetConfigs();
     if (presets[preset]) {
       const presetConfig = presets[preset];
       setFilterConfig(presetConfig);
@@ -492,6 +494,50 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
       }
     }
   }, [isVideoFiltersEnabled]);
+
+  // Toggle individual filter
+  const toggleIndividualFilter = useCallback((filterType: keyof FilterConfig) => {
+    if (!filterConfig) return;
+    
+    const currentlyEnabled = filterConfig[filterType]?.enabled || false;
+    const newConfig = {
+      ...filterConfig,
+      [filterType]: {
+        ...filterConfig[filterType],
+        enabled: !currentlyEnabled
+      }
+    };
+    
+    setFilterConfig(newConfig);
+    webRTCServiceRef.current?.updateFilterConfig(newConfig);
+  }, [filterConfig]);
+
+  // Update filter intensity
+  const updateFilterIntensity = useCallback((filterType: keyof FilterConfig, value: number) => {
+    if (!filterConfig) return;
+    
+    let newConfig = { ...filterConfig };
+    
+    if (filterType === 'skinSmoothing') {
+      newConfig.skinSmoothing = {
+        ...newConfig.skinSmoothing,
+        intensity: Math.max(0, Math.min(100, value))
+      };
+    } else if (filterType === 'brightness') {
+      newConfig.brightness = {
+        ...newConfig.brightness,
+        value: Math.max(-100, Math.min(100, value))
+      };
+    } else if (filterType === 'contrast') {
+      newConfig.contrast = {
+        ...newConfig.contrast,
+        value: Math.max(-100, Math.min(100, value))
+      };
+    }
+    
+    setFilterConfig(newConfig);
+    webRTCServiceRef.current?.updateFilterConfig(newConfig);
+  }, [filterConfig]);
 
   // Get connection quality icon
   const getConnectionQualityIcon = useCallback(() => {
@@ -586,6 +632,8 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
     toggleVideoFilters,
     updateFilterConfig,
     setFilterPreset,
+    toggleIndividualFilter,
+    updateFilterIntensity,
     
     // Utils
     getConnectionQualityIcon,
