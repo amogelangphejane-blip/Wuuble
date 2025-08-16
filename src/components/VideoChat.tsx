@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useVideoChat } from '@/hooks/useVideoChat';
+import { VideoFilterService, FilterCategory } from '@/services/videoFilterService';
 import { 
   Video, 
   VideoOff, 
@@ -30,7 +31,10 @@ import {
   Search,
   X,
   Volume2,
-  VolumeX
+  VolumeX,
+  Sun,
+  Contrast,
+  Smile
 } from 'lucide-react';
 
 interface UserPreferences {
@@ -82,7 +86,9 @@ export const VideoChat = () => {
     markMessagesAsRead,
     toggleVideoFilters,
     updateFilterConfig,
-    setFilterPreset
+    setFilterPreset,
+    toggleIndividualFilter,
+    updateFilterIntensity
   } = useVideoChat({ useMockSignaling: true });
 
   // UI States
@@ -649,82 +655,188 @@ export const VideoChat = () => {
         </div>
       )}
 
-      {/* Filters Modal */}
+      {/* Settings Modal */}
       <Dialog open={showFilters} onOpenChange={setShowFilters}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Matching Preferences</DialogTitle>
+            <DialogTitle className="flex items-center space-x-2">
+              <Settings className="w-5 h-5" />
+              <span>Video Chat Settings</span>
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Age Range</label>
-              <Select
-                value={preferences.ageRange}
-                onValueChange={(value) => 
-                  setPreferences(prev => ({ ...prev, ageRange: value }))
-                }
+          
+          <div className="space-y-6">
+            {/* Matching Preferences Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Matching Preferences</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Age Range</label>
+                  <Select
+                    value={preferences.ageRange}
+                    onValueChange={(value) => 
+                      setPreferences(prev => ({ ...prev, ageRange: value }))
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="18-25">18-25</SelectItem>
+                      <SelectItem value="26-35">26-35</SelectItem>
+                      <SelectItem value="36-45">36-45</SelectItem>
+                      <SelectItem value="46+">46+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Location</label>
+                  <Select
+                    value={preferences.location}
+                    onValueChange={(value) => 
+                      setPreferences(prev => ({ ...prev, location: value }))
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="global">Global</SelectItem>
+                      <SelectItem value="local">Local</SelectItem>
+                      <SelectItem value="country">Same Country</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Language</label>
+                  <Select
+                    value={preferences.language}
+                    onValueChange={(value) => 
+                      setPreferences(prev => ({ ...prev, language: value }))
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Spanish</SelectItem>
+                      <SelectItem value="fr">French</SelectItem>
+                      <SelectItem value="de">German</SelectItem>
+                      <SelectItem value="it">Italian</SelectItem>
+                      <SelectItem value="pt">Portuguese</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Interests</label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {["Music", "Travel", "Sports", "Art", "Food", "Movies"].map((interest) => (
+                      <Badge key={interest} variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">
+                        {interest}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Video Filters Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center space-x-2">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Video Filters</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Master Filter Toggle */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="settings-filters-toggle" className="text-sm font-medium">
+                      Enable Video Filters
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Apply beauty and enhancement filters to your video
+                    </p>
+                  </div>
+                  <Switch
+                    id="settings-filters-toggle"
+                    checked={isVideoFiltersEnabled}
+                    onCheckedChange={toggleVideoFilters}
+                  />
+                </div>
+
+                {/* Quick Filter Controls */}
+                {isVideoFiltersEnabled && filterConfig && (
+                  <div className="space-y-4 pt-2 border-t">
+                    {/* Smooth Skin Filter */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Smile className="w-4 h-4" />
+                        <Label className="text-sm">Smooth Skin</Label>
+                      </div>
+                      <Switch
+                        checked={filterConfig.skinSmoothing?.enabled || false}
+                        onCheckedChange={() => toggleIndividualFilter('skinSmoothing')}
+                      />
+                    </div>
+
+                    {/* Brightness Filter */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Sun className="w-4 h-4" />
+                        <Label className="text-sm">Brightness</Label>
+                      </div>
+                      <Switch
+                        checked={filterConfig.brightness?.enabled || false}
+                        onCheckedChange={() => toggleIndividualFilter('brightness')}
+                      />
+                    </div>
+
+                    {/* Contrast Filter */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Contrast className="w-4 h-4" />
+                        <Label className="text-sm">Contrast</Label>
+                      </div>
+                      <Switch
+                        checked={filterConfig.contrast?.enabled || false}
+                        onCheckedChange={() => toggleIndividualFilter('contrast')}
+                      />
+                    </div>
+
+                    {/* Advanced Settings Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowFilters(false);
+                        setShowVideoFilters(true);
+                      }}
+                      className="w-full"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Advanced Filter Settings
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(false)}
               >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="18-25">18-25</SelectItem>
-                  <SelectItem value="26-35">26-35</SelectItem>
-                  <SelectItem value="36-45">36-45</SelectItem>
-                  <SelectItem value="46+">46+</SelectItem>
-                </SelectContent>
-              </Select>
+                Close
+              </Button>
+              <Button onClick={() => setShowFilters(false)}>
+                Apply Settings
+              </Button>
             </div>
-            <div>
-              <label className="text-sm font-medium">Location</label>
-              <Select
-                value={preferences.location}
-                onValueChange={(value) => 
-                  setPreferences(prev => ({ ...prev, location: value }))
-                }
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="global">Global</SelectItem>
-                  <SelectItem value="local">Local</SelectItem>
-                  <SelectItem value="country">Same Country</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Language</label>
-              <Select
-                value={preferences.language}
-                onValueChange={(value) => 
-                  setPreferences(prev => ({ ...prev, language: value }))
-                }
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="es">Spanish</SelectItem>
-                  <SelectItem value="fr">French</SelectItem>
-                  <SelectItem value="de">German</SelectItem>
-                  <SelectItem value="it">Italian</SelectItem>
-                  <SelectItem value="pt">Portuguese</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Interests</label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {["Music", "Travel", "Sports", "Art", "Food", "Movies"].map((interest) => (
-                  <Badge key={interest} variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground">
-                    {interest}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <Button className="w-full" onClick={() => setShowFilters(false)}>Apply Filters</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -806,7 +918,7 @@ export const VideoChat = () => {
 
       {/* Video Filters Dialog */}
       <Dialog open={showVideoFilters} onOpenChange={setShowVideoFilters}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
               <Sparkles className="w-5 h-5" />
@@ -815,14 +927,14 @@ export const VideoChat = () => {
           </DialogHeader>
           
           <div className="space-y-6">
-            {/* Filter Toggle */}
+            {/* Master Filter Toggle */}
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="filters-toggle" className="text-sm font-medium">
                   Enable Video Filters
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Apply smooth skin and beauty filters to your video
+                  Apply beauty and enhancement filters to your video
                 </p>
               </div>
               <Switch
@@ -832,97 +944,105 @@ export const VideoChat = () => {
               />
             </div>
 
-            {/* Filter Presets */}
+            {/* Quick Presets */}
             {isVideoFiltersEnabled && (
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Filter Intensity</Label>
+                <Label className="text-sm font-medium">Quick Presets</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setFilterPreset('light')}
-                    className={filterConfig?.skinSmoothing?.intensity === 30 ? 'border-primary bg-primary/5' : ''}
-                  >
-                    Light
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setFilterPreset('medium')}
-                    className={filterConfig?.skinSmoothing?.intensity === 50 ? 'border-primary bg-primary/5' : ''}
-                  >
-                    Medium
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setFilterPreset('strong')}
-                    className={filterConfig?.skinSmoothing?.intensity === 75 ? 'border-primary bg-primary/5' : ''}
-                  >
-                    Strong
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setFilterPreset('none')}
-                    className={!isVideoFiltersEnabled ? 'border-primary bg-primary/5' : ''}
-                  >
-                    None
-                  </Button>
+                  {Object.entries(VideoFilterService.getPresets()).map(([key, preset]) => (
+                    <Button
+                      key={key}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFilterPreset(key)}
+                      className={
+                        (key === 'none' && !isVideoFiltersEnabled) ||
+                        (key !== 'none' && filterConfig?.skinSmoothing?.intensity === preset.config.skinSmoothing.intensity)
+                          ? 'border-primary bg-primary/5' 
+                          : ''
+                      }
+                    >
+                      {preset.name}
+                    </Button>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Advanced Settings */}
+            {/* Filter Categories */}
             {isVideoFiltersEnabled && filterConfig && (
-              <div className="space-y-4">
-                <Label className="text-sm font-medium">Advanced Settings</Label>
-                
-                {/* Skin Smoothing Intensity */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs">Skin Smoothing</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {filterConfig.skinSmoothing?.intensity || 0}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={filterConfig.skinSmoothing?.intensity || 0}
-                    onChange={(e) => updateFilterConfig({
-                      skinSmoothing: {
-                        ...filterConfig.skinSmoothing,
-                        intensity: parseInt(e.target.value)
-                      }
-                    })}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
+              <div className="space-y-6">
+                {VideoFilterService.getFilterCategories().map((category) => (
+                  <Card key={category.name} className="border-2">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm flex items-center space-x-2">
+                        {category.name === 'Beauty Filters' && <Smile className="w-4 h-4" />}
+                        {category.name === 'Lighting & Color' && <Sun className="w-4 h-4" />}
+                        <span>{category.name}</span>
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">{category.description}</p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {category.filters.map((filterType) => {
+                        const isEnabled = filterConfig[filterType as keyof typeof filterConfig]?.enabled || false;
+                        const intensity = filterType === 'skinSmoothing' 
+                          ? filterConfig.skinSmoothing?.intensity || 0
+                          : filterType === 'brightness'
+                          ? filterConfig.brightness?.value || 0
+                          : filterConfig.contrast?.value || 0;
+                        
+                        return (
+                          <div key={filterType} className="space-y-3">
+                            {/* Individual Filter Toggle */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                {filterType === 'skinSmoothing' && <Smile className="w-4 h-4" />}
+                                {filterType === 'brightness' && <Sun className="w-4 h-4" />}
+                                {filterType === 'contrast' && <Contrast className="w-4 h-4" />}
+                                <Label className="text-sm">
+                                  {filterType === 'skinSmoothing' ? 'Smooth Skin' : 
+                                   filterType === 'brightness' ? 'Brightness' : 
+                                   'Contrast'}
+                                </Label>
+                              </div>
+                              <Switch
+                                checked={isEnabled}
+                                onCheckedChange={() => toggleIndividualFilter(filterType as keyof typeof filterConfig)}
+                              />
+                            </div>
 
-                {/* Brightness */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs">Brightness</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {filterConfig.brightness?.value || 0}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="-50"
-                    max="50"
-                    value={filterConfig.brightness?.value || 0}
-                    onChange={(e) => updateFilterConfig({
-                      brightness: {
-                        enabled: true,
-                        value: parseInt(e.target.value)
-                      }
-                    })}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
+                            {/* Intensity Slider */}
+                            {isEnabled && (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-xs text-muted-foreground">
+                                    {filterType === 'skinSmoothing' ? 'Smoothing Intensity' : 
+                                     filterType === 'brightness' ? 'Brightness Level' : 
+                                     'Contrast Level'}
+                                  </Label>
+                                  <span className="text-xs text-muted-foreground">
+                                    {intensity}{filterType === 'skinSmoothing' ? '%' : ''}
+                                  </span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={filterType === 'skinSmoothing' ? "0" : "-50"}
+                                  max={filterType === 'skinSmoothing' ? "100" : "50"}
+                                  value={intensity}
+                                  onChange={(e) => updateFilterIntensity(
+                                    filterType as keyof typeof filterConfig, 
+                                    parseInt(e.target.value)
+                                  )}
+                                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             )}
 

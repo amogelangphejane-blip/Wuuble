@@ -15,6 +15,18 @@ export interface FilterConfig {
   };
 }
 
+export interface FilterPreset {
+  name: string;
+  description: string;
+  config: FilterConfig;
+}
+
+export interface FilterCategory {
+  name: string;
+  description: string;
+  filters: string[];
+}
+
 export interface VideoFilterEvents {
   onFilteredFrame?: (canvas: HTMLCanvasElement) => void;
   onError?: (error: Error) => void;
@@ -303,29 +315,105 @@ export class VideoFilterService {
     // Canvas cleanup is handled by garbage collection
   }
 
+  // Filter categories
+  public static getFilterCategories(): FilterCategory[] {
+    return [
+      {
+        name: "Beauty Filters",
+        description: "Enhance your appearance with skin smoothing and beauty effects",
+        filters: ["skinSmoothing"]
+      },
+      {
+        name: "Lighting & Color",
+        description: "Adjust brightness, contrast, and color settings",
+        filters: ["brightness", "contrast"]
+      }
+    ];
+  }
+
+  // Individual filter controls
+  public enableFilter(filterType: keyof FilterConfig, enabled: boolean): void {
+    if (this.config[filterType]) {
+      this.config[filterType].enabled = enabled;
+    }
+  }
+
+  public isFilterEnabled(filterType: keyof FilterConfig): boolean {
+    return this.config[filterType]?.enabled || false;
+  }
+
+  public getFilterIntensity(filterType: keyof FilterConfig): number {
+    if (filterType === 'skinSmoothing') {
+      return this.config.skinSmoothing.intensity;
+    } else if (filterType === 'brightness') {
+      return this.config.brightness.value;
+    } else if (filterType === 'contrast') {
+      return this.config.contrast.value;
+    }
+    return 0;
+  }
+
+  public setFilterIntensity(filterType: keyof FilterConfig, value: number): void {
+    if (filterType === 'skinSmoothing') {
+      this.config.skinSmoothing.intensity = Math.max(0, Math.min(100, value));
+    } else if (filterType === 'brightness') {
+      this.config.brightness.value = Math.max(-100, Math.min(100, value));
+    } else if (filterType === 'contrast') {
+      this.config.contrast.value = Math.max(-100, Math.min(100, value));
+    }
+  }
+
   // Preset configurations
-  public static getPresets(): Record<string, FilterConfig> {
+  public static getPresets(): Record<string, FilterPreset> {
     return {
       none: {
-        skinSmoothing: { enabled: false, intensity: 0, blurRadius: 0, threshold: 150 },
-        brightness: { enabled: false, value: 0 },
-        contrast: { enabled: false, value: 0 }
+        name: "None",
+        description: "No filters applied",
+        config: {
+          skinSmoothing: { enabled: false, intensity: 0, blurRadius: 0, threshold: 150 },
+          brightness: { enabled: false, value: 0 },
+          contrast: { enabled: false, value: 0 }
+        }
       },
       light: {
-        skinSmoothing: { enabled: true, intensity: 30, blurRadius: 1, threshold: 180 },
-        brightness: { enabled: true, value: 5 },
-        contrast: { enabled: false, value: 0 }
+        name: "Light",
+        description: "Subtle enhancement with gentle skin smoothing",
+        config: {
+          skinSmoothing: { enabled: true, intensity: 30, blurRadius: 1, threshold: 180 },
+          brightness: { enabled: true, value: 5 },
+          contrast: { enabled: false, value: 0 }
+        }
       },
       medium: {
-        skinSmoothing: { enabled: true, intensity: 50, blurRadius: 2, threshold: 160 },
-        brightness: { enabled: true, value: 10 },
-        contrast: { enabled: true, value: 5 }
+        name: "Medium",
+        description: "Balanced filtering for most users",
+        config: {
+          skinSmoothing: { enabled: true, intensity: 50, blurRadius: 2, threshold: 160 },
+          brightness: { enabled: true, value: 10 },
+          contrast: { enabled: true, value: 5 }
+        }
       },
       strong: {
-        skinSmoothing: { enabled: true, intensity: 75, blurRadius: 3, threshold: 140 },
-        brightness: { enabled: true, value: 15 },
-        contrast: { enabled: true, value: 10 }
+        name: "Strong",
+        description: "Maximum enhancement for dramatic effect",
+        config: {
+          skinSmoothing: { enabled: true, intensity: 75, blurRadius: 3, threshold: 140 },
+          brightness: { enabled: true, value: 15 },
+          contrast: { enabled: true, value: 10 }
+        }
       }
     };
+  }
+
+  // Get preset config for backward compatibility
+  public static getPresetConfigs(): Record<string, FilterConfig> {
+    const presets = this.getPresets();
+    const configs: Record<string, FilterConfig> = {};
+    
+    Object.keys(presets).forEach(key => {
+      configs[key] = presets[key].config;
+    });
+    
+    return configs;
   }
 }
