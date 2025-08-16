@@ -1,0 +1,25 @@
+# 🎯 COPY AND PASTE THESE COMMANDS ON YOUR HOST MACHINE
+
+# Step 1: Go to your project directory (replace with your actual path)
+cd /path/to/your/streaming-project
+
+# Step 2: Stop current container (if running)
+docker stop $(docker ps -q --filter ancestor=node) 2>/dev/null || true
+
+# Step 3: Start new container with camera access
+docker run -d \
+  --name streaming-app-camera \
+  --device=/dev/video0:/dev/video0 \
+  -v /dev/shm:/dev/shm \
+  -p 5173:5173 \
+  -v $(pwd):/workspace \
+  -w /workspace \
+  node:18 \
+  bash -c "npm install && npm run dev"
+
+# Step 4: Check if it's running
+docker ps | grep streaming-app-camera
+
+# Step 5: Test camera access
+echo "✅ Open browser: http://localhost:5173/debug-video-feed.html"
+echo "✅ Click 'Start Camera' and allow permissions"
