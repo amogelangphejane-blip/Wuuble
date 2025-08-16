@@ -50,6 +50,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { validateAvatarUrl } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { CameraTestModal } from './CameraTestModal';
 
 interface LiveStream {
   id: string;
@@ -284,30 +285,76 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
     }
   };
 
-  // Start streaming with modern setup
+  // Start streaming with enhanced error handling and debugging
   const startStreaming = async (streamId: string) => {
     try {
+      console.log('🎥 Starting stream...', { streamId });
+      
+      // Check if browser supports media devices
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Your browser does not support camera access. Please use a modern browser like Chrome, Firefox, or Safari.');
+      }
+
+      // Check if we're in a secure context (HTTPS required for camera access)
+      if (!window.isSecureContext) {
+        console.warn('⚠️ Not in secure context - camera access might be blocked');
+      }
+
+      console.log('📹 Requesting camera and microphone access...');
+      
       // Request camera and microphone access with better constraints
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30 },
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
+          frameRate: { ideal: 30, min: 15 },
           facingMode: 'user'
         }, 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          sampleRate: 44100
         }
       });
       
+      console.log('✅ Media stream obtained:', {
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length,
+        active: stream.active
+      });
+
+      // Store the stream reference
       mediaStreamRef.current = stream;
+      
+      // Wait for video element to be ready and assign stream
       if (videoRef.current) {
+        console.log('📺 Assigning stream to video element...');
         videoRef.current.srcObject = stream;
+        
+        // Add event listeners for video element
+        videoRef.current.onloadedmetadata = () => {
+          console.log('✅ Video metadata loaded');
+          if (videoRef.current) {
+            videoRef.current.play().catch(e => {
+              console.error('❌ Video play failed:', e);
+            });
+          }
+        };
+        
+        videoRef.current.onplay = () => {
+          console.log('▶️ Video started playing');
+        };
+        
+        videoRef.current.onerror = (e) => {
+          console.error('❌ Video element error:', e);
+        };
+      } else {
+        console.warn('⚠️ Video element not found');
       }
 
       // Update stream status to live
+      console.log('💾 Updating stream status in database...');
       await supabase
         .from('live_streams')
         .update({ 
@@ -317,6 +364,8 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
         .eq('id', streamId);
 
       setIsStreaming(true);
+      console.log('🎉 Stream started successfully!');
+      
       toast({
         title: "🔴 You're Live!",
         description: "Your stream is now broadcasting to the community"
@@ -324,10 +373,33 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
 
       fetchStreams();
     } catch (error: any) {
-      console.error('Error starting stream:', error);
+      console.error('❌ Error starting stream:', error);
+      
+      let errorMessage = "Failed to start stream";
+      let errorDescription = "Please try again";
+
+      if (error.name === 'NotAllowedError') {
+        errorMessage = "Camera Access Denied";
+        errorDescription = "Please allow camera and microphone access in your browser settings";
+      } else if (error.name === 'NotFoundError') {
+        errorMessage = "No Camera Found";
+        errorDescription = "Please connect a camera and microphone to your device";
+      } else if (error.name === 'NotReadableError') {
+        errorMessage = "Camera Busy";
+        errorDescription = "Your camera might be in use by another application";
+      } else if (error.name === 'OverconstrainedError') {
+        errorMessage = "Camera Settings Not Supported";
+        errorDescription = "Your camera doesn't support the required settings";
+      } else if (error.name === 'SecurityError') {
+        errorMessage = "Security Error";
+        errorDescription = "Camera access blocked. Please use HTTPS or check browser settings";
+      } else if (error.message) {
+        errorDescription = error.message;
+      }
+
       toast({
-        title: "❌ Camera Access Required",
-        description: "Please allow camera and microphone access to start streaming",
+        title: `❌ ${errorMessage}`,
+        description: errorDescription,
         variant: "destructive"
       });
     }
@@ -377,6 +449,8 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
     if (!user) return;
 
     try {
+      console.log('👥 Joining stream as viewer:', stream.id);
+      
       // Add user as viewer
       await supabase
         .from('stream_viewers')
@@ -390,6 +464,14 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
       fetchStreamChat(stream.id);
       fetchStreamQuestions(stream.id);
       fetchActivePoll(stream.id);
+      
+      // If this is the stream creator, automatically start streaming
+      if (stream.creator_id === user.id && stream.status === 'live') {
+        console.log('🎬 Auto-starting stream for creator');
+        setTimeout(() => {
+          startStreaming(stream.id);
+        }, 500); // Small delay to ensure modal is fully rendered
+      }
     } catch (error: any) {
       console.error('Error joining stream:', error);
     }
@@ -796,22 +878,37 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
                 </div>
               </div>
             </div>
-            <div className="bg-gray-50 p-6 flex gap-4">
-              <Button 
-                onClick={createStream}
-                disabled={!newStream.title.trim()}
-                className="flex-1 h-12 text-lg bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600"
-              >
-                <Radio className="w-5 h-5 mr-2" />
-                {newStream.scheduled_start_time ? '📅 Schedule Stream' : '🔴 Go Live Now'}
-              </Button>
-              <Button 
-                onClick={() => setCreateStreamDialogOpen(false)}
-                variant="outline"
-                className="flex-1 h-12 text-lg"
-              >
-                Cancel
-              </Button>
+            <div className="bg-gray-50 p-6 space-y-4">
+              {/* Camera Test Button */}
+              <div className="flex justify-center">
+                <CameraTestModal 
+                  trigger={
+                    <Button variant="outline" size="sm">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Test Camera & Microphone
+                    </Button>
+                  }
+                />
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <Button 
+                  onClick={createStream}
+                  disabled={!newStream.title.trim()}
+                  className="flex-1 h-12 text-lg bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600"
+                >
+                  <Radio className="w-5 h-5 mr-2" />
+                  {newStream.scheduled_start_time ? '📅 Schedule Stream' : '🔴 Go Live Now'}
+                </Button>
+                <Button 
+                  onClick={() => setCreateStreamDialogOpen(false)}
+                  variant="outline"
+                  className="flex-1 h-12 text-lg"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -995,6 +1092,10 @@ export const LiveStreamFeature = ({ communityId, communityName, isMember, isCrea
                   autoPlay
                   muted={selectedStream.creator_id !== user?.id}
                   playsInline
+                  controls={false}
+                  onLoadStart={() => console.log('📹 Video load started')}
+                  onCanPlay={() => console.log('✅ Video can play')}
+                  onError={(e) => console.error('❌ Video error:', e)}
                 />
 
                 {/* Live Reactions Overlay */}
