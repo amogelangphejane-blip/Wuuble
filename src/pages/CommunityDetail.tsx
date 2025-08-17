@@ -27,7 +27,8 @@ import {
   Radio,
   Info,
   Trash2,
-  ShoppingBag
+  ShoppingBag,
+  Trophy
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
@@ -40,6 +41,7 @@ import { CommunityAbout } from '@/components/CommunityAbout';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
 import { CommunitySettings } from '@/components/CommunitySettings';
 import { DigitalMarketplace } from '@/components/DigitalMarketplace';
+import { CommunityLeaderboard } from '@/components/CommunityLeaderboard';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { validateAvatarUrl } from '@/lib/utils';
 
@@ -323,6 +325,7 @@ const CommunityDetail = () => {
 
   const tabs = [
     { id: 'discussions', label: 'Discussions', icon: MessageCircle },
+    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'members', label: 'Members', icon: Users },
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
@@ -537,6 +540,28 @@ const CommunityDetail = () => {
                         <h3 className="text-xl font-semibold mb-2">Join to see discussions</h3>
                         <p className="text-muted-foreground mb-6">
                           Become a member to participate in community discussions and connect with other learners.
+                        </p>
+                        <Button onClick={joinCommunity} disabled={joiningLeaving}>
+                          <UserPlus className="mr-2 w-4 h-4" />
+                          Join Community
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'leaderboard' && (
+                <div className="space-y-6">
+                  {(isMember || isCreator) ? (
+                    <CommunityLeaderboard communityId={community.id} />
+                  ) : (
+                    <Card className="text-center py-12">
+                      <CardContent>
+                        <Trophy className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold mb-2">Join to see leaderboard</h3>
+                        <p className="text-muted-foreground mb-6">
+                          Become a member to view the community leaderboard and track your engagement progress.
                         </p>
                         <Button onClick={joinCommunity} disabled={joiningLeaving}>
                           <UserPlus className="mr-2 w-4 h-4" />
