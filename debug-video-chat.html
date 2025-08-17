@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Video Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .video-container {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        video {
+            width: 300px;
+            height: 200px;
+            background: #000;
+            border-radius: 5px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .primary { background: #007bff; color: white; }
+        .success { background: #28a745; color: white; }
+        .danger { background: #dc3545; color: white; }
+        .warning { background: #ffc107; color: black; }
+        .info { background: #17a2b8; color: white; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.connecting { background: #fff3cd; color: #856404; }
+        .status.connected { background: #d4edda; color: #155724; }
+        .status.disconnected { background: #f8d7da; color: #721c24; }
+        .status.error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 Video Chat Debug Tool</h1>
+        <p>This tool helps debug video chat functionality by testing camera access, WebRTC connections, and signaling.</p>
+        
+        <div class="status" id="status">Status: Not started</div>
+        
+        <div class="controls">
+            <button class="primary" onclick="startCamera()">📹 Start Camera</button>
+            <button class="success" onclick="startMockConnection()">🔗 Test Mock Connection</button>
+            <button class="warning" onclick="toggleVideo()">📹 Toggle Video</button>
+            <button class="info" onclick="toggleAudio()">🎤 Toggle Audio</button>
+            <button class="danger" onclick="stopAll()">⏹️ Stop All</button>
+            <button onclick="clearLog()">🧹 Clear Log</button>
+        </div>
+        
+        <div class="video-container">
+            <div>
+                <h3>Local Video</h3>
+                <video id="localVideo" autoplay muted playsinline></video>
+            </div>
+            <div>
+                <h3>Remote Video</h3>
+                <video id="remoteVideo" autoplay playsinline></video>
+            </div>
+        </div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        let localStream = null;
+        let remoteStream = null;
+        let peerConnection = null;
+        let isVideoEnabled = true;
+        let isAudioEnabled = true;
+        
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const status = document.getElementById('status');
+        const log = document.getElementById('log');
+        
+        // Ice servers configuration
+        const iceServers = [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+        ];
+        
+        function logMessage(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            log.textContent += logEntry;
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, className = 'disconnected') {
+            status.textContent = `Status: ${message}`;
+            status.className = `status ${className}`;
+        }
+        
+        async function startCamera() {
+            try {
+                updateStatus('Requesting camera access...', 'connecting');
+                logMessage('🎥 Requesting camera and microphone access...');
+                
+                const constraints = {
+                    video: {
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 },
+                        frameRate: { ideal: 30, max: 60 }
+                    },
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                localVideo.srcObject = localStream;
+                
+                updateStatus('Camera access granted', 'connected');
+                logMessage('✅ Camera and microphone access granted successfully');
+                logMessage(`📹 Video tracks: ${localStream.getVideoTracks().length}`);
+                logMessage(`🎤 Audio tracks: ${localStream.getAudioTracks().length}`);
+                
+                // Log track details
+                localStream.getTracks().forEach((track, index) => {
+                    logMessage(`Track ${index}: ${track.kind} - ${track.label} (enabled: ${track.enabled})`);
+                });
+                
+            } catch (error) {
+                updateStatus('Camera access failed', 'error');
+                logMessage(`❌ Camera access failed: ${error.name} - ${error.message}`, 'error');
+                
+                // Provide specific error guidance
+                if (error.name === 'NotAllowedError') {
+                    logMessage('💡 Solution: Please allow camera access in your browser settings');
+                } else if (error.name === 'NotFoundError') {
+                    logMessage('💡 Solution: Please connect a camera and microphone');
+                } else if (error.name === 'NotReadableError') {
+                    logMessage('💡 Solution: Camera might be in use by another application');
+                }
+            }
+        }
+        
+        async function startMockConnection() {
+            if (!localStream) {
+                logMessage('❌ Please start camera first');
+                return;
+            }
+            
+            try {
+                updateStatus('Creating peer connection...', 'connecting');
+                logMessage('🚀 Creating WebRTC peer connection...');
+                
+                // Create peer connection
+                peerConnection = new RTCPeerConnection({ iceServers });
+                
+                // Add local stream tracks
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                    logMessage(`📤 Added ${track.kind} track to peer connection`);
+                });
+                
+                // Handle remote stream
+                peerConnection.ontrack = (event) => {
+                    logMessage('📺 Remote track received');
+                    const [stream] = event.streams;
+                    remoteVideo.srcObject = stream;
+                    remoteStream = stream;
+                };
+                
+                // Handle connection state changes
+                peerConnection.onconnectionstatechange = () => {
+                    const state = peerConnection.connectionState;
+                    logMessage(`🔗 Connection state: ${state}`);
+                    
+                    if (state === 'connected') {
+                        updateStatus('Connected to peer', 'connected');
+                    } else if (state === 'disconnected' || state === 'failed') {
+                        updateStatus('Connection lost', 'error');
+                    }
+                };
+                
+                // Handle ICE connection state
+                peerConnection.oniceconnectionstatechange = () => {
+                    const state = peerConnection.iceConnectionState;
+                    logMessage(`🧊 ICE connection state: ${state}`);
+                };
+                
+                // Handle ICE candidates
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        logMessage(`🧊 ICE candidate: ${event.candidate.candidate}`);
+                    } else {
+                        logMessage('🧊 ICE gathering completed');
+                    }
+                };
+                
+                // Create offer (simulate being the caller)
+                logMessage('📤 Creating offer...');
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                logMessage('✅ Offer created and set as local description');
+                
+                // Simulate receiving the offer back as answer (mock peer)
+                setTimeout(async () => {
+                    try {
+                        logMessage('📥 Simulating answer from remote peer...');
+                        await peerConnection.setRemoteDescription(offer);
+                        logMessage('✅ Mock connection established');
+                        updateStatus('Mock connection active', 'connected');
+                        
+                        // Simulate remote stream (mirror local stream)
+                        remoteVideo.srcObject = localStream;
+                        logMessage('📺 Mock remote stream set (mirroring local stream)');
+                        
+                    } catch (error) {
+                        logMessage(`❌ Mock connection failed: ${error.message}`, 'error');
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                updateStatus('Connection failed', 'error');
+                logMessage(`❌ WebRTC connection failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function toggleVideo() {
+            if (!localStream) {
+                logMessage('❌ No local stream available');
+                return;
+            }
+            
+            const videoTrack = localStream.getVideoTracks()[0];
+            if (videoTrack) {
+                isVideoEnabled = !isVideoEnabled;
+                videoTrack.enabled = isVideoEnabled;
+                logMessage(`📹 Video ${isVideoEnabled ? 'enabled' : 'disabled'}`);
+            }
+        }
+        
+        function toggleAudio() {
+            if (!localStream) {
+                logMessage('❌ No local stream available');
+                return;
+            }
+            
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (audioTrack) {
+                isAudioEnabled = !isAudioEnabled;
+                audioTrack.enabled = isAudioEnabled;
+                logMessage(`🎤 Audio ${isAudioEnabled ? 'enabled' : 'disabled'}`);
+            }
+        }
+        
+        function stopAll() {
+            logMessage('⏹️ Stopping all streams and connections...');
+            
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    track.stop();
+                    logMessage(`🛑 Stopped ${track.kind} track`);
+                });
+                localStream = null;
+                localVideo.srcObject = null;
+            }
+            
+            if (remoteStream) {
+                remoteStream = null;
+                remoteVideo.srcObject = null;
+            }
+            
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+                logMessage('🔌 Peer connection closed');
+            }
+            
+            updateStatus('All stopped', 'disconnected');
+            logMessage('✅ All resources cleaned up');
+        }
+        
+        function clearLog() {
+            log.textContent = '';
+        }
+        
+        // Initialize
+        logMessage('🎉 Video Chat Debug Tool initialized');
+        logMessage('💡 Click "Start Camera" to begin testing');
+        
+        // Check browser support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            logMessage('❌ Browser does not support getUserMedia', 'error');
+            updateStatus('Browser not supported', 'error');
+        } else {
+            logMessage('✅ Browser supports WebRTC and getUserMedia');
+        }
+        
+        if (!window.RTCPeerConnection) {
+            logMessage('❌ Browser does not support RTCPeerConnection', 'error');
+        } else {
+            logMessage('✅ Browser supports RTCPeerConnection');
+        }
+    </script>
+</body>
+</html>

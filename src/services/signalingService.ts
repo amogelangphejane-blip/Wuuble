@@ -154,6 +154,7 @@ export class SignalingService {
   }
 
   sendIceCandidate(candidate: RTCIceCandidateInit, to: string): void {
+    console.log('🧊 Sending ICE candidate to:', to);
     this.sendMessage({
       type: 'ice-candidate',
       data: candidate,

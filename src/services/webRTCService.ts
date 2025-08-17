@@ -122,6 +122,7 @@ export class WebRTCService {
       this.peerConnection.close();
     }
 
+    console.log('🚀 Creating new peer connection...');
     this.peerConnection = new RTCPeerConnection({
       iceServers: this.config.iceServers
     });
@@ -129,13 +130,17 @@ export class WebRTCService {
     // Add local stream tracks (use filtered stream if available)
     const streamToUse = this.filteredStream || this.localStream;
     if (streamToUse) {
+      console.log('📹 Adding local tracks to peer connection:', streamToUse.getTracks().length);
       streamToUse.getTracks().forEach(track => {
         this.peerConnection!.addTrack(track, streamToUse!);
       });
+    } else {
+      console.warn('⚠️ No local stream available to add to peer connection');
     }
 
     // Handle remote stream
     this.peerConnection.ontrack = (event) => {
+      console.log('📺 Remote track received:', event.track.kind);
       const [remoteStream] = event.streams;
       this.remoteStream = remoteStream;
       this.events.onRemoteStream?.(remoteStream);
@@ -144,13 +149,32 @@ export class WebRTCService {
     // Handle connection state changes
     this.peerConnection.onconnectionstatechange = () => {
       const state = this.peerConnection!.connectionState;
+      console.log('🔗 Peer connection state changed:', state);
       this.events.onConnectionStateChange?.(state);
     };
 
     // Handle ICE connection state changes
     this.peerConnection.oniceconnectionstatechange = () => {
       const state = this.peerConnection!.iceConnectionState;
+      console.log('🧊 ICE connection state changed:', state);
       this.events.onIceConnectionStateChange?.(state);
+    };
+
+    // Handle ICE gathering state changes
+    this.peerConnection.onicegatheringstatechange = () => {
+      const state = this.peerConnection!.iceGatheringState;
+      console.log('🧊 ICE gathering state changed:', state);
+    };
+
+    // ICE candidate handling is now done externally to allow proper signaling
+    this.peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log('🧊 ICE candidate generated:', event.candidate.candidate);
+      } else {
+        console.log('🧊 ICE gathering completed');
+      }
+      // Note: ICE candidates are handled by the external onicecandidate handler
+      // This is set up in the useVideoChat hook
     };
 
     // Create data channel for chat
@@ -162,9 +186,11 @@ export class WebRTCService {
 
     // Handle incoming data channels
     this.peerConnection.ondatachannel = (event) => {
+      console.log('💬 Incoming data channel received');
       this.setupDataChannel(event.channel);
     };
 
+    console.log('✅ Peer connection created successfully');
     return this.peerConnection;
   }
 
