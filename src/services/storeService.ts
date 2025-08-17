@@ -88,15 +88,7 @@ export const getProducts = async (
       .from('digital_products')
       .select(`
         *,
-        category:product_categories(*),
-        seller:seller_profiles(
-          *,
-          user:auth.users(
-            id,
-            email,
-            user_metadata
-          )
-        )
+        category:product_categories(*)
       `)
       .eq('is_active', true);
 

@@ -238,22 +238,14 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
         
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
-            {product.seller?.user && (
-              <>
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={product.seller.user.user_metadata?.avatar_url} />
-                  <AvatarFallback>
-                    {product.seller.user.user_metadata?.full_name?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm text-muted-foreground">
-                  {product.seller.store_name || product.seller.user.user_metadata?.full_name}
-                </span>
-                {product.seller.is_verified && (
-                  <Verified className="h-4 w-4 text-blue-500" />
-                )}
-              </>
-            )}
+            <Avatar className="h-6 w-6">
+              <AvatarFallback>
+                <User className="h-4 w-4" />
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm text-muted-foreground">
+              Digital Seller
+            </span>
           </div>
           
           {product.rating > 0 && (
@@ -320,17 +312,14 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
                 </p>
                 
                 <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                  {product.seller?.user && (
-                    <div className="flex items-center space-x-2">
-                      <Avatar className="h-5 w-5">
-                        <AvatarImage src={product.seller.user.user_metadata?.avatar_url} />
-                        <AvatarFallback>
-                          {product.seller.user.user_metadata?.full_name?.charAt(0) || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>{product.seller.store_name || product.seller.user.user_metadata?.full_name}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    <Avatar className="h-5 w-5">
+                      <AvatarFallback>
+                        <User className="h-3 w-3" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>Digital Seller</span>
+                  </div>
                   
                   {product.rating > 0 && (
                     <div className="flex items-center space-x-1">
