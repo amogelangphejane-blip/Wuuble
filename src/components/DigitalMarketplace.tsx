@@ -109,7 +109,7 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
         // Handle database not set up or connection issues
         if (result.error?.message?.includes('relation') || result.error?.message?.includes('does not exist')) {
           toast({
-            title: "Wuuble marketplace Setup Required",
+            title: "Marketplace Setup Required",
             description: "The marketplace database needs to be set up. Please run the setup script or contact your administrator.",
             variant: "destructive",
           });
@@ -124,10 +124,10 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
     } catch (error) {
       toast({
         title: "Connection Error",
-        description: "Unable to connect to the Wuuble marketplace. Please check your connection and try again.",
+        description: "Unable to connect to the Marketplace. Please check your connection and try again.",
         variant: "destructive",
       });
-      console.error('Wuuble marketplace error:', error);
+      console.error('Marketplace error:', error);
     }
 
     setLoading(false);
@@ -382,7 +382,7 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Wuuble marketplace</h1>
+          <h1 className="text-3xl font-bold">Marketplace</h1>
           <p className="text-muted-foreground">
             {totalCount} products available {communityId ? 'in this community' : ''}
           </p>
