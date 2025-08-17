@@ -339,8 +339,22 @@ export class LeaderboardService {
    */
   async processUserQuery(communityId: string, userId: string, query: string): Promise<LeaderboardQuery> {
     try {
-      // Get user context
-      const userScore = await this.getUserScore(communityId, userId);
+      console.log('[Leaderboard Service] Processing user query:', {
+        communityId,
+        userId,
+        query: query.substring(0, 100) + (query.length > 100 ? '...' : '')
+      });
+
+      // Get user context with fallbacks
+      let userScore = await this.getUserScore(communityId, userId);
+      
+      // Initialize user score if missing
+      if (!userScore) {
+        console.log('[Leaderboard Service] User score not found, initializing...');
+        await this.initializeUserScore(communityId, userId);
+        userScore = await this.getUserScore(communityId, userId);
+      }
+
       const recentActivities = await this.getUserRecentActivities(communityId, userId, 5);
 
       // Process query with AI
@@ -349,10 +363,22 @@ export class LeaderboardService {
         user_id: userId,
         query,
         context: {
-          user_score: userScore!,
+          user_score: userScore || {
+            performance_score: 0,
+            rank: 999,
+            chat_score: 0,
+            video_call_score: 0,
+            participation_score: 0,
+            quality_multiplier: 1.0
+          },
           recent_activities: recentActivities,
-          leaderboard_position: userScore?.rank || 0
+          leaderboard_position: userScore?.rank || 999
         }
+      });
+
+      console.log('[Leaderboard Service] AI processing completed:', {
+        intent: response.intent,
+        confidence: response.confidence
       });
 
       // Store query and response
@@ -374,14 +400,60 @@ export class LeaderboardService {
         .single();
 
       if (error) {
-        console.error('Error storing query:', error);
+        console.error('[Leaderboard Service] Error storing query:', error);
         throw error;
       }
 
+      console.log('[Leaderboard Service] Query stored successfully');
       return data;
     } catch (error) {
-      console.error('Error processing user query:', error);
-      throw error;
+      console.error('[Leaderboard Service] Error processing user query:', {
+        error: error instanceof Error ? error.message : String(error),
+        communityId,
+        userId,
+        query: query.substring(0, 50)
+      });
+      
+      // Return a helpful error response instead of throwing
+      const fallbackQuery = {
+        id: crypto.randomUUID(),
+        community_id: communityId,
+        user_id: userId,
+        query_text: query,
+        query_intent: 'general_question' as const,
+        ai_response: 'I apologize, but I encountered an issue processing your question. This might be due to missing data or a temporary service issue. Please try asking a simpler question or contact support if the problem persists.',
+        response_data: {
+          error: error instanceof Error ? error.message : String(error),
+          suggested_actions: [
+            'Try asking a simpler question like "What is my rank?"',
+            'Check if you have participated in community activities',
+            'Refresh the page and try again',
+            'Contact support if the issue continues'
+          ],
+          follow_up_questions: [
+            'What is my current rank?',
+            'How can I improve my score?',
+            'What activities give the most points?'
+          ],
+          confidence: 0.1
+        },
+        satisfaction_rating: null,
+        follow_up_needed: false,
+        created_at: new Date().toISOString()
+      };
+      
+      // Try to store the fallback response
+      try {
+        const { data } = await supabase
+          .from('community_leaderboard_queries')
+          .insert(fallbackQuery)
+          .select()
+          .single();
+        return data || fallbackQuery;
+      } catch (storeError) {
+        console.error('[Leaderboard Service] Failed to store fallback query:', storeError);
+        return fallbackQuery;
+      }
     }
   }
 

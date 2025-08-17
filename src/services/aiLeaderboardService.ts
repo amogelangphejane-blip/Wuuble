@@ -66,10 +66,29 @@ export class AILeaderboardService {
    */
   async processLeaderboardQuery(request: ProcessLeaderboardQueryRequest): Promise<ProcessLeaderboardQueryResponse> {
     try {
+      console.log('[AI Leaderboard] Processing query:', {
+        query: request.query,
+        userId: request.user_id,
+        communityId: request.community_id,
+        hasContext: !!request.context
+      });
+      
       const response = await this.mockProcessQuery(request);
+      
+      console.log('[AI Leaderboard] Query processed successfully:', {
+        intent: response.intent,
+        confidence: response.confidence,
+        hasResponse: !!response.response
+      });
+      
       return response;
     } catch (error) {
-      console.error('Error processing query:', error);
+      console.error('[AI Leaderboard] Error processing query:', {
+        error: error instanceof Error ? error.message : String(error),
+        query: request.query,
+        userId: request.user_id,
+        communityId: request.community_id
+      });
       return this.getFallbackQueryResponse(request);
     }
   }
