@@ -99,6 +99,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
   const webRTCServiceRef = useRef<WebRTCService | null>(null);
   const signalingServiceRef = useRef<SignalingService | null>(null);
   const partnerIdRef = useRef<string | null>(null);
+  const isInitializedRef = useRef(false);
 
   const { toast } = useToast();
 
@@ -107,26 +108,38 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
 
   // Initialize services
   const initializeServices = useCallback(async () => {
+    if (isInitializedRef.current) {
+      console.log('Services already initialized, skipping...');
+      return;
+    }
+
     try {
+      console.log('🚀 Initializing video chat services...');
+      
       // Initialize WebRTC service
       webRTCServiceRef.current = new WebRTCService(webRTCConfig, {
         onLocalStream: (stream) => {
+          console.log('📹 Local stream received:', stream);
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = stream;
           }
         },
         onFilteredStream: (stream) => {
+          console.log('✨ Filtered stream received:', stream);
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = stream;
           }
         },
         onRemoteStream: (stream) => {
+          console.log('📺 Remote stream received:', stream);
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = stream;
           }
           setPartnerConnected(true);
+          setConnectionStatus('connected');
         },
         onConnectionStateChange: (state) => {
+          console.log('🔗 Connection state changed:', state);
           if (state === 'connected') {
             setConnectionStatus('connected');
             setConnectionQuality('excellent');
@@ -135,7 +148,22 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
             handleConnectionLost();
           }
         },
+        onIceConnectionStateChange: (state) => {
+          console.log('🧊 ICE connection state changed:', state);
+          // Handle ICE connection state changes for better connection quality monitoring
+          if (state === 'connected' || state === 'completed') {
+            setConnectionQuality('excellent');
+          } else if (state === 'checking') {
+            setConnectionQuality('good');
+          } else if (state === 'disconnected') {
+            setConnectionQuality('poor');
+          } else if (state === 'failed') {
+            setConnectionQuality('disconnected');
+            handleConnectionLost();
+          }
+        },
         onDataChannelMessage: (message: ChatMessage) => {
+          console.log('💬 Data channel message received:', message);
           setMessages(prev => [...prev, { ...message, isOwn: false }]);
           setUnreadMessages(prev => prev + 1);
         }
@@ -145,13 +173,16 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
       signalingServiceRef.current = createSignalingService(userId, {
         onMessage: handleSignalingMessage,
         onUserJoined: (partnerId) => {
+          console.log('👥 User joined:', partnerId);
           partnerIdRef.current = partnerId;
           initiateWebRTCConnection();
         },
         onUserLeft: () => {
+          console.log('👋 User left');
           handlePartnerLeft();
         },
         onError: (error) => {
+          console.error('🚨 Signaling error:', error);
           toast({
             title: "Connection Error",
             description: error,
@@ -162,17 +193,24 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
 
       // Initialize local media with better error handling
       try {
+        console.log('🎥 Requesting camera and microphone access...');
         await webRTCServiceRef.current.initializeMedia();
         setCameraPermission('granted');
+        console.log('✅ Media access granted successfully');
+        
+        toast({
+          title: "Camera Ready! 📹",
+          description: "Camera and microphone access granted successfully.",
+        });
       } catch (mediaError: any) {
-        console.error('Media initialization failed:', mediaError);
+        console.error('❌ Media initialization failed:', mediaError);
         
         // Handle specific camera/microphone errors
         if (mediaError.name === 'NotAllowedError' || mediaError.name === 'PermissionDeniedError') {
           setCameraPermission('denied');
           toast({
             title: "Camera Access Blocked",
-            description: "Please allow camera and microphone access in your browser settings, then click 'Enable Camera' to try again.",
+            description: "Please allow camera and microphone access in your browser settings, then click 'Try Again' to retry.",
             variant: "destructive"
           });
         } else if (mediaError.name === 'NotFoundError' || mediaError.name === 'DevicesNotFoundError') {
@@ -208,14 +246,24 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
       }
 
       // Connect to signaling server
-      await signalingServiceRef.current.connect();
+      try {
+        console.log('🌐 Connecting to signaling server...');
+        await signalingServiceRef.current.connect();
+        console.log('✅ Signaling server connected');
+      } catch (signalingError) {
+        console.error('❌ Signaling connection failed:', signalingError);
+        throw signalingError;
+      }
+
+      isInitializedRef.current = true;
+      console.log('🎉 All services initialized successfully');
 
       if (autoConnect) {
         await startChat();
       }
 
     } catch (error) {
-      console.error('Failed to initialize services:', error);
+      console.error('💥 Failed to initialize services:', error);
       setCameraPermission('denied');
       toast({
         title: "Setup Failed",
@@ -230,50 +278,79 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
     if (!webRTCServiceRef.current || !message.from) return;
 
     try {
+      console.log('📨 Handling signaling message:', message.type, 'from:', message.from);
+      
       switch (message.type) {
         case 'offer':
+          console.log('📥 Processing offer...');
           await webRTCServiceRef.current.setRemoteDescription(message.data);
           const answer = await webRTCServiceRef.current.createAnswer();
           signalingServiceRef.current?.sendAnswer(answer, message.from);
+          console.log('📤 Answer sent');
           break;
 
         case 'answer':
+          console.log('📥 Processing answer...');
           await webRTCServiceRef.current.setRemoteDescription(message.data);
+          console.log('✅ Answer processed');
           break;
 
         case 'ice-candidate':
-          await webRTCServiceRef.current.addIceCandidate(message.data);
+          console.log('🧊 Processing ICE candidate...');
+          if (message.data) {
+            await webRTCServiceRef.current.addIceCandidate(message.data);
+            console.log('✅ ICE candidate added');
+          }
           break;
       }
     } catch (error) {
-      console.error('Error handling signaling message:', error);
+      console.error('❌ Error handling signaling message:', error);
     }
   }, []);
 
   // Initiate WebRTC connection
   const initiateWebRTCConnection = useCallback(async () => {
-    if (!webRTCServiceRef.current || !signalingServiceRef.current || !partnerIdRef.current) return;
+    if (!webRTCServiceRef.current || !signalingServiceRef.current || !partnerIdRef.current) {
+      console.warn('⚠️ Cannot initiate WebRTC connection - missing dependencies');
+      return;
+    }
 
     try {
-      webRTCServiceRef.current.createPeerConnection();
+      console.log('🚀 Initiating WebRTC connection with partner:', partnerIdRef.current);
+      
+      const peerConnection = webRTCServiceRef.current.createPeerConnection();
+      
+      // Set up ICE candidate handling
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate && partnerIdRef.current) {
+          console.log('🧊 Sending ICE candidate to partner');
+          signalingServiceRef.current?.sendIceCandidate(event.candidate, partnerIdRef.current);
+        }
+      };
+      
       const offer = await webRTCServiceRef.current.createOffer();
       signalingServiceRef.current.sendOffer(offer, partnerIdRef.current);
+      console.log('📤 Offer sent to partner');
     } catch (error) {
-      console.error('Failed to initiate WebRTC connection:', error);
+      console.error('❌ Failed to initiate WebRTC connection:', error);
     }
   }, []);
 
   // Handle connection lost
   const handleConnectionLost = useCallback(() => {
+    console.log('⚠️ Connection lost, attempting reconnection...');
+    
     if (reconnectAttempts < 3) {
       setConnectionStatus('reconnecting');
       setReconnectAttempts(prev => prev + 1);
       setTimeout(() => {
         if (partnerIdRef.current) {
+          console.log(`🔄 Reconnection attempt ${reconnectAttempts + 1}/3`);
           initiateWebRTCConnection();
         }
       }, 2000);
     } else {
+      console.log('❌ Max reconnection attempts reached');
       setConnectionStatus('disconnected');
       setPartnerConnected(false);
       setConnectionQuality('disconnected');
@@ -287,6 +364,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
 
   // Handle partner left
   const handlePartnerLeft = useCallback(() => {
+    console.log('👋 Partner left the chat');
     setPartnerConnected(false);
     setConnectionStatus('disconnected');
     setConnectionQuality('disconnected');
@@ -304,12 +382,15 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
 
   // Start chat
   const startChat = useCallback(async () => {
+    console.log('🎬 Starting chat...');
+    
     // Reset camera permission state for retry
     if (cameraPermission === 'denied') {
       setCameraPermission('pending');
     }
 
-    if (!signalingServiceRef.current) {
+    if (!signalingServiceRef.current || !isInitializedRef.current) {
+      console.log('🔄 Services not initialized, initializing now...');
       await initializeServices();
       return; // initializeServices will handle the media setup
     }
@@ -317,6 +398,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
     if (cameraPermission !== 'granted') {
       try {
         setCameraPermission('pending');
+        console.log('🎥 Retrying camera access...');
         await webRTCServiceRef.current?.initializeMedia();
         setCameraPermission('granted');
         
@@ -325,7 +407,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
           description: "Camera and microphone access granted successfully.",
         });
       } catch (mediaError: any) {
-        console.error('Media retry failed:', mediaError);
+        console.error('❌ Media retry failed:', mediaError);
         
         // Handle specific camera/microphone errors for retry
         if (mediaError.name === 'NotAllowedError' || mediaError.name === 'PermissionDeniedError') {
@@ -361,11 +443,13 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
 
     // Join a random room to find a partner
     const roomId = 'random-' + Date.now();
+    console.log('🏠 Joining room:', roomId);
     signalingServiceRef.current?.joinRoom(roomId);
 
     // Timeout if no partner found
     setTimeout(() => {
       if (!partnerConnected) {
+        console.log('⏰ Search timeout - no partner found');
         setIsSearching(false);
         setConnectionStatus('disconnected');
         toast({
