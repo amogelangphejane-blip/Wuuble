@@ -23,6 +23,7 @@ import BuyerLibrary from "./pages/BuyerLibrary";
 import CommunityGroupCall from "./pages/CommunityGroupCall";
 import TestGroupCall from "./pages/TestGroupCall";
 import NotFound from "./pages/NotFound";
+import Marketplace from "./pages/Marketplace";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => {
                 <Route path="/profile" element={<ProfileSettings />} />
                 <Route path="/seller-dashboard" element={<SellerDashboard />} />
                 <Route path="/my-library" element={<BuyerLibrary />} />
+                <Route path="/marketplace" element={<Marketplace />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

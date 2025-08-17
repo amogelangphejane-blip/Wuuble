@@ -77,9 +77,9 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
     },
     {
       label: 'Marketplace',
-      href: '/communities', // Will redirect to first community's store
+      href: '/marketplace',
       icon: ShoppingBag,
-      active: location.pathname.includes('/store')
+      active: location.pathname.includes('/marketplace') || location.pathname.includes('/store')
     }
   ];
 

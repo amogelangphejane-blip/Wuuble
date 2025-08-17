@@ -93,23 +93,41 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
       community_id: communityId,
     };
 
-    const result = await getProducts(filters);
-    
-    if (result.success && result.data) {
-      if (reset) {
-        setProducts(result.data.products);
+    try {
+      const result = await getProducts(filters);
+      
+      if (result.success && result.data) {
+        if (reset) {
+          setProducts(result.data.products);
+        } else {
+          setProducts(prev => [...prev, ...result.data!.products]);
+        }
+        setHasMore(result.data.has_more);
+        setTotalCount(result.data.total_count);
+        setCurrentPage(result.data.page + 1);
       } else {
-        setProducts(prev => [...prev, ...result.data!.products]);
+        // Handle database not set up or connection issues
+        if (result.error?.message?.includes('relation') || result.error?.message?.includes('does not exist')) {
+          toast({
+            title: "Marketplace Setup Required",
+            description: "The marketplace database needs to be set up. Please run the setup script or contact your administrator.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: result.error?.message || "Failed to load products",
+            variant: "destructive",
+          });
+        }
       }
-      setHasMore(result.data.has_more);
-      setTotalCount(result.data.total_count);
-      setCurrentPage(result.data.page + 1);
-    } else {
+    } catch (error) {
       toast({
-        title: "Error",
-        description: result.error?.message || "Failed to load products",
+        title: "Connection Error",
+        description: "Unable to connect to the marketplace. Please check your connection and try again.",
         variant: "destructive",
       });
+      console.error('Marketplace error:', error);
     }
 
     setLoading(false);
