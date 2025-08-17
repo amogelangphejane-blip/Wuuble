@@ -406,7 +406,7 @@ export const useExerciseEvaluation = () => {
   }, [psychologyService]);
 
   const getEvaluationsByExercise = useCallback((exerciseId: string) => {
-    return evaluationHistory.filter(eval => eval.exercise_id === exerciseId);
+    return evaluationHistory.filter(evaluation => evaluation.exercise_id === exerciseId);
   }, [evaluationHistory]);
 
   const clearEvaluationHistory = useCallback(() => {
