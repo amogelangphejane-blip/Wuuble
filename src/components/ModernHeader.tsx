@@ -16,7 +16,10 @@ import {
   LogOut, 
   Menu, 
   X,
-  MessageCircle
+  MessageCircle,
+  ShoppingBag,
+  Package,
+  Library
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -71,6 +74,12 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
       href: '/communities',
       icon: Users,
       active: location.pathname.startsWith('/communities')
+    },
+    {
+      label: 'Marketplace',
+      href: '/communities', // Will redirect to first community's store
+      icon: ShoppingBag,
+      active: location.pathname.includes('/store')
     }
   ];
 
@@ -162,6 +171,15 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
                     <DropdownMenuItem onClick={() => navigate('/communities')}>
                       <Users className="mr-2 h-4 w-4" />
                       My Communities
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/seller-dashboard')}>
+                      <Package className="mr-2 h-4 w-4" />
+                      Seller Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/my-library')}>
+                      <Library className="mr-2 h-4 w-4" />
+                      My Library
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>

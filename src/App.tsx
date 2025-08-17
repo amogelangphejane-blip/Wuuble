@@ -18,6 +18,8 @@ import CommunityMembers from "./pages/CommunityMembers";
 import CommunitySubscriptions from "./pages/CommunitySubscriptions";
 import ProfileSettings from "./pages/ProfileSettings";
 import ConnectVideoCall from "./pages/ConnectVideoCall";
+import SellerDashboard from "./pages/SellerDashboard";
+import BuyerLibrary from "./pages/BuyerLibrary";
 import CommunityGroupCall from "./pages/CommunityGroupCall";
 import TestGroupCall from "./pages/TestGroupCall";
 import NotFound from "./pages/NotFound";
@@ -73,6 +75,8 @@ const App = () => {
                 <Route path="/communities/:id/members" element={<CommunityMembers />} />
                 <Route path="/communities/:id/subscriptions" element={<CommunitySubscriptions />} />
                 <Route path="/profile" element={<ProfileSettings />} />
+                <Route path="/seller-dashboard" element={<SellerDashboard />} />
+                <Route path="/my-library" element={<BuyerLibrary />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
