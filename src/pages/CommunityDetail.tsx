@@ -26,7 +26,8 @@ import {
   CreditCard,
   Radio,
   Info,
-  Trash2
+  Trash2,
+  ShoppingBag
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
@@ -38,6 +39,7 @@ import { LiveStreamFeature } from '@/components/LiveStreamFeature';
 import { CommunityAbout } from '@/components/CommunityAbout';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
 import { CommunitySettings } from '@/components/CommunitySettings';
+import { DigitalMarketplace } from '@/components/DigitalMarketplace';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { validateAvatarUrl } from '@/lib/utils';
 
@@ -326,7 +328,8 @@ const CommunityDetail = () => {
     { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
     { id: 'quick-access', label: 'Quick Access', icon: Zap },
     { id: 'live-streaming', label: 'Live Streaming', icon: Radio },
-    { id: 'about', label: 'About', icon: Info }
+    { id: 'about', label: 'About', icon: Info },
+    { id: 'store', label: 'Store', icon: ShoppingBag }
   ];
 
   if (authLoading || loading) {
@@ -734,6 +737,10 @@ const CommunityDetail = () => {
                   isMember={isMember}
                   isCreator={isCreator}
                 />
+              )}
+
+              {activeTab === 'store' && (
+                <DigitalMarketplace communityId={community.id} />
               )}
             </div>
 
