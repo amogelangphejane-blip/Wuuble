@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLeaderboard, useUserProgress, useLeaderboardQuery, useFeedbackGenerator } from '@/hooks/useLeaderboard';
 import { LeaderboardEntry } from '@/types/leaderboard';
+import { PsychologyTrainingDashboard } from '@/components/PsychologyTrainingDashboard';
 import { toast } from 'sonner';
 
 interface CommunityLeaderboardProps {
@@ -38,6 +39,7 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [askDialogOpen, setAskDialogOpen] = useState(false);
   const [question, setQuestion] = useState('');
+  const [showTraining, setShowTraining] = useState(false);
   
   const { leaderboard, userPosition, isLoading, refreshLeaderboard } = useLeaderboard(communityId);
   const { progress, feedback } = useUserProgress(communityId);
@@ -193,9 +195,10 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
       </Card>
 
       <Tabs defaultValue="leaderboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
           <TabsTrigger value="progress">My Progress</TabsTrigger>
+          <TabsTrigger value="training">Psychology Training</TabsTrigger>
           <TabsTrigger value="feedback">AI Feedback</TabsTrigger>
         </TabsList>
 
@@ -280,6 +283,13 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
 
         <TabsContent value="progress" className="space-y-4">
           <ProgressTab progress={progress} />
+        </TabsContent>
+
+        <TabsContent value="training" className="space-y-4">
+          <PsychologyTrainingDashboard 
+            userId="current-user" // In real implementation, get from auth context
+            communityId={communityId}
+          />
         </TabsContent>
 
         <TabsContent value="feedback" className="space-y-4">
