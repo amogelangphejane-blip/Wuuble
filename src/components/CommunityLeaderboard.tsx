@@ -48,11 +48,33 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
     if (!question.trim()) return;
     
     try {
+      console.log('[Community Leaderboard] Asking question:', {
+        question,
+        communityId,
+        userAuthenticated: !!user?.id
+      });
+      
       const response = await askQuestion(question);
+      
+      console.log('[Community Leaderboard] Received response:', {
+        hasResponse: !!response.response,
+        intent: response.intent,
+        confidence: response.confidence
+      });
+      
       toast.success('Got your answer!');
       setQuestion('');
     } catch (error) {
-      console.error('Error asking question:', error);
+      console.error('[Community Leaderboard] Error asking question:', {
+        error: error instanceof Error ? error.message : String(error),
+        question: question.substring(0, 50),
+        communityId,
+        userId: user?.id
+      });
+      
+      // Show more helpful error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to process question: ${errorMessage}. Please try again.`);
     }
   };
 
