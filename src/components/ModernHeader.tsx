@@ -76,7 +76,7 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
       active: location.pathname.startsWith('/communities')
     },
     {
-      label: 'Marketplace',
+      label: 'Wuuble marketplace',
       href: '/marketplace',
       icon: ShoppingBag,
       active: location.pathname.includes('/marketplace') || location.pathname.includes('/store')
