@@ -325,12 +325,12 @@ const CommunityDetail = () => {
 
   const tabs = [
     { id: 'discussions', label: 'Discussions', icon: MessageCircle },
-    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'members', label: 'Members', icon: Users },
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
     { id: 'quick-access', label: 'Quick Access', icon: Zap },
     { id: 'live-streaming', label: 'Live Streaming', icon: Radio },
+    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'about', label: 'About', icon: Info },
     { id: 'store', label: 'Store', icon: ShoppingBag }
   ];
