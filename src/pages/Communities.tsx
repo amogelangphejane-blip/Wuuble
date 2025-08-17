@@ -32,6 +32,7 @@ const Communities = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [showFilters, setShowFilters] = useState(false);
   const [newCommunity, setNewCommunity] = useState({
     name: '',
     description: '',
@@ -255,32 +256,39 @@ const Communities = () => {
                   className="pl-10 h-12 bg-background border-border/50 focus:border-primary"
                 />
               </div>
-              <Button variant="outline" size="lg" className="px-6">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className={`px-6 ${showFilters ? 'bg-primary text-primary-foreground' : ''}`}
+                onClick={() => setShowFilters(!showFilters)}
+              >
                 <Filter className="mr-2 w-4 h-4" />
                 Filters
               </Button>
             </div>
 
-            {/* Category Filters */}
-            <div className="flex flex-wrap gap-2 justify-center">
-              {categories.map((category) => (
-                <Button
-                  key={category.name}
-                  variant={selectedCategory === category.name ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category.name)}
-                  className={`
-                    ${selectedCategory === category.name 
-                      ? 'bg-primary text-primary-foreground shadow-sm' 
-                      : 'hover:bg-secondary'
-                    }
-                  `}
-                >
-                  <span className="mr-2">{category.icon}</span>
-                  {category.name}
-                </Button>
-              ))}
-            </div>
+            {/* Category Filters - Only show when showFilters is true */}
+            {showFilters && (
+              <div className="flex flex-wrap gap-2 justify-center animate-in slide-in-from-top-2 duration-300">
+                {categories.map((category) => (
+                  <Button
+                    key={category.name}
+                    variant={selectedCategory === category.name ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.name)}
+                    className={`
+                      ${selectedCategory === category.name 
+                        ? 'bg-primary text-primary-foreground shadow-sm' 
+                        : 'hover:bg-secondary'
+                      }
+                    `}
+                  >
+                    <span className="mr-2">{category.icon}</span>
+                    {category.name}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>
