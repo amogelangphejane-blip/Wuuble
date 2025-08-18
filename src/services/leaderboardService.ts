@@ -27,6 +27,8 @@ export class LeaderboardService {
    * Get leaderboard for a community
    */
   async getLeaderboard(communityId: string, limit: number = 50): Promise<LeaderboardEntry[]> {
+    console.log('[LeaderboardService] Fetching leaderboard:', { communityId, limit });
+    
     const { data, error } = await supabase
       .from('community_user_scores')
       .select(`
@@ -43,7 +45,18 @@ export class LeaderboardService {
       .limit(limit);
 
     if (error) {
-      console.error('Error fetching leaderboard:', error);
+      console.error('[LeaderboardService] Error fetching leaderboard:', {
+        error: error.message,
+        code: error.code,
+        communityId,
+        limit
+      });
+      
+      // Provide helpful error messages
+      if (error.message.includes('relation') && error.message.includes('does not exist')) {
+        throw new Error('Leaderboard system not initialized. Please contact an administrator to set up the database.');
+      }
+      
       throw error;
     }
 

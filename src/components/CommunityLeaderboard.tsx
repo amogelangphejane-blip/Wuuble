@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLeaderboard, useUserProgress, useLeaderboardQuery, useFeedbackGenerator } from '@/hooks/useLeaderboard';
 import { LeaderboardEntry } from '@/types/leaderboard';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 interface CommunityLeaderboardProps {
@@ -40,6 +41,7 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
   const [question, setQuestion] = useState('');
   const [showTraining, setShowTraining] = useState(false);
   
+  const { user } = useAuth();
   const { leaderboard, userPosition, isLoading, refreshLeaderboard } = useLeaderboard(communityId);
   const { progress, feedback } = useUserProgress(communityId);
   const { askQuestion, queryHistory, isLoading: queryLoading } = useLeaderboardQuery(communityId);
