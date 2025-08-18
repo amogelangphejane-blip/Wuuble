@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLeaderboard, useUserProgress, useLeaderboardQuery, useFeedbackGenerator } from '@/hooks/useLeaderboard';
 import { LeaderboardEntry } from '@/types/leaderboard';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 interface CommunityLeaderboardProps {
@@ -40,6 +41,7 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
   const [question, setQuestion] = useState('');
   const [showTraining, setShowTraining] = useState(false);
   
+  const { user } = useAuth();
   const { leaderboard, userPosition, isLoading, refreshLeaderboard } = useLeaderboard(communityId);
   const { progress, feedback } = useUserProgress(communityId);
   const { askQuestion, queryHistory, isLoading: queryLoading } = useLeaderboardQuery(communityId);
@@ -47,6 +49,18 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
 
   const handleAskQuestion = async () => {
     if (!question.trim()) return;
+    
+    // Check if user is authenticated
+    if (!user?.id) {
+      toast.error('Please log in to ask leaderboard questions.');
+      return;
+    }
+    
+    // Check if we have a community
+    if (!communityId) {
+      toast.error('No community selected. Please navigate to a community first.');
+      return;
+    }
     
     try {
       console.log('[Community Leaderboard] Asking question:', {
@@ -65,6 +79,7 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
       
       toast.success('Got your answer!');
       setQuestion('');
+      setAskDialogOpen(false); // Close the dialog after successful response
     } catch (error) {
       console.error('[Community Leaderboard] Error asking question:', {
         error: error instanceof Error ? error.message : String(error),
@@ -75,7 +90,16 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
       
       // Show more helpful error message
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast.error(`Failed to process question: ${errorMessage}. Please try again.`);
+      
+      if (errorMessage.includes('database not set up') || errorMessage.includes('relation') && errorMessage.includes('does not exist')) {
+        toast.error('Leaderboard system needs setup. Please contact an administrator.');
+      } else if (errorMessage.includes('not authenticated')) {
+        toast.error('Please log in and try again.');
+      } else if (errorMessage.includes('community')) {
+        toast.error('Please make sure you are a member of this community.');
+      } else {
+        toast.error(`Failed to process question: ${errorMessage}`);
+      }
     }
   };
 

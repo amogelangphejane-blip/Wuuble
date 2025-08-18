@@ -177,24 +177,63 @@ export function useLeaderboardQuery(communityId: string): UseLeaderboardQueryRet
   // Process query mutation
   const processQueryMutation = useMutation({
     mutationFn: async (question: string): Promise<ProcessLeaderboardQueryResponse> => {
-      if (!user) throw new Error('User not authenticated');
+      if (!user) {
+        throw new Error('Please log in to ask leaderboard questions');
+      }
       
-      const queryResult = await leaderboardService.processUserQuery(communityId, user.id, question);
+      console.log('[useLeaderboard] Processing query:', {
+        question: question.substring(0, 50) + '...',
+        userId: user.id,
+        communityId
+      });
       
-      return {
-        response: queryResult.ai_response,
-        intent: queryResult.query_intent!,
-        confidence: (queryResult.response_data as any)?.confidence || 0.8,
-        suggested_actions: (queryResult.response_data as any)?.suggested_actions,
-        follow_up_questions: (queryResult.response_data as any)?.follow_up_questions
-      };
+      try {
+        const queryResult = await leaderboardService.processUserQuery(communityId, user.id, question);
+        
+        console.log('[useLeaderboard] Query processed successfully:', {
+          hasResponse: !!queryResult.ai_response,
+          intent: queryResult.query_intent,
+          responseLength: queryResult.ai_response?.length
+        });
+        
+        return {
+          response: queryResult.ai_response,
+          intent: queryResult.query_intent!,
+          confidence: (queryResult.response_data as any)?.confidence || 0.8,
+          suggested_actions: (queryResult.response_data as any)?.suggested_actions,
+          follow_up_questions: (queryResult.response_data as any)?.follow_up_questions
+        };
+      } catch (error) {
+        console.error('[useLeaderboard] Query processing failed:', {
+          error: error instanceof Error ? error.message : String(error),
+          question: question.substring(0, 50),
+          userId: user.id,
+          communityId
+        });
+        
+        // Re-throw with more context
+        if (error instanceof Error) {
+          if (error.message.includes('relation') && error.message.includes('does not exist')) {
+            throw new Error('Leaderboard database not set up. Please contact an administrator to apply the database migration.');
+          }
+          if (error.message.includes('not authenticated')) {
+            throw new Error('Authentication required. Please log in and try again.');
+          }
+          if (error.message.includes('network')) {
+            throw new Error('Network error. Please check your connection and try again.');
+          }
+          throw error;
+        }
+        throw new Error('An unexpected error occurred while processing your question.');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['query-history', communityId, user?.id] });
     },
     onError: (error) => {
-      console.error('Error processing query:', error);
-      toast.error('Failed to process your question. Please try again.');
+      console.error('[useLeaderboard] Mutation error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process your question. Please try again.';
+      toast.error(errorMessage);
     }
   });
 
