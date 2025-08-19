@@ -22,8 +22,14 @@ export class AILeaderboardService {
 
   constructor() {
     // In a real implementation, these would come from environment variables
-    this.apiKey = process.env.VITE_OPENAI_API_KEY || '';
+    this.apiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
     this.baseUrl = 'https://api.openai.com/v1';
+    
+    // Log initialization status
+    console.log('[AI Leaderboard Service] Initialized:', {
+      hasApiKey: !!this.apiKey,
+      usingMockMode: !this.apiKey
+    });
   }
 
   public static getInstance(): AILeaderboardService {
