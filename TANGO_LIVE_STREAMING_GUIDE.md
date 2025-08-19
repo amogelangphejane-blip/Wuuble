@@ -145,9 +145,9 @@ stream_moderators    -- Moderation permissions
 - Charts and metrics visualization
 - Performance tracking for streamers
 
-#### `/src/components/LiveStreamFeature.tsx`
-- Enhanced existing component with Tango features
-- Community-based streaming integration
+#### `/src/pages/LiveStreaming.tsx`
+- New Tango-style live streaming page
+- Full-featured streaming platform with modern UI
 
 ### API Functions
 
