@@ -19,7 +19,8 @@ import {
   MessageCircle,
   ShoppingBag,
   Package,
-  Library
+  Library,
+  Radio
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -74,6 +75,12 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
       href: '/communities',
       icon: Users,
       active: location.pathname.startsWith('/communities')
+    },
+    {
+      label: 'Live',
+      href: '/live',
+      icon: Radio,
+      active: location.pathname.startsWith('/live')
     },
     {
       label: 'Marketplace',
