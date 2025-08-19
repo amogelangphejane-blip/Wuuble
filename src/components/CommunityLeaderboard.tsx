@@ -15,7 +15,12 @@ import {
   Sparkles,
   MessageSquare,
   Bot,
-  RefreshCw
+  RefreshCw,
+  Send,
+  ThumbsUp,
+  ThumbsDown,
+  Copy,
+  ExternalLink
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,6 +44,7 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
   const [askDialogOpen, setAskDialogOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [showTraining, setShowTraining] = useState(false);
+  const [feedbackRatings, setFeedbackRatings] = useState<Record<string, 'up' | 'down' | null>>({});
   
   const { leaderboard, userPosition, isLoading, refreshLeaderboard } = useLeaderboard(communityId);
   const { progress, feedback } = useUserProgress(communityId);
@@ -76,6 +82,24 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
       // Show more helpful error message
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error(`Failed to process question: ${errorMessage}. Please try again.`);
+    }
+  };
+
+  const handleFeedbackRating = (queryId: string, rating: 'up' | 'down') => {
+    setFeedbackRatings(prev => ({
+      ...prev,
+      [queryId]: prev[queryId] === rating ? null : rating
+    }));
+    // Here you could also send the rating to your backend
+    toast.success(rating === 'up' ? 'Thanks for the positive feedback!' : 'Thanks for the feedback, we\'ll improve!');
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Copied to clipboard!');
+    } catch (error) {
+      toast.error('Failed to copy to clipboard');
     }
   };
 
@@ -124,53 +148,267 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
             <div className="flex space-x-2">
               <Dialog open={askDialogOpen} onOpenChange={setAskDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="secondary" className="bg-white/20 hover:bg-white/30">
+                  <Button variant="secondary" className="bg-white/20 hover:bg-white/30 transition-all duration-200 shadow-lg">
                     <Bot className="w-4 h-4 mr-2" />
-                    Ask AI
+                    Ask AI Assistant
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center space-x-2">
-                      <Bot className="w-5 h-5" />
-                      <span>Ask About Your Progress</span>
+                <DialogContent className="sm:max-w-[700px] max-h-[80vh] w-[95vw] sm:w-full">
+                  <DialogHeader className="pb-4 border-b">
+                    <DialogTitle className="flex items-center space-x-3 text-xl">
+                      <div className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg">
+                        <Bot className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                          AI Progress Assistant
+                        </span>
+                        <p className="text-sm text-gray-500 font-normal mt-1">
+                          Get personalized insights about your community engagement
+                        </p>
+                      </div>
                     </DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="flex space-x-2">
-                      <Input
-                        placeholder="Why is my rank low? How can I improve?"
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleAskQuestion()}
-                      />
-                      <Button 
-                        onClick={handleAskQuestion}
-                        disabled={queryLoading || !question.trim()}
-                      >
-                        {queryLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Ask'}
-                      </Button>
-                    </div>
-                    
-                    {/* Query History */}
-                    <ScrollArea className="h-64">
-                      <div className="space-y-3">
-                        {queryHistory.map((query, index) => (
-                          <div key={query.id} className="p-3 bg-gray-50 rounded-lg">
-                            <p className="font-medium text-sm text-gray-700">{query.query_text}</p>
-                            <p className="text-sm text-gray-600 mt-1">{query.ai_response}</p>
-                            <div className="flex justify-between items-center mt-2">
-                              <Badge variant="outline" className="text-xs">
-                                {query.query_intent}
-                              </Badge>
-                              <span className="text-xs text-gray-400">
-                                {new Date(query.created_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
+                  
+                  <div className="space-y-6 py-4">
+                    {/* Suggested Questions */}
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium text-gray-700 flex items-center">
+                        <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
+                        Quick Questions
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {[
+                          "Why is my rank low?",
+                          "How can I improve?",
+                          "What are my strengths?",
+                          "Show my progress trends",
+                          "Compare me to top performers",
+                          "What activities boost my score?"
+                        ].map((suggestedQ) => (
+                          <Button
+                            key={suggestedQ}
+                            variant="outline"
+                            size="sm"
+                            className="text-xs hover:bg-purple-50 hover:border-purple-300 transition-colors justify-start h-auto py-2 px-3"
+                            onClick={() => setQuestion(suggestedQ)}
+                            disabled={queryLoading}
+                          >
+                            <span className="truncate">{suggestedQ}</span>
+                          </Button>
                         ))}
                       </div>
-                    </ScrollArea>
+                    </div>
+
+                    {/* Question Input */}
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium text-gray-700 flex items-center">
+                        <MessageCircle className="w-4 h-4 mr-2 text-blue-500" />
+                        Ask Your Question
+                      </h4>
+                      <div className="relative">
+                        <Input
+                          placeholder="Type your question about your progress, ranking, or how to improve..."
+                          value={question}
+                          onChange={(e) => setQuestion(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleAskQuestion();
+                            }
+                          }}
+                          className="pr-16 py-3 text-sm border-2 focus:border-purple-300 transition-colors"
+                          disabled={queryLoading}
+                        />
+                        <Button 
+                          onClick={handleAskQuestion}
+                          disabled={queryLoading || !question.trim()}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-200"
+                          size="sm"
+                        >
+                          {queryLoading ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>💡 Try asking about specific areas like "video calls", "chat engagement", or "overall ranking"</span>
+                        <span>Press Enter to send</span>
+                      </div>
+                    </div>
+                    
+                    {/* Loading Indicator */}
+                    {queryLoading && (
+                      <div className="space-y-3">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-medium text-blue-600">You</span>
+                          </div>
+                          <div className="flex-1 bg-blue-50 rounded-lg p-3">
+                            <p className="text-sm font-medium text-gray-800">{question}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start space-x-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                            <Bot className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex-1 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3">
+                            <div className="flex items-center space-x-2">
+                              <div className="flex space-x-1">
+                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                              </div>
+                              <span className="text-sm text-gray-600">AI is thinking...</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Query History */}
+                    {queryHistory.length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-gray-700 flex items-center">
+                          <MessageSquare className="w-4 h-4 mr-2 text-green-500" />
+                          Recent Conversations ({queryHistory.length})
+                        </h4>
+                        <ScrollArea className="h-80 border rounded-lg">
+                          <div className="p-3 space-y-4">
+                            {queryHistory.map((query, index) => (
+                              <motion.div
+                                key={query.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                                className="space-y-3 pb-4 border-b border-gray-100 last:border-b-0"
+                              >
+                                {/* User Question */}
+                                <div className="flex items-start space-x-3">
+                                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-sm font-medium text-blue-600">You</span>
+                                  </div>
+                                  <div className="flex-1 bg-blue-50 rounded-lg p-3">
+                                    <p className="text-sm font-medium text-gray-800">{query.query_text}</p>
+                                  </div>
+                                </div>
+
+                                {/* AI Response */}
+                                <div className="flex items-start space-x-3">
+                                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                                    <Bot className="w-4 h-4 text-white" />
+                                  </div>
+                                  <div className="flex-1 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3">
+                                    <p className="text-sm text-gray-700 leading-relaxed">{query.ai_response}</p>
+                                    
+                                    {/* Action Buttons */}
+                                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/50">
+                                      <div className="flex items-center space-x-2">
+                                        <Badge 
+                                          variant="outline" 
+                                          className="text-xs bg-white/50 border-purple-200 text-purple-700"
+                                        >
+                                          {query.query_intent?.replace('_', ' ') || 'general'}
+                                        </Badge>
+                                        {query.response_data?.confidence && (
+                                          <Badge 
+                                            variant="outline" 
+                                            className="text-xs bg-white/50 border-green-200 text-green-700"
+                                          >
+                                            {Math.round(query.response_data.confidence * 100)}% confident
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      
+                                      <div className="flex items-center space-x-1">
+                                        {/* Copy Button */}
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 hover:bg-white/50"
+                                          onClick={() => copyToClipboard(query.ai_response)}
+                                        >
+                                          <Copy className="w-3 h-3" />
+                                        </Button>
+                                        
+                                        {/* Feedback Buttons */}
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className={`h-6 w-6 p-0 hover:bg-white/50 ${
+                                            feedbackRatings[query.id] === 'up' 
+                                              ? 'text-green-600 bg-green-100' 
+                                              : 'text-gray-400'
+                                          }`}
+                                          onClick={() => handleFeedbackRating(query.id, 'up')}
+                                        >
+                                          <ThumbsUp className="w-3 h-3" />
+                                        </Button>
+                                        
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className={`h-6 w-6 p-0 hover:bg-white/50 ${
+                                            feedbackRatings[query.id] === 'down' 
+                                              ? 'text-red-600 bg-red-100' 
+                                              : 'text-gray-400'
+                                          }`}
+                                          onClick={() => handleFeedbackRating(query.id, 'down')}
+                                        >
+                                          <ThumbsDown className="w-3 h-3" />
+                                        </Button>
+                                        
+                                        <span className="text-xs text-gray-500 ml-2">
+                                          {new Date(query.created_at).toLocaleString()}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Show suggested actions if available */}
+                                    {query.response_data?.suggested_actions && Array.isArray(query.response_data.suggested_actions) && (
+                                      <div className="mt-3 pt-2 border-t border-white/50">
+                                        <p className="text-xs font-medium text-gray-600 mb-2">💡 Suggested Actions:</p>
+                                        <div className="flex flex-wrap gap-1">
+                                          {query.response_data.suggested_actions.slice(0, 3).map((action: string, actionIndex: number) => (
+                                            <Badge
+                                              key={actionIndex}
+                                              variant="secondary"
+                                              className="text-xs bg-white/70 text-gray-700 hover:bg-white cursor-pointer transition-colors"
+                                              onClick={() => setQuestion(action)}
+                                            >
+                                              {action}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+
+                    {/* Empty State */}
+                    {queryHistory.length === 0 && !queryLoading && (
+                      <div className="text-center py-8 px-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border-2 border-dashed border-purple-200">
+                        <Bot className="w-12 h-12 mx-auto mb-4 text-purple-400" />
+                        <h4 className="font-medium text-gray-800 mb-2">Start Your First Conversation</h4>
+                        <p className="text-sm text-gray-600 mb-4">
+                          Ask me anything about your progress, ranking, or how to improve your community engagement!
+                        </p>
+                        <div className="flex justify-center">
+                          <Badge variant="outline" className="bg-white/50 text-purple-700 border-purple-300">
+                            AI-Powered Insights
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
