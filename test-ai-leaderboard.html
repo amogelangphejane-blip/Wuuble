@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Leaderboard Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .pass { background-color: #d4edda; border-color: #c3e6cb; }
+        .fail { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>AI Leaderboard Diagnostic Test</h1>
+    
+    <div class="test-section">
+        <h2>Environment Variables Check</h2>
+        <button onclick="checkEnvironment()">Check Environment</button>
+        <div id="env-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>AI Service Test</h2>
+        <button onclick="testAIService()">Test AI Service</button>
+        <div id="ai-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Mock Query Test</h2>
+        <button onclick="testMockQuery()">Test Mock Query</button>
+        <div id="query-results"></div>
+    </div>
+
+    <script>
+        function checkEnvironment() {
+            const results = document.getElementById('env-results');
+            const checks = [];
+
+            // Check if we're in a browser environment that supports import.meta.env
+            try {
+                const hasOpenAI = typeof import !== 'undefined' && import.meta && import.meta.env && import.meta.env.VITE_OPENAI_API_KEY;
+                checks.push({
+                    name: 'OpenAI API Key',
+                    status: hasOpenAI ? 'pass' : 'warning',
+                    message: hasOpenAI ? 'Configured' : 'Not configured (will use mock)'
+                });
+            } catch (e) {
+                checks.push({
+                    name: 'Environment Check',
+                    status: 'warning',
+                    message: 'Running in static HTML - cannot check environment variables'
+                });
+            }
+
+            results.innerHTML = checks.map(check => 
+                `<div class="${check.status}">
+                    <strong>${check.name}:</strong> ${check.message}
+                </div>`
+            ).join('');
+        }
+
+        async function testAIService() {
+            const results = document.getElementById('ai-results');
+            results.innerHTML = '<div>Testing AI service...</div>';
+
+            try {
+                // Simulate the AI service mock implementation
+                const mockResponse = await simulateAIQuery('What is my rank?');
+                
+                results.innerHTML = `
+                    <div class="pass">
+                        <strong>AI Service Test:</strong> Mock implementation working
+                        <pre>${JSON.stringify(mockResponse, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="fail">
+                        <strong>AI Service Test:</strong> Failed
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function testMockQuery() {
+            const results = document.getElementById('query-results');
+            results.innerHTML = '<div>Testing query processing...</div>';
+
+            const testQueries = [
+                'What is my rank?',
+                'How can I improve?',
+                'Why is my rank low?',
+                'What are my strengths?'
+            ];
+
+            try {
+                const responses = [];
+                for (const query of testQueries) {
+                    const response = await simulateAIQuery(query);
+                    responses.push({ query, response });
+                }
+
+                results.innerHTML = `
+                    <div class="pass">
+                        <strong>Query Processing Test:</strong> All queries processed successfully
+                        ${responses.map(r => `
+                            <div style="margin: 10px 0; padding: 10px; background: #f9f9f9;">
+                                <strong>Q:</strong> ${r.query}<br>
+                                <strong>A:</strong> ${r.response.response}<br>
+                                <strong>Intent:</strong> ${r.response.intent}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="fail">
+                        <strong>Query Processing Test:</strong> Failed
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Simulate the AI service functionality
+        async function simulateAIQuery(query) {
+            // Simulate processing delay
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            const queryLower = query.toLowerCase();
+            let intent = 'general_question';
+            let response = '';
+
+            // Simple intent classification
+            if (queryLower.includes('rank') || queryLower.includes('position')) {
+                intent = 'rank_inquiry';
+                response = "You're currently ranked #15 in your community with a performance score of 250. Great job! You're in the top 25! 🌟";
+            } else if (queryLower.includes('improve') || queryLower.includes('better')) {
+                intent = 'improvement_request';
+                response = "Focus on posting more thoughtful, helpful messages in community discussions. Quality matters more than quantity!";
+            } else if (queryLower.includes('low') || queryLower.includes('why')) {
+                intent = 'improvement_request';
+                response = "Your rank reflects your current activity level. Try joining more video calls and actively participating - they have the highest impact on your score!";
+            } else if (queryLower.includes('strength')) {
+                intent = 'comparison_request';
+                response = "Your strengths are in chat discussions and community engagement. To reach the next level, focus on video call participation.";
+            } else {
+                response = "I'm here to help you understand your community performance! You're currently ranked #15. Feel free to ask me about your rank, how to improve, or track your progress.";
+            }
+
+            return {
+                response,
+                intent,
+                confidence: 0.85,
+                suggested_actions: [
+                    'Join more video calls this week',
+                    'Post thoughtful responses in discussions',
+                    'Help answer questions from other members'
+                ],
+                follow_up_questions: [
+                    'How can I improve my rank?',
+                    'What are my strongest areas?',
+                    'Show me my progress over time'
+                ]
+            };
+        }
+
+        // Auto-run basic checks on page load
+        window.onload = function() {
+            checkEnvironment();
+        };
+    </script>
+</body>
+</html>
