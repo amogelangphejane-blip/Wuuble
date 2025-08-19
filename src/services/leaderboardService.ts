@@ -342,7 +342,98 @@ export class LeaderboardService {
       console.log('[Leaderboard Service] Processing user query:', {
         communityId,
         userId,
-        query: query.substring(0, 100) + (query.length > 100 ? '...' : '')
+        query: query.substring(0, 100) + (query.length > 100 ? '...' : ''),
+        timestamp: new Date().toISOString()
+      });
+
+      // First check if user is a member of the community
+      const { data: membership, error: membershipError } = await supabase
+        .from('community_members')
+        .select('id, role')
+        .eq('community_id', communityId)
+        .eq('user_id', userId)
+        .single();
+
+      if (membershipError && membershipError.code !== 'PGRST116') {
+        console.error('[Leaderboard Service] Error checking community membership:', membershipError);
+      }
+
+      if (!membership) {
+        console.warn('[Leaderboard Service] User is not a member of this community, checking if community is public:', {
+          communityId,
+          userId
+        });
+        
+        // Check if the community is public and auto-join the user
+        const { data: community, error: communityError } = await supabase
+          .from('communities')
+          .select('is_private, name')
+          .eq('id', communityId)
+          .single();
+
+        if (community && !community.is_private) {
+          console.log('[Leaderboard Service] Community is public, auto-joining user:', {
+            communityId,
+            userId,
+            communityName: community.name
+          });
+          
+          // Auto-join the user to the public community
+          const { error: joinError } = await supabase
+            .from('community_members')
+            .insert({
+              community_id: communityId,
+              user_id: userId,
+              role: 'member'
+            });
+
+          if (joinError) {
+            console.error('[Leaderboard Service] Failed to auto-join user to community:', joinError);
+            // Continue with access denied response
+          } else {
+            console.log('[Leaderboard Service] Successfully auto-joined user to community');
+            // Continue with the query processing since user is now a member
+          }
+        }
+
+        if (!community || community.is_private || membershipError) {
+          // Return a helpful error response for private communities or errors
+          return {
+            id: crypto.randomUUID(),
+            community_id: communityId,
+            user_id: userId,
+            query_text: query,
+            query_intent: 'access_denied' as const,
+            ai_response: community?.is_private 
+              ? 'This is a private community. You need to be invited by the community creator to access the leaderboard and ask questions.'
+              : 'I apologize, but you need to be a member of this community to ask questions about the leaderboard. Please join the community first to access this feature.',
+            response_data: {
+              error: 'User is not a community member',
+              suggested_actions: community?.is_private
+                ? [
+                    'Request an invitation from the community creator',
+                    'Contact a community administrator',
+                    'Check if you have the correct community link'
+                  ]
+                : [
+                    'Join this community to access the leaderboard',
+                    'Ask the community creator for an invitation',
+                    'Check if you have the correct community link'
+                  ],
+              follow_up_questions: [],
+              confidence: 1.0
+            },
+            satisfaction_rating: null,
+            follow_up_needed: false,
+            created_at: new Date().toISOString()
+          };
+        }
+      }
+
+      console.log('[Leaderboard Service] User membership confirmed:', {
+        role: membership.role,
+        communityId,
+        userId
       });
 
       // Get user context with fallbacks
@@ -382,6 +473,14 @@ export class LeaderboardService {
       });
 
       // Store query and response
+      console.log('[Leaderboard Service] Storing query in database:', {
+        communityId,
+        userId,
+        queryLength: query.length,
+        intent: response.intent,
+        responseLength: response.response.length
+      });
+
       const { data, error } = await supabase
         .from('community_leaderboard_queries')
         .insert({
@@ -400,7 +499,14 @@ export class LeaderboardService {
         .single();
 
       if (error) {
-        console.error('[Leaderboard Service] Error storing query:', error);
+        console.error('[Leaderboard Service] Error storing query:', {
+          error: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          communityId,
+          userId
+        });
         throw error;
       }
 

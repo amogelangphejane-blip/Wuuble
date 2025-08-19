@@ -32,6 +32,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLeaderboard, useUserProgress, useLeaderboardQuery, useFeedbackGenerator } from '@/hooks/useLeaderboard';
+import { useAuth } from '@/hooks/useAuth';
 import { LeaderboardEntry } from '@/types/leaderboard';
 import { toast } from 'sonner';
 
@@ -46,6 +47,7 @@ export const CommunityLeaderboard: React.FC<CommunityLeaderboardProps> = ({ comm
   const [showTraining, setShowTraining] = useState(false);
   const [feedbackRatings, setFeedbackRatings] = useState<Record<string, 'up' | 'down' | null>>({});
   
+  const { user } = useAuth();
   const { leaderboard, userPosition, isLoading, refreshLeaderboard } = useLeaderboard(communityId);
   const { progress, feedback } = useUserProgress(communityId);
   const { askQuestion, queryHistory, isLoading: queryLoading } = useLeaderboardQuery(communityId);

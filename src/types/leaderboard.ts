@@ -134,7 +134,8 @@ export type QueryIntent =
   | 'comparison_request' 
   | 'goal_setting' 
   | 'progress_tracking' 
-  | 'general_question';
+  | 'general_question'
+  | 'access_denied';
 
 export interface LeaderboardSettings {
   id: string;
