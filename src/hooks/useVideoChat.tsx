@@ -231,11 +231,12 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
 
     try {
       switch (message.type) {
-        case 'offer':
+        case 'offer': {
           await webRTCServiceRef.current.setRemoteDescription(message.data);
           const answer = await webRTCServiceRef.current.createAnswer();
           signalingServiceRef.current?.sendAnswer(answer, message.from);
           break;
+        }
 
         case 'answer':
           await webRTCServiceRef.current.setRemoteDescription(message.data);
@@ -516,7 +517,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
   const updateFilterIntensity = useCallback((filterType: keyof FilterConfig, value: number) => {
     if (!filterConfig) return;
     
-    let newConfig = { ...filterConfig };
+    const newConfig = { ...filterConfig };
     
     if (filterType === 'skinSmoothing') {
       newConfig.skinSmoothing = {

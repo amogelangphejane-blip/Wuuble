@@ -56,7 +56,7 @@ import {
   Globe,
   Users2,
   Music,
-  GameController2,
+  Gamepad2,
   Brush,
   Wand2,
   BarChart

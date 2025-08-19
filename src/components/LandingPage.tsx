@@ -27,7 +27,7 @@ import {
   Gem,
   Award,
   TrendingUp,
-  Infinity
+  Infinity as InfinityIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
