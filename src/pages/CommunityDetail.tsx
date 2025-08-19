@@ -36,7 +36,7 @@ import { CommunitySearch } from '@/components/CommunitySearch';
 import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
 import { ModernHeader } from '@/components/ModernHeader';
 import { QuickAccess } from '@/components/QuickAccess';
-import { LiveStreamFeature } from '@/components/LiveStreamFeature';
+
 import { CommunityAbout } from '@/components/CommunityAbout';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
 import { CommunitySettings } from '@/components/CommunitySettings';
@@ -329,7 +329,7 @@ const CommunityDetail = () => {
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
     { id: 'quick-access', label: 'Quick Access', icon: Zap },
-    { id: 'live-streaming', label: 'Live Streaming', icon: Radio },
+
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'about', label: 'About', icon: Info },
     { id: 'store', label: 'Store', icon: ShoppingBag }
@@ -746,14 +746,7 @@ const CommunityDetail = () => {
                 />
               )}
 
-              {activeTab === 'live-streaming' && (
-                <LiveStreamFeature 
-                  communityId={community.id}
-                  communityName={community.name}
-                  isMember={isMember}
-                  isCreator={isCreator}
-                />
-              )}
+
 
               {activeTab === 'about' && (
                 <CommunityAbout 

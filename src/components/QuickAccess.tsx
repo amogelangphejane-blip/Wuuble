@@ -370,12 +370,15 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
           </CardContent>
         </Card>
 
-        {/* Community Stats */}
-        <Card className="hover:shadow-md transition-shadow">
+        {/* Live Streaming */}
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/live')}>
           <CardContent className="p-6 text-center">
-            <Star className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
-            <h4 className="font-semibold mb-2">Community Stats</h4>
-            <p className="text-sm text-muted-foreground">View activity metrics</p>
+            <div className="relative">
+              <Video className="w-12 h-12 text-red-500 mx-auto mb-3" />
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+            </div>
+            <h4 className="font-semibold mb-2">Live Streaming</h4>
+            <p className="text-sm text-muted-foreground">Go live with Tango-style features</p>
           </CardContent>
         </Card>
       </div>
@@ -392,7 +395,7 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
                 <li>• Join random video chats with other users</li>
                 <li>• Quick navigation to discussions and events</li>
                 <li>• Real-time activity updates</li>
-                <li>• Access live streaming in the dedicated tab</li>
+                <li>• Access modern live streaming features</li>
               </ul>
             </div>
           </div>
