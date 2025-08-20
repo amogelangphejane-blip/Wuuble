@@ -3,7 +3,7 @@ import LandingPage from '@/components/LandingPage';
 import LoadingPage from '@/components/LoadingPage';
 
 const Index = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Temporarily skip loading to fix blank page issue
   const [showTransition, setShowTransition] = useState(false);
   const [loadingError, setLoadingError] = useState<string | null>(null);
 

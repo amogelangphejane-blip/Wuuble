@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive App Debug</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+        }
+        .status { 
+            padding: 15px; 
+            margin: 15px 0; 
+            border-radius: 8px; 
+            border-left: 5px solid;
+        }
+        .success { 
+            background: rgba(40, 167, 69, 0.2); 
+            border-color: #28a745;
+            color: #d4edda;
+        }
+        .error { 
+            background: rgba(220, 53, 69, 0.2); 
+            border-color: #dc3545;
+            color: #f8d7da;
+        }
+        .info { 
+            background: rgba(23, 162, 184, 0.2); 
+            border-color: #17a2b8;
+            color: #d1ecf1;
+        }
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            border-color: #ffc107;
+            color: #fff3cd;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            margin: 20px 0;
+            background: white;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        h1, h2, h3 { text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Comprehensive React App Debug</h1>
+        <div id="results"></div>
+        
+        <div class="grid">
+            <div>
+                <h2>📱 Normal App View</h2>
+                <iframe id="normalFrame" src="http://localhost:8080/"></iframe>
+            </div>
+            <div>
+                <h2>🔧 Diagnostic Mode</h2>
+                <iframe id="diagnosticFrame" src="http://localhost:8080/?diagnostic=true"></iframe>
+            </div>
+        </div>
+        
+        <h2>📊 Detailed Analysis</h2>
+        <div id="detailed-results"></div>
+    </div>
+    
+    <script>
+        const results = document.getElementById('results');
+        const detailedResults = document.getElementById('detailed-results');
+        
+        function addResult(message, type = 'info', target = results) {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            target.appendChild(div);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function addCode(title, code, target = detailedResults) {
+            const h3 = document.createElement('h3');
+            h3.textContent = title;
+            target.appendChild(h3);
+            
+            const div = document.createElement('div');
+            div.className = 'code';
+            div.textContent = code;
+            target.appendChild(div);
+        }
+        
+        addResult('🚀 Comprehensive debug test started');
+        
+        // Test 1: Environment check
+        addResult(`🌐 User Agent: ${navigator.userAgent}`, 'info');
+        addResult(`📍 Location: ${window.location.href}`, 'info');
+        addResult(`🎯 Viewport: ${window.innerWidth}x${window.innerHeight}`, 'info');
+        
+        // Test 2: JavaScript capabilities
+        try {
+            // ES6 features
+            const testArrow = () => 'ES6 Arrow functions work';
+            const testDestructuring = { a: 1, b: 2 };
+            const { a, b } = testDestructuring;
+            const testTemplate = `Template literals work: ${a + b}`;
+            
+            addResult('✅ ES6 features supported', 'success');
+            
+            // Async/await
+            (async () => {
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 1));
+                    addResult('✅ Async/await supported', 'success');
+                } catch (e) {
+                    addResult(`❌ Async/await failed: ${e.message}`, 'error');
+                }
+            })();
+            
+        } catch (e) {
+            addResult(`❌ ES6 features failed: ${e.message}`, 'error');
+        }
+        
+        // Test 3: Fetch and network
+        async function testNetwork() {
+            try {
+                const response = await fetch('http://localhost:8080/');
+                const html = await response.text();
+                
+                addResult('✅ Network fetch successful', 'success');
+                
+                // Analyze the HTML
+                if (html.includes('<div id="root">')) {
+                    addResult('✅ Root element found in HTML', 'success');
+                } else {
+                    addResult('❌ Root element missing from HTML', 'error');
+                }
+                
+                if (html.includes('/src/main.tsx')) {
+                    addResult('✅ Main script reference found', 'success');
+                } else {
+                    addResult('❌ Main script reference missing', 'error');
+                }
+                
+                addCode('HTML Response (first 1000 chars)', html.substring(0, 1000));
+                
+            } catch (e) {
+                addResult(`❌ Network test failed: ${e.message}`, 'error');
+            }
+        }
+        
+        // Test 4: Module loading
+        async function testModuleLoading() {
+            try {
+                const response = await fetch('http://localhost:8080/src/main.tsx');
+                const mainTsx = await response.text();
+                
+                addResult('✅ main.tsx accessible', 'success');
+                addCode('main.tsx content', mainTsx);
+                
+                // Try to load App.tsx
+                const appResponse = await fetch('http://localhost:8080/src/App.tsx');
+                const appTsx = await appResponse.text();
+                
+                addResult('✅ App.tsx accessible', 'success');
+                addCode('App.tsx content (first 500 chars)', appTsx.substring(0, 500));
+                
+            } catch (e) {
+                addResult(`❌ Module loading test failed: ${e.message}`, 'error');
+            }
+        }
+        
+        // Test 5: Console error monitoring
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        const errors = [];
+        const warnings = [];
+        
+        console.error = function(...args) {
+            errors.push(args.join(' '));
+            originalConsoleError.apply(console, args);
+            addResult(`🚨 Console Error: ${args.join(' ')}`, 'error');
+        };
+        
+        console.warn = function(...args) {
+            warnings.push(args.join(' '));
+            originalConsoleWarn.apply(console, args);
+            addResult(`⚠️ Console Warning: ${args.join(' ')}`, 'warning');
+        };
+        
+        // Test 6: iframe monitoring
+        const normalFrame = document.getElementById('normalFrame');
+        const diagnosticFrame = document.getElementById('diagnosticFrame');
+        
+        normalFrame.onload = () => {
+            addResult('✅ Normal app iframe loaded', 'success');
+            
+            // Try to access iframe content (if same origin)
+            try {
+                const iframeDoc = normalFrame.contentDocument || normalFrame.contentWindow.document;
+                const rootElement = iframeDoc.getElementById('root');
+                
+                if (rootElement) {
+                    addResult(`✅ Root element found in iframe: ${rootElement.children.length} children`, 'success');
+                    if (rootElement.children.length === 0) {
+                        addResult('⚠️ Root element is empty - this might be the issue!', 'warning');
+                    }
+                } else {
+                    addResult('❌ Root element not found in iframe', 'error');
+                }
+                
+            } catch (e) {
+                addResult(`ℹ️ Cannot access iframe content (CORS): ${e.message}`, 'info');
+            }
+        };
+        
+        normalFrame.onerror = () => {
+            addResult('❌ Normal app iframe failed to load', 'error');
+        };
+        
+        diagnosticFrame.onload = () => {
+            addResult('✅ Diagnostic mode iframe loaded', 'success');
+        };
+        
+        diagnosticFrame.onerror = () => {
+            addResult('❌ Diagnostic mode iframe failed to load', 'error');
+        };
+        
+        // Run tests
+        testNetwork();
+        testModuleLoading();
+        
+        // Summary after 5 seconds
+        setTimeout(() => {
+            addResult('📋 Summary Report:', 'info');
+            
+            if (errors.length > 0) {
+                addResult(`❌ Found ${errors.length} console errors`, 'error');
+                addCode('Console Errors', errors.join('\n'));
+            } else {
+                addResult('✅ No console errors detected', 'success');
+            }
+            
+            if (warnings.length > 0) {
+                addResult(`⚠️ Found ${warnings.length} console warnings`, 'warning');
+                addCode('Console Warnings', warnings.join('\n'));
+            } else {
+                addResult('✅ No console warnings detected', 'success');
+            }
+            
+            addResult('🎯 Next Steps:', 'info');
+            addResult('1. Check the iframe contents above', 'info');
+            addResult('2. Look for any console errors in the browser dev tools', 'info');
+            addResult('3. If the root element is empty, there\'s likely a React rendering issue', 'info');
+            addResult('4. If diagnostic mode works but normal mode doesn\'t, check the main app logic', 'info');
+            
+        }, 5000);
+    </script>
+</body>
+</html>
