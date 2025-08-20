@@ -25,6 +25,7 @@ import TestGroupCall from "./pages/TestGroupCall";
 import NotFound from "./pages/NotFound";
 import Marketplace from "./pages/Marketplace";
 import CommunityLeaderboardPage from "./pages/CommunityLeaderboard";
+import AzarLivestreams from "./pages/AzarLivestreams";
 
 
 const queryClient = new QueryClient();
@@ -83,6 +84,12 @@ const App = () => {
                 <Route path="/seller-dashboard" element={<SellerDashboard />} />
                 <Route path="/my-library" element={<BuyerLibrary />} />
                 <Route path="/marketplace" element={<Marketplace />} />
+                
+                {/* Azar Livestream Routes */}
+                <Route path="/azar-livestreams" element={<AzarLivestreams />} />
+                <Route path="/azar-livestreams/broadcast" element={<AzarLivestreams />} />
+                <Route path="/azar-livestreams/:streamId" element={<AzarLivestreams />} />
+                
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
