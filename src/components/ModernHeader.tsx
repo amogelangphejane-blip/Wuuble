@@ -76,12 +76,7 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
       icon: Users,
       active: location.pathname.startsWith('/communities')
     },
-    {
-      label: 'Live',
-      href: '/live',
-      icon: Radio,
-      active: location.pathname.startsWith('/live')
-    },
+
     {
       label: 'Marketplace',
       href: '/marketplace',
