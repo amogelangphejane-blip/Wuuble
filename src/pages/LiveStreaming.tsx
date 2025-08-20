@@ -149,7 +149,7 @@ const BEAUTY_FILTERS: BeautyFilter[] = [
 const STREAM_CATEGORIES = [
   { id: 'just_chatting', name: 'Just Chatting', icon: MessageCircle, color: 'bg-blue-500' },
   { id: 'music', name: 'Music', icon: Music, color: 'bg-purple-500' },
-  { id: 'gaming', name: 'Gaming', icon: GameController2, color: 'bg-green-500' },
+  { id: 'gaming', name: 'Gaming', icon: Gamepad2, color: 'bg-green-500' },
   { id: 'art', name: 'Art & Creative', icon: Brush, color: 'bg-pink-500' },
   { id: 'lifestyle', name: 'Lifestyle', icon: Users2, color: 'bg-orange-500' },
   { id: 'education', name: 'Education', icon: Users, color: 'bg-indigo-500' },
