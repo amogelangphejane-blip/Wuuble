@@ -31,7 +31,7 @@
 
 ## Common Causes of Blank Pages
 
-1. **Loading Screen Stuck**: The LoadingPage component might not be calling `onLoadingComplete`
+1. **Loading Screen Removed**: LoadingPage component has been removed to fix blank page issues
 2. **Supabase Connection Issues**: Authentication provider might be hanging
 3. **Missing Environment Variables**: Supabase credentials might be missing
 4. **JavaScript Errors**: Check browser console for errors
