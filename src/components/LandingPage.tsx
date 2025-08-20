@@ -27,6 +27,7 @@ import {
   Gem,
   Award,
   TrendingUp,
+  Radio,
   Infinity as InfinityIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
