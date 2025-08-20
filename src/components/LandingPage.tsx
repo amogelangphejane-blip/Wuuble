@@ -447,6 +447,91 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Live Streaming Section */}
+      <section className="py-24 relative overflow-hidden bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="absolute inset-0">
+          <div className="absolute top-1/3 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-to-r from-pink-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+        
+        <div className="container mx-auto px-6 lg:px-8 relative">
+          <div className="text-center max-w-4xl mx-auto mb-16">
+            <div className="mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-6 animate-pulse">
+                <Play className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
+                Go Live Like
+                <span className="block bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent mt-2">
+                  Azar & Instagram
+                </span>
+              </h2>
+              <p className="text-xl text-purple-100 mb-8 leading-relaxed">
+                Share your moments with the world through our advanced livestreaming platform. 
+                Connect with viewers, build your audience, and create unforgettable experiences.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
+            <Card className="bg-white/10 border-white/20 backdrop-blur-xl text-white">
+              <CardContent className="p-8 text-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Radio className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Live Broadcasting</h3>
+                <p className="text-purple-100">Stream in HD quality with real-time interaction and professional-grade features.</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/10 border-white/20 backdrop-blur-xl text-white">
+              <CardContent className="p-8 text-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MessageCircle className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Interactive Chat</h3>
+                <p className="text-purple-100">Engage with your audience through live chat, reactions, and Q&A sessions.</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/10 border-white/20 backdrop-blur-xl text-white">
+              <CardContent className="p-8 text-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Eye className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Discover Content</h3>
+                <p className="text-purple-100">Explore live streams from creators worldwide and join conversations that matter.</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button 
+                size="lg"
+                onClick={() => navigate('/azar-livestreams')}
+                className="group bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white shadow-2xl hover:shadow-red-500/25 transition-all duration-300 px-8 py-4 text-lg font-semibold rounded-full transform hover:scale-105"
+              >
+                <Play className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                Start Broadcasting
+                <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+              </Button>
+              
+              <Button 
+                size="lg"
+                variant="outline"
+                className="group border-2 border-white/30 hover:border-white/60 text-white hover:text-white bg-white/10 hover:bg-white/20 px-8 py-4 text-lg backdrop-blur-xl rounded-full transition-all duration-300 hover:scale-105"
+                onClick={() => navigate('/azar-livestreams')}
+              >
+                <Eye className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                Watch Streams
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Exclusive CTA Section */}
       <section className="py-32 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-50/80 via-white to-pink-50/80"></div>

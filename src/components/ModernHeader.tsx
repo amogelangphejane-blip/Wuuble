@@ -20,7 +20,8 @@ import {
   ShoppingBag,
   Package,
   Library,
-  Radio
+  Radio,
+  Video
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -76,7 +77,12 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
       icon: Users,
       active: location.pathname.startsWith('/communities')
     },
-
+    {
+      label: 'Live Streams',
+      href: '/azar-livestreams',
+      icon: Video,
+      active: location.pathname.startsWith('/azar-livestreams')
+    },
     {
       label: 'Marketplace',
       href: '/marketplace',
