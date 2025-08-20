@@ -94,6 +94,15 @@ export const useLivestream = () => {
     subscriptionsRef.current = [];
   }, []);
 
+  // Check if user can create streams
+  const canCreateStream = useCallback(async (community_id?: string) => {
+    try {
+      return await livestreamService.canCreateStream(community_id);
+    } catch (error: any) {
+      return { canCreate: false, reason: error.message };
+    }
+  }, []);
+
   // Create a new livestream
   const createStream = useCallback(async (data: {
     title: string;
@@ -105,6 +114,12 @@ export const useLivestream = () => {
   }) => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
+      
+      // Check permissions first
+      const { canCreate, reason } = await livestreamService.canCreateStream(data.community_id);
+      if (!canCreate) {
+        throw new Error(reason || 'Permission denied');
+      }
       
       const stream = await livestreamService.createLivestream(data);
       
@@ -410,6 +425,7 @@ export const useLivestream = () => {
     ...state,
     
     // Actions
+    canCreateStream,
     createStream,
     startBroadcast,
     stopBroadcast,
