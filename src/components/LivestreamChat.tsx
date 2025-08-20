@@ -9,7 +9,7 @@ import {
   Heart, 
   Laugh, 
   ThumbsUp, 
-  Fire, 
+  Flame, 
   Star,
   MessageCircle,
   X,
@@ -54,7 +54,7 @@ const reactionIcons = {
   wow: Star,
   laugh: Laugh,
   clap: ThumbsUp,
-  fire: Fire
+  fire: Flame
 };
 
 export const LivestreamChat: React.FC<LivestreamChatProps> = ({

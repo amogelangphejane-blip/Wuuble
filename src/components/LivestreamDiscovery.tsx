@@ -14,7 +14,7 @@ import {
   MessageCircle,
   Play,
   Clock,
-  Fire,
+  Flame,
   TrendingUp,
   Users,
   Star,
@@ -393,7 +393,7 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
                   </SelectItem>
                   <SelectItem value="popular">
                     <div className="flex items-center space-x-2">
-                      <Fire className="w-4 h-4" />
+                      <Flame className="w-4 h-4" />
                       <span>Popular</span>
                     </div>
                   </SelectItem>
