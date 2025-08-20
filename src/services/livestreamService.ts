@@ -70,11 +70,24 @@ export interface LiveStream {
 class LivestreamService {
   private localStream: MediaStream | null = null;
   private peerConnections: Map<string, RTCPeerConnection> = new Map();
+  private debugMode = localStorage.getItem('livestream_debug') === 'true';
   private configuration: RTCConfiguration = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
-    ]
+      // Add TURN servers for better connectivity
+      {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      }
+    ],
+    iceCandidatePoolSize: 10
   };
 
   // Initialize WebRTC for broadcasting
@@ -95,9 +108,31 @@ class LivestreamService {
 
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
       return this.localStream;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error starting broadcast:', error);
-      throw new Error('Failed to access camera/microphone');
+      
+      // Enhanced error handling with specific messages
+      if (error.name === 'NotAllowedError') {
+        throw new Error('Camera/microphone permission denied. Please allow access and try again.');
+      } else if (error.name === 'NotFoundError') {
+        throw new Error('No camera or microphone found. Please check your devices.');
+      } else if (error.name === 'NotReadableError') {
+        throw new Error('Camera/microphone is already in use by another application.');
+      } else if (error.name === 'OverconstrainedError') {
+        // Try fallback with lower constraints
+        try {
+          const fallbackConstraints: MediaStreamConstraints = {
+            video: config.video ? { width: 640, height: 480 } : false,
+            audio: config.audio
+          };
+          this.localStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+          return this.localStream;
+        } catch (fallbackError) {
+          throw new Error('Camera/microphone constraints not supported. Please try with different settings.');
+        }
+      }
+      
+      throw new Error(`Failed to access camera/microphone: ${error.message}`);
     }
   }
 
@@ -122,30 +157,56 @@ class LivestreamService {
     settings?: Partial<LiveStream['settings']>;
     tags?: string[];
   }): Promise<LiveStream> {
-    const { data: stream, error } = await supabase
-      .from('live_streams')
-      .insert({
-        title: data.title,
-        description: data.description,
-        community_id: data.community_id,
-        creator_id: (await supabase.auth.getUser()).data.user?.id,
-        max_viewers: data.max_viewers || 1000,
-        settings: {
-          qa_mode: false,
-          polls_enabled: true,
-          reactions_enabled: true,
-          chat_moderation: false,
-          ...data.settings
-        },
-        tags: data.tags || [],
-        stream_key: this.generateStreamKey(),
-        status: 'scheduled'
-      })
-      .select()
-      .single();
+    this.debugLog('Creating livestream:', data);
+    
+    // Check authentication
+    const { data: user, error: authError } = await supabase.auth.getUser();
+    if (authError || !user.user) {
+      throw new Error('You must be logged in to create a livestream');
+    }
 
-    if (error) throw error;
-    return stream;
+    try {
+      const { data: stream, error } = await supabase
+        .from('live_streams')
+        .insert({
+          title: data.title,
+          description: data.description,
+          community_id: data.community_id,
+          creator_id: user.user.id,
+          max_viewers: data.max_viewers || 1000,
+          settings: {
+            qa_mode: false,
+            polls_enabled: true,
+            reactions_enabled: true,
+            chat_moderation: false,
+            ...data.settings
+          },
+          tags: data.tags || [],
+          stream_key: this.generateStreamKey(),
+          status: 'scheduled'
+        })
+        .select()
+        .single();
+
+      this.debugLog('Stream creation result:', { stream, error });
+
+      if (error) {
+        this.debugLog('Stream creation error:', error);
+        
+        if (error.message.includes('permission denied')) {
+          throw new Error('Permission denied. Please check if you have access to create streams in this community.');
+        } else if (error.message.includes('violates row-level security')) {
+          throw new Error('Access denied. You may need to be a member of the community to create streams.');
+        }
+        
+        throw error;
+      }
+      
+      return stream;
+    } catch (error: any) {
+      this.debugLog('Error creating livestream:', error);
+      throw error;
+    }
   }
 
   // Start a livestream (change status to live)
@@ -175,38 +236,65 @@ class LivestreamService {
     await this.stopBroadcast();
   }
 
+  // Debug logging helper
+  private debugLog(message: string, data?: any) {
+    if (this.debugMode) {
+      console.log(`[LivestreamService] ${message}`, data);
+    }
+  }
+
   // Get live streams
   async getLivestreams(filters?: {
     status?: string;
     community_id?: string;
     creator_id?: string;
   }): Promise<LiveStream[]> {
-    let query = supabase
-      .from('live_streams')
-      .select(`
-        *,
-        profiles:creator_id (
-          id,
-          username,
-          full_name,
-          avatar_url
-        )
-      `)
-      .order('created_at', { ascending: false });
+    this.debugLog('Getting livestreams with filters:', filters);
+    
+    try {
+      let query = supabase
+        .from('live_streams')
+        .select(`
+          *,
+          profiles:creator_id (
+            id,
+            user_id,
+            display_name,
+            avatar_url
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-    if (filters?.status) {
-      query = query.eq('status', filters.status);
-    }
-    if (filters?.community_id) {
-      query = query.eq('community_id', filters.community_id);
-    }
-    if (filters?.creator_id) {
-      query = query.eq('creator_id', filters.creator_id);
-    }
+      if (filters?.status) {
+        query = query.eq('status', filters.status);
+      }
+      if (filters?.community_id) {
+        query = query.eq('community_id', filters.community_id);
+      }
+      if (filters?.creator_id) {
+        query = query.eq('creator_id', filters.creator_id);
+      }
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
+      const { data, error } = await query;
+      
+      this.debugLog('Livestreams query result:', { data, error });
+      
+      if (error) {
+        this.debugLog('Database error:', error);
+        throw error;
+      }
+      
+      return data || [];
+    } catch (error: any) {
+      this.debugLog('Error getting livestreams:', error);
+      
+      // Check if it's a table not found error
+      if (error.message?.includes('relation "live_streams" does not exist')) {
+        throw new Error('Livestream database tables are not set up. Please contact support.');
+      }
+      
+      throw error;
+    }
   }
 
   // Join a livestream as viewer
