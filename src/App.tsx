@@ -25,7 +25,7 @@ import TestGroupCall from "./pages/TestGroupCall";
 import NotFound from "./pages/NotFound";
 import Marketplace from "./pages/Marketplace";
 import CommunityLeaderboardPage from "./pages/CommunityLeaderboard";
-import LiveStreaming from "./pages/LiveStreaming";
+
 
 const queryClient = new QueryClient();
 
@@ -78,8 +78,7 @@ const App = () => {
                 <Route path="/communities/:id/members" element={<CommunityMembers />} />
                 <Route path="/communities/:id/subscriptions" element={<CommunitySubscriptions />} />
                 <Route path="/communities/:id/leaderboard" element={<CommunityLeaderboardPage />} />
-                <Route path="/live" element={<LiveStreaming />} />
-                <Route path="/live/:streamId" element={<LiveStreaming />} />
+
                 <Route path="/profile" element={<ProfileSettings />} />
                 <Route path="/seller-dashboard" element={<SellerDashboard />} />
                 <Route path="/my-library" element={<BuyerLibrary />} />

@@ -79,7 +79,7 @@ interface CommunitySettings {
   require_post_approval: boolean;
   allow_events: boolean;
   require_event_approval: boolean;
-  allow_live_streams: boolean;
+
   
   // Communication
   allow_group_calls: boolean;
@@ -114,7 +114,7 @@ export const CommunitySettings = ({
     require_post_approval: false,
     allow_events: true,
     require_event_approval: false,
-    allow_live_streams: true,
+
     allow_group_calls: true,
     allow_direct_messages: true,
     notification_frequency: 'immediate'
@@ -528,18 +528,7 @@ export const CommunitySettings = ({
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label>Allow Live Streams</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Enable live streaming features for members.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.allow_live_streams}
-                    onCheckedChange={(checked) => setSettings({ ...settings, allow_live_streams: checked })}
-                  />
-                </div>
+
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
