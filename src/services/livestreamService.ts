@@ -57,6 +57,7 @@ export interface LiveStream {
   recording_url?: string;
   thumbnail_url?: string;
   tags?: string[];
+  visibility: 'public' | 'community_only';
   settings: {
     qa_mode: boolean;
     polls_enabled: boolean;
@@ -154,6 +155,7 @@ class LivestreamService {
     description?: string;
     community_id?: string;
     max_viewers?: number;
+    visibility?: 'public' | 'community_only';
     settings?: Partial<LiveStream['settings']>;
     tags?: string[];
   }): Promise<LiveStream> {
@@ -174,6 +176,7 @@ class LivestreamService {
           community_id: data.community_id,
           creator_id: user.user.id,
           max_viewers: data.max_viewers || 1000,
+          visibility: data.visibility || (data.community_id ? 'community_only' : 'public'),
           settings: {
             qa_mode: false,
             polls_enabled: true,

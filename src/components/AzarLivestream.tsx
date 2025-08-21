@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useLivestream } from '@/hooks/useLivestream';
 import { LivestreamChat } from './LivestreamChat';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Video,
   VideoOff,
@@ -61,7 +62,10 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
     maxViewers: 1000,
     enableChat: true,
     enableReactions: true,
+    visibility: 'community_only' as 'public' | 'community_only',
+    communityId: '',
   });
+  const [userCommunities, setUserCommunities] = useState<Array<{ id: string; name: string }>>([]);
 
   const {
     currentStream,
@@ -119,11 +123,46 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
     }
   }, [mode, stream, isViewing, joinStream]);
 
+  // Fetch user communities when in broadcast mode
+  useEffect(() => {
+    if (mode === 'broadcast') {
+      fetchUserCommunities();
+    }
+  }, [mode]);
+
+  const fetchUserCommunities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('community_members')
+        .select(`
+          community_id,
+          communities (
+            id,
+            name
+          )
+        `)
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+
+      if (error) throw error;
+
+      const communities = data?.map(item => ({
+        id: item.communities?.id || '',
+        name: item.communities?.name || ''
+      })).filter(c => c.id && c.name) || [];
+
+      setUserCommunities(communities);
+    } catch (error) {
+      console.error('Error fetching user communities:', error);
+    }
+  };
+
   const handleCreateStream = async () => {
     try {
       const newStream = await createStream({
         title: streamForm.title,
         description: streamForm.description,
+        community_id: streamForm.visibility === 'community_only' ? streamForm.communityId : undefined,
+        visibility: streamForm.visibility,
         tags: streamForm.tags,
         max_viewers: streamForm.maxViewers,
         settings: {
@@ -275,9 +314,58 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
                           onCheckedChange={(checked) => setStreamForm(prev => ({ ...prev, enableReactions: checked }))}
                         />
                       </div>
+                      
+                      <div className="space-y-3">
+                        <Label>Stream Visibility</Label>
+                        <Select
+                          value={streamForm.visibility}
+                          onValueChange={(value: 'public' | 'community_only') => 
+                            setStreamForm(prev => ({ ...prev, visibility: value, communityId: value === 'public' ? '' : prev.communityId }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="public">🌐 Public - Anyone can watch</SelectItem>
+                            <SelectItem value="community_only">🔒 Community Only - Members only</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {streamForm.visibility === 'community_only' && (
+                          <div>
+                            <Label htmlFor="community">Select Community</Label>
+                            <Select
+                              value={streamForm.communityId}
+                              onValueChange={(value) => setStreamForm(prev => ({ ...prev, communityId: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose a community..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {userCommunities.map(community => (
+                                  <SelectItem key={community.id} value={community.id}>
+                                    {community.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {userCommunities.length === 0 && (
+                              <p className="text-sm text-gray-500 mt-1">
+                                You're not a member of any communities yet.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
                       <Button 
                         onClick={handleCreateStream}
-                        disabled={!streamForm.title.trim() || isLoading}
+                        disabled={
+                          !streamForm.title.trim() || 
+                          isLoading || 
+                          (streamForm.visibility === 'community_only' && !streamForm.communityId)
+                        }
                         className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                       >
                         {isLoading ? 'Starting...' : 'Start Stream'}

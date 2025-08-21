@@ -26,7 +26,9 @@ import {
   Tag,
   Heart,
   Share,
-  MoreVertical
+  MoreVertical,
+  Lock,
+  Globe
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -170,13 +172,30 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
             {getStreamStatusText(stream)}
           </Badge>
 
-          {/* Viewer Count */}
-          {stream.status === 'live' && (
-            <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-sm backdrop-blur-sm">
-              <Eye className="w-3 h-3 inline mr-1" />
-              {stream.viewer_count}
+          {/* Viewer Count & Visibility */}
+          <div className="absolute top-2 right-2 flex flex-col items-end space-y-1">
+            {stream.status === 'live' && (
+              <div className="bg-black/50 text-white px-2 py-1 rounded text-sm backdrop-blur-sm">
+                <Eye className="w-3 h-3 inline mr-1" />
+                {stream.viewer_count}
+              </div>
+            )}
+            
+            {/* Visibility indicator */}
+            <div className="bg-black/50 text-white px-2 py-1 rounded text-xs backdrop-blur-sm flex items-center">
+              {stream.visibility === 'public' ? (
+                <>
+                  <Globe className="w-3 h-3 mr-1" />
+                  Public
+                </>
+              ) : (
+                <>
+                  <Lock className="w-3 h-3 mr-1" />
+                  Community
+                </>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Play Overlay */}
           <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -321,6 +340,19 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
                   <div className="flex items-center space-x-1">
                     <MessageCircle className="w-4 h-4" />
                     <span>{stream.total_messages}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    {stream.visibility === 'public' ? (
+                      <>
+                        <Globe className="w-4 h-4" />
+                        <span>Public</span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-4 h-4" />
+                        <span>Community</span>
+                      </>
+                    )}
                   </div>
                   <span>
                     {formatDistanceToNow(new Date(stream.created_at), { addSuffix: true })}
