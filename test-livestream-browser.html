@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Livestream Feature Browser Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #4a5568;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        h2 {
+            color: #2d3748;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        
+        .test-section {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #4299e1;
+        }
+        
+        .video-container {
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        video {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+        
+        .placeholder {
+            position: absolute;
+            color: white;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);
+        }
+        
+        button:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        .success {
+            background: #c6f6d5;
+            color: #2f855a;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+        
+        .warning {
+            background: #fefcbf;
+            color: #d69e2e;
+            border: 1px solid #faf089;
+        }
+        
+        .info {
+            background: #bee3f8;
+            color: #2b6cb0;
+            border: 1px solid #90cdf4;
+        }
+        
+        .log {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin: 15px 0;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        
+        input, select {
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            margin: 5px;
+            width: 200px;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+        
+        .metric {
+            display: inline-block;
+            background: #4299e1;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 5px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 Livestream Feature Test Suite</h1>
+        
+        <div class="test-section">
+            <h2>🔧 System Status</h2>
+            <div class="controls">
+                <button onclick="runAllTests()">🚀 Run All Tests</button>
+                <button onclick="clearLogs()">🗑️ Clear Logs</button>
+                <button onclick="toggleDebugMode()">🐛 Toggle Debug</button>
+            </div>
+            <div id="systemStatus" class="status info">Ready to test...</div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>📹 WebRTC & Media Test</h2>
+                <div class="video-container">
+                    <video id="localVideo" autoplay muted playsinline></video>
+                    <div id="videoPlaceholder" class="placeholder">
+                        Click "Test Camera" to start video
+                    </div>
+                </div>
+                <div class="controls">
+                    <button onclick="testCamera()">📹 Test Camera</button>
+                    <button onclick="testMicrophone()">🎤 Test Microphone</button>
+                    <button onclick="testScreenShare()">🖥️ Screen Share</button>
+                    <button onclick="stopMedia()">⏹️ Stop Media</button>
+                </div>
+                <div id="mediaStatus" class="status info">Media tests ready</div>
+            </div>
+
+            <div class="card">
+                <h2>🗄️ Database Test</h2>
+                <div class="controls">
+                    <button onclick="testDatabaseConnection()">🔗 Test Connection</button>
+                    <button onclick="testStreamCreation()">➕ Test Create Stream</button>
+                    <button onclick="testStreamRetrieval()">📋 Test Get Streams</button>
+                    <button onclick="testRealtimeConnection()">⚡ Test Realtime</button>
+                </div>
+                <div id="dbStatus" class="status info">Database tests ready</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎮 Live Stream Simulation</h2>
+            <div class="controls">
+                <input type="text" id="streamTitle" placeholder="Stream Title" value="Test Stream">
+                <input type="text" id="streamDescription" placeholder="Description" value="Testing livestream">
+                <select id="streamVisibility">
+                    <option value="public">Public</option>
+                    <option value="community_only">Community Only</option>
+                </select>
+                <button onclick="createTestStream()">🎬 Create Stream</button>
+                <button onclick="startBroadcast()">🔴 Start Broadcast</button>
+                <button onclick="endBroadcast()">⏹️ End Broadcast</button>
+            </div>
+            <div id="streamStatus" class="status info">Stream simulation ready</div>
+            <div id="streamMetrics"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Test Results</h2>
+            <div id="testResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Debug Log</h2>
+            <div id="debugLog" class="log">Debug log will appear here...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Supabase configuration
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8";
+
+        // Import Supabase (using CDN)
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Global variables
+        let localStream = null;
+        let currentStream = null;
+        let debugMode = localStorage.getItem('livestream_debug') === 'true';
+        let testResults = {};
+
+        // Utility functions
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('debugLog');
+            const colorMap = {
+                info: '#90cdf4',
+                success: '#9ae6b4', 
+                error: '#feb2b2',
+                warning: '#faf089'
+            };
+            
+            logElement.innerHTML += `<span style="color: ${colorMap[type] || '#e2e8f0'}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            if (debugMode) {
+                console.log(`[LivestreamTest] ${message}`);
+            }
+        }
+
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.className = `status ${type}`;
+            element.textContent = message;
+        }
+
+        function updateMetrics() {
+            const metricsElement = document.getElementById('streamMetrics');
+            const metrics = [
+                `Tests: ${Object.keys(testResults).length}`,
+                `Passed: ${Object.values(testResults).filter(r => r.success).length}`,
+                `Failed: ${Object.values(testResults).filter(r => !r.success).length}`,
+                `Debug: ${debugMode ? 'ON' : 'OFF'}`
+            ];
+            
+            metricsElement.innerHTML = metrics.map(m => `<span class="metric">${m}</span>`).join('');
+        }
+
+        // WebRTC and Media Tests
+        window.testCamera = async function() {
+            log('Testing camera access...', 'info');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 1280, height: 720 }, 
+                    audio: false 
+                });
+                
+                localStream = stream;
+                const video = document.getElementById('localVideo');
+                const placeholder = document.getElementById('videoPlaceholder');
+                
+                video.srcObject = stream;
+                placeholder.style.display = 'none';
+                video.style.display = 'block';
+                
+                testResults.camera = { success: true, message: 'Camera access granted' };
+                updateStatus('mediaStatus', '✅ Camera access granted', 'success');
+                log('✅ Camera access granted', 'success');
+            } catch (error) {
+                testResults.camera = { success: false, error: error.message };
+                updateStatus('mediaStatus', `❌ Camera error: ${error.message}`, 'error');
+                log(`❌ Camera error: ${error.message}`, 'error');
+            }
+            updateMetrics();
+        };
+
+        window.testMicrophone = async function() {
+            log('Testing microphone access...', 'info');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: false, 
+                    audio: true 
+                });
+                
+                // Test audio levels
+                const audioContext = new AudioContext();
+                const analyser = audioContext.createAnalyser();
+                const microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                
+                // Check for audio input
+                setTimeout(() => {
+                    analyser.getByteFrequencyData(dataArray);
+                    const average = dataArray.reduce((a, b) => a + b) / bufferLength;
+                    
+                    if (average > 0) {
+                        testResults.microphone = { success: true, level: average };
+                        log(`✅ Microphone working (level: ${Math.round(average)})`, 'success');
+                    } else {
+                        testResults.microphone = { success: false, message: 'No audio detected' };
+                        log('⚠️ Microphone access granted but no audio detected', 'warning');
+                    }
+                    
+                    stream.getTracks().forEach(track => track.stop());
+                    audioContext.close();
+                    updateMetrics();
+                }, 1000);
+                
+                updateStatus('mediaStatus', '✅ Microphone access granted', 'success');
+            } catch (error) {
+                testResults.microphone = { success: false, error: error.message };
+                updateStatus('mediaStatus', `❌ Microphone error: ${error.message}`, 'error');
+                log(`❌ Microphone error: ${error.message}`, 'error');
+                updateMetrics();
+            }
+        };
+
+        window.testScreenShare = async function() {
+            log('Testing screen share...', 'info');
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                
+                const video = document.getElementById('localVideo');
+                const placeholder = document.getElementById('videoPlaceholder');
+                
+                video.srcObject = stream;
+                placeholder.style.display = 'none';
+                video.style.display = 'block';
+                
+                stream.getVideoTracks()[0].addEventListener('ended', () => {
+                    log('Screen share ended by user', 'info');
+                    stopMedia();
+                });
+                
+                testResults.screenShare = { success: true, message: 'Screen share started' };
+                updateStatus('mediaStatus', '✅ Screen sharing active', 'success');
+                log('✅ Screen share started', 'success');
+            } catch (error) {
+                testResults.screenShare = { success: false, error: error.message };
+                updateStatus('mediaStatus', `❌ Screen share error: ${error.message}`, 'error');
+                log(`❌ Screen share error: ${error.message}`, 'error');
+            }
+            updateMetrics();
+        };
+
+        window.stopMedia = function() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            
+            const video = document.getElementById('localVideo');
+            const placeholder = document.getElementById('videoPlaceholder');
+            
+            video.srcObject = null;
+            video.style.display = 'none';
+            placeholder.style.display = 'block';
+            placeholder.textContent = 'Media stopped';
+            
+            updateStatus('mediaStatus', 'Media stopped', 'info');
+            log('Media streams stopped', 'info');
+        };
+
+        // Database Tests
+        window.testDatabaseConnection = async function() {
+            log('Testing database connection...', 'info');
+            try {
+                const { data, error } = await supabase
+                    .from('live_streams')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    testResults.dbConnection = { success: false, error: error.message };
+                    updateStatus('dbStatus', `❌ DB Error: ${error.message}`, 'error');
+                    log(`❌ Database error: ${error.message}`, 'error');
+                } else {
+                    testResults.dbConnection = { success: true, message: 'Connected' };
+                    updateStatus('dbStatus', '✅ Database connected', 'success');
+                    log('✅ Database connection successful', 'success');
+                }
+            } catch (error) {
+                testResults.dbConnection = { success: false, error: error.message };
+                updateStatus('dbStatus', `❌ Connection failed: ${error.message}`, 'error');
+                log(`❌ Connection failed: ${error.message}`, 'error');
+            }
+            updateMetrics();
+        };
+
+        window.testStreamCreation = async function() {
+            log('Testing stream creation...', 'info');
+            try {
+                const testStream = {
+                    title: 'Browser Test Stream',
+                    description: 'Testing stream creation from browser',
+                    status: 'scheduled',
+                    visibility: 'public',
+                    max_viewers: 100,
+                    settings: {
+                        qa_mode: false,
+                        polls_enabled: true,
+                        reactions_enabled: true,
+                        chat_moderation: false
+                    },
+                    tags: ['test', 'browser']
+                };
+
+                const { data, error } = await supabase
+                    .from('live_streams')
+                    .insert(testStream)
+                    .select()
+                    .single();
+
+                if (error) {
+                    if (error.message.includes('authentication') || error.message.includes('row-level security')) {
+                        testResults.streamCreation = { success: true, message: 'RLS working (auth required)' };
+                        updateStatus('dbStatus', '⚠️ Stream creation requires authentication (expected)', 'warning');
+                        log('⚠️ Stream creation blocked by RLS - authentication required (this is expected)', 'warning');
+                    } else {
+                        testResults.streamCreation = { success: false, error: error.message };
+                        updateStatus('dbStatus', `❌ Stream creation error: ${error.message}`, 'error');
+                        log(`❌ Stream creation error: ${error.message}`, 'error');
+                    }
+                } else {
+                    // Clean up test stream
+                    await supabase.from('live_streams').delete().eq('id', data.id);
+                    
+                    testResults.streamCreation = { success: true, message: 'Created and cleaned up' };
+                    updateStatus('dbStatus', '✅ Stream creation successful', 'success');
+                    log('✅ Stream created and cleaned up successfully', 'success');
+                }
+            } catch (error) {
+                testResults.streamCreation = { success: false, error: error.message };
+                updateStatus('dbStatus', `❌ Stream creation failed: ${error.message}`, 'error');
+                log(`❌ Stream creation failed: ${error.message}`, 'error');
+            }
+            updateMetrics();
+        };
+
+        window.testStreamRetrieval = async function() {
+            log('Testing stream retrieval...', 'info');
+            try {
+                const { data, error } = await supabase
+                    .from('live_streams')
+                    .select('*')
+                    .limit(10);
+
+                if (error) {
+                    testResults.streamRetrieval = { success: false, error: error.message };
+                    updateStatus('dbStatus', `❌ Stream retrieval error: ${error.message}`, 'error');
+                    log(`❌ Stream retrieval error: ${error.message}`, 'error');
+                } else {
+                    testResults.streamRetrieval = { success: true, count: data.length };
+                    updateStatus('dbStatus', `✅ Retrieved ${data.length} streams`, 'success');
+                    log(`✅ Retrieved ${data.length} streams`, 'success');
+                    
+                    if (data.length > 0) {
+                        log(`Sample stream: "${data[0].title}" (${data[0].status})`, 'info');
+                    }
+                }
+            } catch (error) {
+                testResults.streamRetrieval = { success: false, error: error.message };
+                updateStatus('dbStatus', `❌ Stream retrieval failed: ${error.message}`, 'error');
+                log(`❌ Stream retrieval failed: ${error.message}`, 'error');
+            }
+            updateMetrics();
+        };
+
+        window.testRealtimeConnection = async function() {
+            log('Testing realtime connection...', 'info');
+            
+            return new Promise((resolve) => {
+                let connected = false;
+                let timeout;
+
+                const channel = supabase
+                    .channel('browser-test-livestream')
+                    .on('postgres_changes', {
+                        event: '*',
+                        schema: 'public',
+                        table: 'live_streams'
+                    }, (payload) => {
+                        log(`Realtime event: ${payload.eventType}`, 'info');
+                    })
+                    .subscribe((status) => {
+                        log(`Realtime status: ${status}`, 'info');
+
+                        if (status === 'SUBSCRIBED') {
+                            connected = true;
+                            testResults.realtime = { success: true, status };
+                            updateStatus('dbStatus', '✅ Realtime connected', 'success');
+                            log('✅ Realtime connection established', 'success');
+
+                            timeout = setTimeout(() => {
+                                channel.unsubscribe();
+                                resolve();
+                            }, 2000);
+                        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                            testResults.realtime = { success: false, status };
+                            updateStatus('dbStatus', `❌ Realtime failed: ${status}`, 'error');
+                            log(`❌ Realtime connection failed: ${status}`, 'error');
+                            clearTimeout(timeout);
+                            resolve();
+                        }
+                    });
+
+                setTimeout(() => {
+                    if (!connected) {
+                        testResults.realtime = { success: false, status: 'timeout' };
+                        updateStatus('dbStatus', '❌ Realtime connection timeout', 'error');
+                        log('❌ Realtime connection timeout', 'error');
+                        channel.unsubscribe();
+                        resolve();
+                    }
+                }, 10000);
+                
+                updateMetrics();
+            });
+        };
+
+        // Stream Simulation
+        window.createTestStream = async function() {
+            const title = document.getElementById('streamTitle').value;
+            const description = document.getElementById('streamDescription').value;
+            const visibility = document.getElementById('streamVisibility').value;
+            
+            log(`Creating test stream: "${title}"`, 'info');
+            
+            // Simulate stream creation (will likely fail due to auth)
+            try {
+                const { data, error } = await supabase
+                    .from('live_streams')
+                    .insert({
+                        title,
+                        description,
+                        visibility,
+                        status: 'scheduled',
+                        max_viewers: 1000,
+                        settings: {
+                            qa_mode: false,
+                            polls_enabled: true,
+                            reactions_enabled: true,
+                            chat_moderation: false
+                        }
+                    })
+                    .select()
+                    .single();
+
+                if (error) {
+                    updateStatus('streamStatus', `⚠️ Stream creation requires authentication`, 'warning');
+                    log('⚠️ Stream creation requires authentication (expected)', 'warning');
+                } else {
+                    currentStream = data;
+                    updateStatus('streamStatus', `✅ Stream created: ${data.title}`, 'success');
+                    log(`✅ Stream created with ID: ${data.id}`, 'success');
+                }
+            } catch (error) {
+                updateStatus('streamStatus', `❌ Error: ${error.message}`, 'error');
+                log(`❌ Stream creation error: ${error.message}`, 'error');
+            }
+        };
+
+        window.startBroadcast = async function() {
+            log('Starting broadcast simulation...', 'info');
+            
+            try {
+                // Test WebRTC peer connection
+                const pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                });
+
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        log('ICE candidate generated', 'info');
+                    }
+                };
+
+                pc.onconnectionstatechange = () => {
+                    log(`WebRTC connection state: ${pc.connectionState}`, 'info');
+                };
+
+                if (localStream) {
+                    localStream.getTracks().forEach(track => {
+                        pc.addTrack(track, localStream);
+                    });
+                }
+
+                // Create offer
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                testResults.webrtc = { success: true, message: 'WebRTC peer connection created' };
+                updateStatus('streamStatus', '✅ Broadcast simulation started', 'success');
+                log('✅ WebRTC peer connection created successfully', 'success');
+                
+                setTimeout(() => {
+                    pc.close();
+                    log('WebRTC connection closed', 'info');
+                }, 5000);
+
+            } catch (error) {
+                testResults.webrtc = { success: false, error: error.message };
+                updateStatus('streamStatus', `❌ Broadcast error: ${error.message}`, 'error');
+                log(`❌ Broadcast error: ${error.message}`, 'error');
+            }
+            updateMetrics();
+        };
+
+        window.endBroadcast = function() {
+            log('Ending broadcast simulation...', 'info');
+            updateStatus('streamStatus', 'Broadcast ended', 'info');
+            stopMedia();
+        };
+
+        // Utility functions
+        window.runAllTests = async function() {
+            log('🚀 Starting comprehensive test suite...', 'info');
+            updateStatus('systemStatus', '🔄 Running tests...', 'info');
+            
+            // Clear previous results
+            testResults = {};
+            
+            // Run all tests in sequence
+            await testDatabaseConnection();
+            await testStreamRetrieval();
+            await testStreamCreation();
+            await testRealtimeConnection();
+            await testCamera();
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for camera
+            await testMicrophone();
+            
+            // Generate final report
+            const passed = Object.values(testResults).filter(r => r.success).length;
+            const total = Object.keys(testResults).length;
+            
+            if (passed === total) {
+                updateStatus('systemStatus', `✅ All tests passed (${passed}/${total})`, 'success');
+                log(`🎉 All tests completed successfully! (${passed}/${total})`, 'success');
+            } else {
+                updateStatus('systemStatus', `⚠️ ${passed}/${total} tests passed`, 'warning');
+                log(`⚠️ Test suite completed with ${total - passed} issues`, 'warning');
+            }
+            
+            // Display detailed results
+            displayTestResults();
+        };
+
+        function displayTestResults() {
+            const resultsElement = document.getElementById('testResults');
+            let html = '<div class="grid">';
+            
+            for (const [test, result] of Object.entries(testResults)) {
+                const statusClass = result.success ? 'success' : 'error';
+                const icon = result.success ? '✅' : '❌';
+                const message = result.message || result.error || 'No details';
+                
+                html += `
+                    <div class="card">
+                        <h3>${icon} ${test.charAt(0).toUpperCase() + test.slice(1)}</h3>
+                        <div class="status ${statusClass}">${message}</div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            resultsElement.innerHTML = html;
+        }
+
+        window.clearLogs = function() {
+            document.getElementById('debugLog').innerHTML = 'Debug log cleared...\n';
+            log('Debug log cleared', 'info');
+        };
+
+        window.toggleDebugMode = function() {
+            debugMode = !debugMode;
+            localStorage.setItem('livestream_debug', debugMode.toString());
+            updateStatus('systemStatus', `Debug mode: ${debugMode ? 'ON' : 'OFF'}`, 'info');
+            log(`Debug mode ${debugMode ? 'enabled' : 'disabled'}`, 'info');
+            updateMetrics();
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🎥 Livestream Browser Test Suite initialized', 'success');
+            log(`Debug mode: ${debugMode ? 'ON' : 'OFF'}`, 'info');
+            log('Click "Run All Tests" to start comprehensive testing', 'info');
+            updateMetrics();
+        });
+    </script>
+</body>
+</html>
