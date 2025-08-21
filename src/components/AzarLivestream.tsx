@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useLivestream } from '@/hooks/useLivestream';
 import { LivestreamChat } from './LivestreamChat';
 import { supabase } from '@/integrations/supabase/client';
@@ -85,6 +86,7 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
     volume,
     isMuted,
     broadcastConfig,
+    chatUserProfiles,
     isLoading,
     error,
     createStream,
@@ -241,8 +243,17 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <Avatar className="w-10 h-10 flex-shrink-0 border-2 border-white/30">
+                  <AvatarImage src={currentStream.profiles?.avatar_url || "/placeholder-avatar.jpg"} />
+                  <AvatarFallback className="bg-white/20 text-white text-sm">
+                    {currentStream.profiles?.display_name?.slice(0, 2).toUpperCase() || currentStream.creator_id.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="text-white">
                   <h3 className="font-semibold">{currentStream.title}</h3>
+                  <p className="text-sm text-white/80 mb-1">
+                    {currentStream.profiles?.display_name || 'Anonymous Creator'}
+                  </p>
                   <div className="flex items-center space-x-4 text-sm text-white/80">
                     <div className="flex items-center space-x-1">
                       <Eye className="w-4 h-4" />
@@ -436,6 +447,7 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
           onSendReaction={(type, position) => sendReaction(currentStream.id, type, position)}
           unreadCount={unreadCount}
           isStreamer={true}
+          userProfiles={chatUserProfiles}
         />
       )}
 
@@ -488,8 +500,17 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <Avatar className="w-10 h-10 flex-shrink-0 border-2 border-white/30">
+                  <AvatarImage src={stream.profiles?.avatar_url || "/placeholder-avatar.jpg"} />
+                  <AvatarFallback className="bg-white/20 text-white text-sm">
+                    {stream.profiles?.display_name?.slice(0, 2).toUpperCase() || stream.creator_id.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="text-white">
                   <h3 className="font-semibold">{stream.title}</h3>
+                  <p className="text-sm text-white/80 mb-1">
+                    {stream.profiles?.display_name || 'Anonymous Creator'}
+                  </p>
                   <div className="flex items-center space-x-4 text-sm text-white/80">
                     <div className="flex items-center space-x-1">
                       <Eye className="w-4 h-4" />
@@ -594,6 +615,7 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
           onSendReaction={(type, position) => sendReaction(stream.id, type, position)}
           unreadCount={unreadCount}
           isStreamer={false}
+          userProfiles={chatUserProfiles}
         />
       )}
 

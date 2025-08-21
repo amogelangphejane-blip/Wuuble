@@ -37,6 +37,7 @@ interface LivestreamChatProps {
   onSendReaction: (type: StreamReaction['reaction_type'], position?: { x: number; y: number }) => void;
   unreadCount: number;
   isStreamer?: boolean;
+  userProfiles?: Record<string, { display_name?: string; avatar_url?: string }>;
 }
 
 const reactionEmojis = {
@@ -67,7 +68,8 @@ export const LivestreamChat: React.FC<LivestreamChatProps> = ({
   onSendMessage,
   onSendReaction,
   unreadCount,
-  isStreamer = false
+  isStreamer = false,
+  userProfiles = {}
 }) => {
   const [messageText, setMessageText] = useState('');
   const [showReactions, setShowReactions] = useState(false);
@@ -195,13 +197,15 @@ export const LivestreamChat: React.FC<LivestreamChatProps> = ({
             >
               <div className="flex items-start space-x-2">
                 <Avatar className="w-6 h-6">
-                  <AvatarImage src="/placeholder-avatar.jpg" />
-                  <AvatarFallback className="text-xs">U</AvatarFallback>
+                  <AvatarImage src={userProfiles[message.user_id]?.avatar_url || "/placeholder-avatar.jpg"} />
+                  <AvatarFallback className="text-xs">
+                    {userProfiles[message.user_id]?.display_name?.slice(0, 2).toUpperCase() || message.user_id.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-medium text-gray-900 truncate">
-                      User
+                      {userProfiles[message.user_id]?.display_name || 'Anonymous'}
                     </span>
                     {message.message_type === 'question' && (
                       <Badge variant="outline" className="text-xs">Q</Badge>

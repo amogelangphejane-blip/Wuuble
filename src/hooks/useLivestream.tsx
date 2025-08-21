@@ -31,6 +31,7 @@ export interface LivestreamState {
   messages: StreamMessage[];
   unreadCount: number;
   isChatOpen: boolean;
+  chatUserProfiles: Record<string, { display_name?: string; avatar_url?: string }>;
 
   // Reactions state
   reactions: StreamReaction[];
@@ -73,6 +74,7 @@ export const useLivestream = () => {
     messages: [],
     unreadCount: 0,
     isChatOpen: false,
+    chatUserProfiles: {},
     reactions: [],
     reactionAnimations: [],
     isControlsVisible: true,
@@ -221,6 +223,18 @@ export const useLivestream = () => {
           unreadCount: prev.isChatOpen ? prev.unreadCount : prev.unreadCount + 1
         }));
       });
+
+      // Load initial chat user profiles
+      const loadChatProfiles = async () => {
+        try {
+          const profiles = await livestreamService.getChatUserProfiles(streamId);
+          setState(prev => ({ ...prev, chatUserProfiles: profiles }));
+        } catch (error) {
+          console.error('Error loading chat profiles:', error);
+        }
+      };
+
+      loadChatProfiles();
       
       const reactionSubscription = livestreamService.subscribeToReactions(streamId, (reaction) => {
         setState(prev => ({ 
