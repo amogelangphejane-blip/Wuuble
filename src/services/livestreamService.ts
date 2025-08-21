@@ -66,6 +66,12 @@ export interface LiveStream {
   };
   created_at: string;
   updated_at: string;
+  profiles?: {
+    id: string;
+    user_id: string;
+    display_name?: string;
+    avatar_url?: string;
+  };
 }
 
 class LivestreamService {
@@ -478,6 +484,42 @@ class LivestreamService {
     // Implement WebRTC signaling logic here
     // This could use WebSockets, Socket.IO, or Supabase realtime
     console.log('Signaling message:', { streamId, targetId, message });
+  }
+
+  // Get user profiles for chat participants
+  async getChatUserProfiles(streamId: string): Promise<Record<string, { display_name?: string; avatar_url?: string }>> {
+    try {
+      const { data, error } = await supabase
+        .from('stream_chat')
+        .select(`
+          user_id,
+          profiles:user_id (
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('stream_id', streamId)
+        .order('created_at', { ascending: false })
+        .limit(100); // Get profiles for last 100 messages
+
+      if (error) throw error;
+
+      const profiles: Record<string, { display_name?: string; avatar_url?: string }> = {};
+      
+      data?.forEach(item => {
+        if (item.user_id && item.profiles) {
+          profiles[item.user_id] = {
+            display_name: item.profiles.display_name,
+            avatar_url: item.profiles.avatar_url
+          };
+        }
+      });
+
+      return profiles;
+    } catch (error) {
+      console.error('Error fetching chat user profiles:', error);
+      return {};
+    }
   }
 }
 

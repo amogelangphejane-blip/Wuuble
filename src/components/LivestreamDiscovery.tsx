@@ -209,9 +209,9 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
         <CardContent className="p-4">
           <div className="flex items-start space-x-3">
             <Avatar className="w-10 h-10 flex-shrink-0">
-              <AvatarImage src="/placeholder-avatar.jpg" />
+              <AvatarImage src={stream.profiles?.avatar_url || "/placeholder-avatar.jpg"} />
               <AvatarFallback>
-                {stream.creator_id.slice(0, 2).toUpperCase()}
+                {stream.profiles?.display_name?.slice(0, 2).toUpperCase() || stream.creator_id.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             
@@ -221,7 +221,7 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
               </h3>
               
               <p className="text-xs text-gray-600 mb-2">
-                Creator Name
+                {stream.profiles?.display_name || 'Anonymous Creator'}
               </p>
               
               {stream.description && (
@@ -318,12 +318,12 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
                 
                 <div className="flex items-center space-x-2 mb-2">
                   <Avatar className="w-6 h-6">
-                    <AvatarImage src="/placeholder-avatar.jpg" />
+                    <AvatarImage src={stream.profiles?.avatar_url || "/placeholder-avatar.jpg"} />
                     <AvatarFallback className="text-xs">
-                      {stream.creator_id.slice(0, 2).toUpperCase()}
+                      {stream.profiles?.display_name?.slice(0, 2).toUpperCase() || stream.creator_id.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm text-gray-600">Creator Name</span>
+                  <span className="text-sm text-gray-600">{stream.profiles?.display_name || 'Anonymous Creator'}</span>
                 </div>
 
                 {stream.description && (
