@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useLivestream } from '@/hooks/useLivestream';
+import { useAuth } from '@/hooks/useAuth';
 import { LiveStream } from '@/services/livestreamService';
 import {
   Search,
@@ -28,7 +30,8 @@ import {
   Share,
   MoreVertical,
   Lock,
-  Globe
+  Globe,
+  Trash
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -54,7 +57,10 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
     isLoading,
     error,
     loadStreams,
+    deleteStream,
   } = useLivestream();
+  
+  const { user } = useAuth();
 
   // Load streams on mount and filter changes
   useEffect(() => {
@@ -78,6 +84,11 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
   // Filter and sort streams
   const filteredStreams = streams
     .filter(stream => {
+      // Always exclude ended streams from display
+      if (stream.status === 'ended') {
+        return false;
+      }
+
       // Text search
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -112,8 +123,10 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
       }
     });
 
-  // Get all unique tags from streams
-  const allTags = Array.from(new Set(streams.flatMap(stream => stream.tags || [])));
+  // Get all unique tags from active streams (excluding ended streams)
+  const allTags = Array.from(new Set(streams
+    .filter(stream => stream.status !== 'ended')
+    .flatMap(stream => stream.tags || [])));
 
   const getStreamStatusColor = (status: string) => {
     switch (status) {
@@ -262,17 +275,37 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
               </div>
             </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={(e) => {
-                e.stopPropagation();
-                // Handle more options
-              }}
-            >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
+            {/* More options - only show for stream creator */}
+            {user?.id === stream.creator_id && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('Are you sure you want to delete this stream? This action cannot be undone.')) {
+                        deleteStream(stream.id);
+                      }
+                    }}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash className="w-4 h-4 mr-2" />
+                    Delete Stream
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </CardContent>
       </div>
@@ -360,17 +393,37 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
                 </div>
               </div>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Handle more options
-                }}
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
+              {/* More options - only show for stream creator */}
+              {user?.id === stream.creator_id && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm('Are you sure you want to delete this stream? This action cannot be undone.')) {
+                          deleteStream(stream.id);
+                        }
+                      }}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash className="w-4 h-4 mr-2" />
+                      Delete Stream
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>

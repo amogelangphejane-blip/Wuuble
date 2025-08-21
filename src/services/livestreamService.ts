@@ -245,6 +245,23 @@ class LivestreamService {
     await this.stopBroadcast();
   }
 
+  // Delete a livestream permanently
+  async deleteLivestream(streamId: string): Promise<void> {
+    this.debugLog('Deleting livestream:', streamId);
+    
+    const { error } = await supabase
+      .from('live_streams')
+      .delete()
+      .eq('id', streamId);
+
+    if (error) {
+      this.debugLog('Error deleting livestream:', error);
+      throw error;
+    }
+    
+    this.debugLog('Livestream deleted successfully');
+  }
+
   // Debug logging helper
   private debugLog(message: string, data?: any) {
     if (this.debugMode) {

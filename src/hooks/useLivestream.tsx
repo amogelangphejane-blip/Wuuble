@@ -409,6 +409,35 @@ export const useLivestream = () => {
     }));
   }, []);
 
+  // Delete a stream
+  const deleteStream = useCallback(async (streamId: string) => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      
+      await livestreamService.deleteLivestream(streamId);
+      
+      // Remove the stream from the local state
+      setState(prev => ({ 
+        ...prev, 
+        streams: prev.streams.filter(stream => stream.id !== streamId),
+        isLoading: false 
+      }));
+      
+      toast({
+        title: "Stream Deleted",
+        description: "The stream has been permanently deleted.",
+      });
+      
+    } catch (error: any) {
+      setState(prev => ({ ...prev, isLoading: false, error: error.message }));
+      toast({
+        title: "Error Deleting Stream",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -432,6 +461,7 @@ export const useLivestream = () => {
     sendMessage,
     sendReaction,
     loadStreams,
+    deleteStream,
     toggleChat,
     toggleMute,
     setVolume,
