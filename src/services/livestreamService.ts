@@ -361,37 +361,111 @@ class LivestreamService {
 
   // Send chat message
   async sendChatMessage(streamId: string, message: string, type: 'text' | 'emoji' | 'question' = 'text'): Promise<void> {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) throw new Error('Not authenticated');
+    this.debugLog('Attempting to send chat message', { streamId, message, type });
+    
+    try {
+      const { data: user, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        this.debugLog('Authentication error:', authError);
+        throw new Error('Authentication failed: ' + authError.message);
+      }
+      
+      if (!user.user) {
+        this.debugLog('No authenticated user found');
+        throw new Error('Not authenticated - please sign in to send messages');
+      }
+      
+      this.debugLog('User authenticated, sending message', { userId: user.user.id });
 
-    const { error } = await supabase
-      .from('stream_chat')
-      .insert({
+      const messageData = {
         stream_id: streamId,
         user_id: user.user.id,
-        message,
+        message: message.trim(),
         message_type: type
-      });
+      };
+      
+      this.debugLog('Inserting message data:', messageData);
 
-    if (error) throw error;
+      const { error } = await supabase
+        .from('stream_chat')
+        .insert(messageData);
+
+      if (error) {
+        this.debugLog('Database error inserting message:', error);
+        
+        // Provide specific error messages based on the error type
+        if (error.message.includes('permission denied') || error.message.includes('row-level security')) {
+          throw new Error('Permission denied - you may not have access to send messages to this stream');
+        } else if (error.message.includes('foreign key')) {
+          throw new Error('Invalid stream - the stream may have been deleted');
+        } else if (error.message.includes('violates check constraint')) {
+          throw new Error('Message content is invalid - please check your message');
+        }
+        
+        throw new Error('Failed to send message: ' + error.message);
+      }
+      
+      this.debugLog('Message sent successfully');
+    } catch (error: any) {
+      this.debugLog('Exception in sendChatMessage:', error);
+      throw error;
+    }
   }
 
   // Send reaction
   async sendReaction(streamId: string, reactionType: StreamReaction['reaction_type'], position?: { x: number; y: number }): Promise<void> {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) throw new Error('Not authenticated');
+    this.debugLog('Attempting to send reaction', { streamId, reactionType, position });
+    
+    try {
+      const { data: user, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        this.debugLog('Authentication error:', authError);
+        throw new Error('Authentication failed: ' + authError.message);
+      }
+      
+      if (!user.user) {
+        this.debugLog('No authenticated user found');
+        throw new Error('Not authenticated - please sign in to send reactions');
+      }
+      
+      this.debugLog('User authenticated, sending reaction', { userId: user.user.id });
 
-    const { error } = await supabase
-      .from('stream_reactions')
-      .insert({
+      const reactionData = {
         stream_id: streamId,
         user_id: user.user.id,
         reaction_type: reactionType,
-        position_x: position?.x,
-        position_y: position?.y
-      });
+        position_x: position?.x || Math.random() * 100,
+        position_y: position?.y || Math.random() * 100
+      };
+      
+      this.debugLog('Inserting reaction data:', reactionData);
 
-    if (error) throw error;
+      const { error } = await supabase
+        .from('stream_reactions')
+        .insert(reactionData);
+
+      if (error) {
+        this.debugLog('Database error inserting reaction:', error);
+        
+        // Provide specific error messages based on the error type
+        if (error.message.includes('permission denied') || error.message.includes('row-level security')) {
+          throw new Error('Permission denied - you may not have access to react to this stream');
+        } else if (error.message.includes('foreign key')) {
+          throw new Error('Invalid stream - the stream may have been deleted');
+        } else if (error.message.includes('violates check constraint')) {
+          throw new Error('Invalid reaction type');
+        }
+        
+        throw new Error('Failed to send reaction: ' + error.message);
+      }
+      
+      this.debugLog('Reaction sent successfully');
+    } catch (error: any) {
+      this.debugLog('Exception in sendReaction:', error);
+      throw error;
+    }
   }
 
   // Subscribe to chat messages

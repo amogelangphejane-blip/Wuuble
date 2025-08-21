@@ -311,12 +311,30 @@ export const useLivestream = () => {
 
   // Send chat message
   const sendMessage = useCallback(async (streamId: string, message: string, type: 'text' | 'emoji' | 'question' = 'text') => {
+    if (!message.trim()) {
+      toast({
+        title: "Cannot Send Empty Message",
+        description: "Please enter a message before sending.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       await livestreamService.sendChatMessage(streamId, message, type);
+      
+      // Show success feedback for questions
+      if (type === 'question') {
+        toast({
+          title: "Question Sent",
+          description: "Your question has been sent to the streamer.",
+        });
+      }
     } catch (error: any) {
+      console.error('Error sending message:', error);
       toast({
         title: "Failed to Send Message",
-        description: error.message,
+        description: error.message || "An unexpected error occurred while sending your message.",
         variant: "destructive",
       });
     }
@@ -326,10 +344,18 @@ export const useLivestream = () => {
   const sendReaction = useCallback(async (streamId: string, type: StreamReaction['reaction_type'], position?: { x: number; y: number }) => {
     try {
       await livestreamService.sendReaction(streamId, type, position);
+      
+      // Show brief success feedback
+      toast({
+        title: "Reaction Sent! 🎉",
+        description: `Your ${type} reaction was sent successfully.`,
+        duration: 2000,
+      });
     } catch (error: any) {
+      console.error('Error sending reaction:', error);
       toast({
         title: "Failed to Send Reaction",
-        description: error.message,
+        description: error.message || "An unexpected error occurred while sending your reaction.",
         variant: "destructive",
       });
     }
