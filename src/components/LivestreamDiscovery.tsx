@@ -78,6 +78,11 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
   // Filter and sort streams
   const filteredStreams = streams
     .filter(stream => {
+      // Always exclude ended streams from display
+      if (stream.status === 'ended') {
+        return false;
+      }
+
       // Text search
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -112,8 +117,10 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
       }
     });
 
-  // Get all unique tags from streams
-  const allTags = Array.from(new Set(streams.flatMap(stream => stream.tags || [])));
+  // Get all unique tags from active streams (excluding ended streams)
+  const allTags = Array.from(new Set(streams
+    .filter(stream => stream.status !== 'ended')
+    .flatMap(stream => stream.tags || [])));
 
   const getStreamStatusColor = (status: string) => {
     switch (status) {
