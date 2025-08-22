@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { Crown } from 'lucide-react';
 
@@ -12,7 +13,10 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [ageError, setAgeError] = useState('');
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
@@ -21,6 +25,34 @@ const Auth = () => {
       navigate('/');
     }
   }, [user, navigate]);
+
+  const validateAge = (ageValue: string) => {
+    const numAge = parseInt(ageValue);
+    if (isNaN(numAge)) {
+      setAgeError('Please enter a valid age');
+      return false;
+    }
+    if (numAge < 13) {
+      setAgeError('You must be at least 13 years old to sign up');
+      return false;
+    }
+    if (numAge > 120) {
+      setAgeError('Please enter a valid age');
+      return false;
+    }
+    setAgeError('');
+    return true;
+  };
+
+  const handleAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const ageValue = e.target.value;
+    setAge(ageValue);
+    if (ageValue) {
+      validateAge(ageValue);
+    } else {
+      setAgeError('');
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +63,18 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate age before submitting
+    if (!validateAge(age)) {
+      return;
+    }
+    
+    if (!gender) {
+      return;
+    }
+
     setIsLoading(true);
-    await signUp(email, password, displayName);
+    await signUp(email, password, displayName, parseInt(age), gender);
     setIsLoading(false);
   };
 
@@ -132,10 +174,43 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-age">Age</Label>
+                    <Input
+                      id="signup-age"
+                      type="number"
+                      placeholder="Enter your age"
+                      value={age}
+                      onChange={handleAgeChange}
+                      min="13"
+                      max="120"
+                      required
+                    />
+                    {ageError && (
+                      <p className="text-sm text-red-500">{ageError}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-gender">Gender</Label>
+                    <Select value={gender} onValueChange={setGender} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="non-binary">Non-binary</SelectItem>
+                        <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    By signing up, you confirm that you are at least 13 years old and agree to our terms of service.
+                  </div>
                   <Button 
                     type="submit" 
                     className="w-full"
-                    disabled={isLoading}
+                    disabled={isLoading || !!ageError || !gender}
                   >
                     {isLoading ? 'Creating account...' : 'Sign Up'}
                   </Button>
