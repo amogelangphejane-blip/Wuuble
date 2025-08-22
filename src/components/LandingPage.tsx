@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Heart, 
   Users, 
@@ -28,16 +30,27 @@ import {
   Award,
   TrendingUp,
   Radio,
-  Infinity as InfinityIcon
+  Infinity as InfinityIcon,
+  Search,
+  Grid3X3,
+  List,
+  Filter,
+  Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
 import { ModernHeader } from '@/components/ModernHeader';
 import { ModernFooter } from '@/components/ModernFooter';
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  // Discover-style header state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [filterType, setFilterType] = useState<'all' | 'live' | 'scheduled' | 'popular'>('all');
 
   const exclusiveFeatures = [
     {
@@ -143,8 +156,89 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 relative overflow-hidden">
-      <ModernHeader />
+    <div className="min-h-screen bg-gray-50 relative overflow-hidden">
+      {/* Discover-style Header */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Wuuble
+            </h1>
+            
+            <Button 
+              onClick={() => navigate('/auth')}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              Get Started
+            </Button>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search communities, features, or content..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Filters */}
+            <div className="flex items-center space-x-2">
+              <Select value={filterType} onValueChange={(value: 'all' | 'live' | 'scheduled' | 'popular') => setFilterType(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="live">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full" />
+                      <span>Live</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="popular">
+                    <div className="flex items-center space-x-2">
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Popular</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="scheduled">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-4 h-4" />
+                      <span>Scheduled</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* View Mode Toggle */}
+              <div className="flex items-center border rounded-md">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="rounded-r-none"
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="rounded-l-none"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       
       {/* Exclusive Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
