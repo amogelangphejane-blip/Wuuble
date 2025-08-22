@@ -86,22 +86,39 @@ export const LivestreamChat: React.FC<LivestreamChatProps> = ({
 
   const handleSendMessage = () => {
     if (messageText.trim()) {
+      console.log('[LivestreamChat] Sending message:', {
+        streamId,
+        message: messageText,
+        type: isQuestionMode ? 'question' : 'text',
+        timestamp: new Date().toISOString()
+      });
+      
       onSendMessage(messageText, isQuestionMode ? 'question' : 'text');
       setMessageText('');
+    } else {
+      console.warn('[LivestreamChat] Attempted to send empty message');
     }
   };
 
   const handleReactionClick = (type: StreamReaction['reaction_type'], event: React.MouseEvent) => {
     const rect = chatContainerRef.current?.getBoundingClientRect();
+    let position;
+    
     if (rect) {
-      const position = {
+      position = {
         x: ((event.clientX - rect.left) / rect.width) * 100,
         y: ((event.clientY - rect.top) / rect.height) * 100
       };
-      onSendReaction(type, position);
-    } else {
-      onSendReaction(type);
     }
+    
+    console.log('[LivestreamChat] Sending reaction:', {
+      streamId,
+      type,
+      position,
+      timestamp: new Date().toISOString()
+    });
+    
+    onSendReaction(type, position);
     setShowReactions(false);
   };
 
