@@ -108,6 +108,12 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
   // Initialize services
   const initializeServices = useCallback(async () => {
     try {
+      // Prevent multiple initializations
+      if (webRTCServiceRef.current || signalingServiceRef.current) {
+        console.log('Services already initialized, skipping...');
+        return;
+      }
+
       // Initialize WebRTC service
       webRTCServiceRef.current = new WebRTCService(webRTCConfig, {
         onLocalStream: (stream) => {
@@ -223,7 +229,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
         variant: "destructive"
       });
     }
-  }, [webRTCConfig, useMockSignaling, autoConnect, toast]);
+  }, []); // Fixed: Empty dependency array to prevent infinite loop
 
   // Handle signaling messages
   const handleSignalingMessage = useCallback(async (message: SignalingMessage) => {
@@ -303,79 +309,107 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
     });
   }, [toast]);
 
-  // Start chat
+  // Start chat - Fixed: Better service initialization flow
   const startChat = useCallback(async () => {
-    // Reset camera permission state for retry
-    if (cameraPermission === 'denied') {
-      setCameraPermission('pending');
-    }
-
-    if (!signalingServiceRef.current) {
-      await initializeServices();
-      return; // initializeServices will handle the media setup
-    }
-
-    if (cameraPermission !== 'granted') {
-      try {
+    try {
+      setIsSearching(true);
+      setConnectionStatus('connecting');
+      
+      // Reset camera permission state for retry
+      if (cameraPermission === 'denied') {
         setCameraPermission('pending');
-        await webRTCServiceRef.current?.initializeMedia();
-        setCameraPermission('granted');
-        
+      }
+
+      // Ensure services are initialized
+      if (!signalingServiceRef.current || !webRTCServiceRef.current) {
         toast({
-          title: "Camera Ready! 📹",
-          description: "Camera and microphone access granted successfully.",
+          title: "Initializing...",
+          description: "Setting up video chat services"
         });
-      } catch (mediaError: any) {
-        console.error('Media retry failed:', mediaError);
+        await initializeServices();
         
-        // Handle specific camera/microphone errors for retry
-        if (mediaError.name === 'NotAllowedError' || mediaError.name === 'PermissionDeniedError') {
-          setCameraPermission('denied');
+        // Wait a moment for services to be ready
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Verify services are ready
+      if (!signalingServiceRef.current || !webRTCServiceRef.current) {
+        throw new Error('Failed to initialize services');
+      }
+
+      if (cameraPermission !== 'granted') {
+        try {
+          setCameraPermission('pending');
+          await webRTCServiceRef.current.initializeMedia();
+          setCameraPermission('granted');
+          
           toast({
-            title: "Camera Still Blocked",
-            description: "Please click the camera icon in your browser's address bar and allow camera access, then try again.",
-            variant: "destructive"
+            title: "Camera Ready! 📹",
+            description: "Camera and microphone access granted successfully.",
           });
-        } else if (mediaError.name === 'NotFoundError' || mediaError.name === 'DevicesNotFoundError') {
-          setCameraPermission('denied');
+        } catch (mediaError: any) {
+          console.error('Media retry failed:', mediaError);
+          
+          // Handle specific camera/microphone errors for retry
+          if (mediaError.name === 'NotAllowedError' || mediaError.name === 'PermissionDeniedError') {
+            setCameraPermission('denied');
+            toast({
+              title: "Camera Still Blocked",
+              description: "Please click the camera icon in your browser's address bar and allow camera access, then try again.",
+              variant: "destructive"
+            });
+          } else if (mediaError.name === 'NotFoundError' || mediaError.name === 'DevicesNotFoundError') {
+            setCameraPermission('denied');
+            toast({
+              title: "No Camera Found",
+              description: "Please connect a camera and microphone, then try again.",
+              variant: "destructive"
+            });
+          } else {
+            setCameraPermission('denied');
+            toast({
+              title: "Camera Access Failed",
+              description: "Please refresh the page and try again.",
+              variant: "destructive"
+            });
+          }
+          setIsSearching(false);
+          setConnectionStatus('disconnected');
+          return;
+        }
+      }
+
+      // Clear previous state
+      setMessages([]);
+      setUnreadMessages(0);
+
+      // Join a random room to find a partner
+      const roomId = 'random-' + Date.now();
+      signalingServiceRef.current.joinRoom(roomId);
+
+      // Timeout if no partner found
+      setTimeout(() => {
+        if (!partnerConnected) {
+          setIsSearching(false);
+          setConnectionStatus('disconnected');
           toast({
-            title: "No Camera Found",
-            description: "Please connect a camera and microphone, then try again.",
-            variant: "destructive"
-          });
-        } else {
-          setCameraPermission('denied');
-          toast({
-            title: "Camera Access Failed",
-            description: "Please refresh the page and try again.",
-            variant: "destructive"
+            title: "No Partners Found",
+            description: "Try again in a moment. There might be fewer users online right now.",
           });
         }
-        return;
-      }
+      }, 15000); // Increased timeout to 15 seconds
+      
+    } catch (error: any) {
+      console.error('Failed to start chat:', error);
+      setIsSearching(false);
+      setConnectionStatus('disconnected');
+      toast({
+        title: "Chat Start Failed",
+        description: error.message || "Unable to start video chat. Please refresh and try again.",
+        variant: "destructive"
+      });
     }
-
-    setIsSearching(true);
-    setConnectionStatus('connecting');
-    setMessages([]);
-    setUnreadMessages(0);
-
-    // Join a random room to find a partner
-    const roomId = 'random-' + Date.now();
-    signalingServiceRef.current?.joinRoom(roomId);
-
-    // Timeout if no partner found
-    setTimeout(() => {
-      if (!partnerConnected) {
-        setIsSearching(false);
-        setConnectionStatus('disconnected');
-        toast({
-          title: "No Partners Found",
-          description: "Try again in a moment.",
-        });
-      }
-    }, 10000);
-  }, [cameraPermission, partnerConnected, initializeServices, toast]);
+  }, [cameraPermission, partnerConnected, toast]);
 
   // End chat
   const endChat = useCallback(() => {
@@ -562,7 +596,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
     }
   }, [connectionQuality]);
 
-  // Initialize on mount
+  // Initialize on mount - Fixed: Removed dependency loop
   useEffect(() => {
     initializeServices();
 
@@ -570,7 +604,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
       webRTCServiceRef.current?.cleanup();
       signalingServiceRef.current?.disconnect();
     };
-  }, [initializeServices]);
+  }, []); // Fixed: Empty dependency array to prevent infinite loop
 
   // Simulate connection quality monitoring
   useEffect(() => {

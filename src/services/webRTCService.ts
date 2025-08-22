@@ -317,6 +317,16 @@ export class WebRTCService {
 }
 
 // Default configuration
+// Detect device capabilities for optimal performance
+const detectDeviceCapabilities = (): boolean => {
+  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+  const isLowEnd = navigator.hardwareConcurrency <= 2;
+  const hasLimitedMemory = (navigator as any).deviceMemory && (navigator as any).deviceMemory < 4;
+  
+  // Disable video filters on mobile, low-end devices, or devices with limited memory
+  return !isMobile && !isLowEnd && !hasLimitedMemory;
+};
+
 export const defaultWebRTCConfig: WebRTCConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -336,5 +346,5 @@ export const defaultWebRTCConfig: WebRTCConfig = {
       sampleRate: 48000
     }
   },
-  enableVideoFilters: true
+  enableVideoFilters: detectDeviceCapabilities() // Conditional based on device capabilities
 };
