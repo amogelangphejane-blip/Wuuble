@@ -87,7 +87,7 @@ const LandingPage = () => {
             <div className="mb-12">
               <Button 
                 size="lg"
-                onClick={() => navigate(user ? '/random-video-chat' : '/auth')}
+                onClick={() => navigate(user ? '/communities' : '/auth')}
                 className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 px-12 py-6 text-xl font-semibold rounded-full transform hover:scale-105"
               >
                 <Play className="mr-3 w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
