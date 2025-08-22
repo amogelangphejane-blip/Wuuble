@@ -60,22 +60,16 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
 
   const navigationItems = [
     {
-      label: 'Home',
-      href: '/',
-      icon: BookOpen,
-      active: location.pathname === '/'
+      label: 'Communities',
+      href: '/communities',
+      icon: Users,
+      active: location.pathname.startsWith('/communities')
     },
     {
       label: 'Chat',
       href: '/chat',
       icon: MessageCircle,
       active: location.pathname.startsWith('/chat')
-    },
-    {
-      label: 'Communities',
-      href: '/communities',
-      icon: Users,
-      active: location.pathname.startsWith('/communities')
     },
     {
       label: 'Live Streams',
@@ -118,7 +112,7 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
           {/* Logo */}
           <div 
             className="flex items-center space-x-2 cursor-pointer group"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/communities')}
           >
             <img 
               src="/wuuble-logo.svg" 
