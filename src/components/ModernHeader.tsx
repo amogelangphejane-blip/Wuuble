@@ -21,7 +21,8 @@ import {
   Package,
   Library,
   Radio,
-  Video
+  Video,
+  Home
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -59,6 +60,12 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
   };
 
   const navigationItems = [
+    {
+      label: 'Home',
+      href: '/',
+      icon: Home,
+      active: location.pathname === '/' || location.pathname === '/home'
+    },
     {
       label: 'Communities',
       href: '/communities',
