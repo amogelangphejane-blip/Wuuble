@@ -518,54 +518,7 @@ const Communities = () => {
         </div>
       </section>
 
-      {/* Community Stats Section */}
-      {!loading && communities.length > 0 && (
-        <section className="py-8 bg-background/50 backdrop-blur-sm border-b border-border/30">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-6xl mx-auto">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="text-center p-6 bg-card rounded-xl shadow-sm border border-border/50">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-2xl font-bold text-foreground">{communities.length}</div>
-                  <div className="text-sm text-muted-foreground">Total Communities</div>
-                </div>
-                
-                <div className="text-center p-6 bg-card rounded-xl shadow-sm border border-border/50">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-2xl font-bold text-foreground">
-                    {communities.reduce((acc, c) => acc + c.member_count, 0)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Total Members</div>
-                </div>
-                
-                <div className="text-center p-6 bg-card rounded-xl shadow-sm border border-border/50">
-                  <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                    <Flame className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-2xl font-bold text-foreground">
-                    {communities.filter(c => c.member_count > 10).length}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Active Communities</div>
-                </div>
-                
-                <div className="text-center p-6 bg-card rounded-xl shadow-sm border border-border/50">
-                  <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-rose-500 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                    <Globe className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-2xl font-bold text-foreground">
-                    {communities.filter(c => !c.is_private).length}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Public Communities</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+
 
       {/* Enhanced Search and Filters Section */}
       <section className="py-8 bg-muted/30 border-b border-border/50" id="communities-section">
