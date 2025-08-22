@@ -1,166 +1,25 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Heart, 
-  Users, 
-  MessageCircle, 
-  Calendar, 
-  Star, 
-  CheckCircle, 
-  ArrowRight,
   Play,
-  Sparkles,
-  Target,
-  Zap,
-  Shield,
-  Globe,
-  UserPlus,
-  Coffee,
-  Smile,
-  Flag,
-  Mic,
-  Crown,
-  Diamond,
-  Lock,
-  Eye,
-  Gem,
-  Award,
-  TrendingUp,
-  Radio,
-  Infinity as InfinityIcon,
-  Search,
-  Grid3X3,
-  List,
-  Filter,
-  Clock
+  ArrowRight,
+  Users,
+  Video,
+  Globe
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useState } from 'react';
-import { ModernHeader } from '@/components/ModernHeader';
 import { ModernFooter } from '@/components/ModernFooter';
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  // Discover-style header state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [filterType, setFilterType] = useState<'all' | 'live' | 'scheduled' | 'popular'>('all');
-
-  const exclusiveFeatures = [
-    {
-      icon: <Users className="w-7 h-7" />,
-      title: "Social Connection Hub",
-      description: "Connect with like-minded individuals and build meaningful relationships through our exclusive social networking platform.",
-      badge: "Social"
-    },
-    {
-      icon: <Crown className="w-7 h-7" />,
-      title: "Exclusive Groups",
-      description: "Join invitation-only groups where exceptional individuals collaborate, share insights, and grow together.",
-      badge: "Exclusive"
-    },
-    {
-      icon: <TrendingUp className="w-7 h-7" />,
-      title: "Personal Growth",
-      description: "Accelerate your personal and professional development through peer learning and mentorship opportunities.",
-      badge: "Growth"
-    },
-    {
-      icon: <MessageCircle className="w-7 h-7" />,
-      title: "Meaningful Conversations",
-      description: "Engage in deep, purposeful discussions that inspire growth and foster lasting connections.",
-      badge: "Connect"
-    },
-    {
-      icon: <UserPlus className="w-7 h-7" />,
-      title: "Network Expansion",
-      description: "Expand your professional and personal network with curated connections and strategic introductions.",
-      badge: "Network"
-    },
-    {
-      icon: <Sparkles className="w-7 h-7" />,
-      title: "Growth Opportunities",
-      description: "Discover exclusive opportunities for collaboration, learning, and advancement within your field.",
-      badge: "Opportunity"
-    }
-  ];
-
-  const premiumTestimonials = [
-    {
-      name: "Sarah Mitchell",
-      role: "Community Builder",
-      avatar: "SM",
-      content: "Wuuble transformed how I connect with others. The exclusive groups have introduced me to incredible people who've become lifelong friends and collaborators.",
-      rating: 5,
-      company: "Growth Network",
-      verified: true
-    },
-    {
-      name: "David Chen",
-      role: "Personal Development Coach",
-      avatar: "DC",
-      content: "The growth opportunities here are unmatched. I've connected with mentors and peers who've accelerated my personal journey beyond what I thought possible.",
-      rating: 5,
-      company: "Life Mastery",
-      verified: true
-    },
-    {
-      name: "Maria Rodriguez",
-      role: "Social Impact Leader",
-      avatar: "MR",
-      content: "The meaningful conversations and connections I've made through Wuuble have enriched both my personal and professional life. It's where authentic relationships flourish.",
-      rating: 5,
-      company: "Change Makers",
-      verified: true
-    }
-  ];
-
-  const exclusiveStats = [
-    { value: "50K+", label: "Active Connections", suffix: "Growing Daily" },
-    { value: "1,200+", label: "Exclusive Groups", suffix: "Active Communities" },
-    { value: "95%", label: "Growth Success", suffix: "Member Development" },
-    { value: "85%", label: "Long-term Bonds", suffix: "Lasting Friendships" }
-  ];
-
-  const membershipTiers = [
-    {
-      title: "Growth Leaders",
-      description: "For those dedicated to continuous learning and leadership",
-      members: "Limited to 200",
-      value: "Advanced",
-      perks: ["Leadership Circle", "Mentorship Programs", "Growth Workshops"],
-      gradient: "from-yellow-400 via-amber-500 to-orange-600"
-    },
-    {
-      title: "Connection Builders", 
-      description: "For community creators and relationship builders",
-      members: "Limited to 800",
-      value: "Enhanced",
-      perks: ["Community Tools", "Event Hosting", "Collaboration Hub"],
-      gradient: "from-purple-400 via-pink-500 to-rose-600"
-    },
-    {
-      title: "Social Connectors",
-      description: "For individuals seeking meaningful connections",
-      members: "Limited to 3000",
-      value: "Essential",
-      perks: ["Group Access", "Social Features", "Growth Resources"],
-      gradient: "from-blue-400 via-cyan-500 to-teal-600"
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-hidden">
-      {/* Discover-style Header */}
+      {/* Clean Header */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Wuuble
             </h1>
@@ -173,519 +32,94 @@ const LandingPage = () => {
               Get Started
             </Button>
           </div>
-
-          {/* Search and Filters */}
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search communities, features, or content..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Filters */}
-            <div className="flex items-center space-x-2">
-              <Select value={filterType} onValueChange={(value: 'all' | 'live' | 'scheduled' | 'popular') => setFilterType(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="live">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-red-500 rounded-full" />
-                      <span>Live</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="popular">
-                    <div className="flex items-center space-x-2">
-                      <TrendingUp className="w-4 h-4" />
-                      <span>Popular</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="scheduled">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4" />
-                      <span>Scheduled</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* View Mode Toggle */}
-              <div className="flex items-center border rounded-md">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className="rounded-r-none"
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="rounded-l-none"
-                >
-                  <List className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
       
-      {/* Exclusive Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Premium Animated Background */}
-        <div className="absolute inset-0">
-          {/* Luxury Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-50 to-gray-100"></div>
-          
-          {/* Premium Mesh Gradient */}
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-amber-400/30 to-orange-400/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }}></div>
-          </div>
-          
-          {/* Floating Luxury Elements */}
-          <div className="absolute inset-0 overflow-hidden">
-            {[...Array(12)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute animate-float opacity-30"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 5}s`,
-                  animationDuration: `${8 + Math.random() * 4}s`
-                }}
-              >
-                {i % 4 === 0 && <Diamond className="w-4 h-4 text-purple-600" />}
-                {i % 4 === 1 && <Crown className="w-4 h-4 text-yellow-600" />}
-                {i % 4 === 2 && <Gem className="w-4 h-4 text-pink-600" />}
-                {i % 4 === 3 && <Award className="w-4 h-4 text-blue-600" />}
-              </div>
-            ))}
-          </div>
+      {/* Clean Hero Section - Azar Style */}
+      <section className="relative min-h-screen flex items-center justify-center">
+        {/* Simple Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30"></div>
+        
+        {/* Minimal Floating Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute animate-float opacity-20"
+              style={{
+                left: `${20 + Math.random() * 60}%`,
+                top: `${20 + Math.random() * 60}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${6 + Math.random() * 2}s`
+              }}
+            >
+              {i % 3 === 0 && <Video className="w-6 h-6 text-purple-400" />}
+              {i % 3 === 1 && <Users className="w-6 h-6 text-pink-400" />}
+              {i % 3 === 2 && <Globe className="w-6 h-6 text-blue-400" />}
+            </div>
+          ))}
         </div>
         
-        <div className="container mx-auto px-6 lg:px-8 py-32 relative z-10">
-          <div className="text-center max-w-5xl mx-auto">
-            {/* Premium Headline */}
-            <h1 className="text-5xl sm:text-6xl lg:text-8xl font-bold mb-8 leading-tight">
-              <span className="block text-gray-900 mb-4">Where</span>
-              <span className="block bg-gradient-to-r from-purple-600 via-pink-600 to-amber-600 bg-clip-text text-transparent animate-gradient">
-                Connections
+        <div className="container mx-auto px-6 lg:px-8 py-20 relative z-10">
+          <div className="text-center max-w-4xl mx-auto">
+            {/* Clean Logo/Icon */}
+            <div className="mb-8">
+              <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+                <Video className="w-12 h-12 text-white" />
+              </div>
+            </div>
+            
+            {/* Simple Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-gray-900">
+              Meet New People
+              <span className="block bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mt-2">
+                Video Chat Instantly
               </span>
-              <span className="block text-gray-900">Flourish</span>
             </h1>
             
-            {/* Exclusive Badge */}
-            <div className="inline-flex items-center mb-8">
-              <Badge className="bg-white/80 text-gray-700 border border-purple-200 hover:border-purple-300 backdrop-blur-xl px-6 py-2 text-sm font-medium rounded-full transition-all duration-300 hover:scale-105 shadow-lg">
-                <Users className="w-6 h-6 mr-2 text-purple-600" />
-                Join the Community
-              </Badge>
-            </div>
-            
-            {/* Sophisticated Subtitle */}
-            <p className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed font-light">
-              Build meaningful relationships, join exclusive groups, and accelerate your personal growth through our vibrant social community. 
-              <span className="text-purple-600 font-medium"> Connect. Grow. Thrive.</span>
+            {/* Clean Subtitle */}
+            <p className="text-lg sm:text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+              Connect with people from around the world through random video chats. 
+              Simple, fun, and instant connections.
             </p>
             
-            {/* Premium Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 max-w-4xl mx-auto">
-              {exclusiveStats.map((stat, index) => (
-                <div key={index} className="text-center group">
-                  <div className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2 group-hover:scale-110 transition-transform duration-300">
-                    {stat.value}
-                  </div>
-                  <div className="text-gray-600 text-sm font-medium">{stat.label}</div>
-                  <div className="text-purple-600 text-xs mt-1">{stat.suffix}</div>
-                </div>
-              ))}
-            </div>
-            
-            {/* Exclusive CTA */}
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            {/* Primary CTA */}
+            <div className="mb-12">
               <Button 
                 size="lg"
-                onClick={() => navigate(user ? '/communities' : '/auth')}
-                className="group bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 px-12 py-6 text-lg font-semibold rounded-full border border-purple-200 hover:border-purple-300 backdrop-blur-xl transform hover:scale-105"
+                onClick={() => navigate(user ? '/random-video-chat' : '/auth')}
+                className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 px-12 py-6 text-xl font-semibold rounded-full transform hover:scale-105"
               >
-                <Crown className="mr-3 w-5 h-5 text-yellow-200 group-hover:rotate-12 transition-transform duration-300" />
-                {user ? 'Enter Elite Circle' : 'Request Invitation'}
-                <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                <Play className="mr-3 w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
+                Start Video Chat
+                <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
               </Button>
+            </div>
+            
+            {/* Simple Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-3xl mx-auto">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-purple-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-2">Random Matching</h3>
+                <p className="text-gray-600 text-sm">Meet new people instantly with our smart matching system</p>
+              </div>
               
-              <Button 
-                size="lg"
-                variant="outline"
-                className="group border-2 border-gray-300 hover:border-purple-500 text-gray-700 hover:text-purple-700 bg-white/80 hover:bg-purple-50 px-12 py-6 text-lg backdrop-blur-xl rounded-full transition-all duration-300 hover:scale-105 shadow-lg"
-                onClick={() => navigate('/connect-video-call')}
-              >
-                <Eye className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-                Preview Experience
-              </Button>
-            </div>
-            
-            {/* Trust Indicators */}
-            <div className="mt-16 flex flex-wrap justify-center items-center gap-8 opacity-70">
-              <div className="flex items-center text-sm text-gray-600">
-                <Shield className="w-4 h-4 mr-2 text-green-600" />
-                Verified Members Only
+              <div className="text-center">
+                <div className="w-16 h-16 bg-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Video className="w-8 h-8 text-pink-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-2">HD Video Chat</h3>
+                <p className="text-gray-600 text-sm">Crystal clear video and audio for the best experience</p>
               </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <Lock className="w-4 h-4 mr-2 text-blue-600" />
-                Privacy Guaranteed
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <Award className="w-4 h-4 mr-2 text-purple-600" />
-                Premium Experience
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Exclusive Features Section */}
-      <section className="py-32 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-gray-50"></div>
-        <div className="container mx-auto px-6 lg:px-8 relative">
-          <div className="text-center mb-20">
-            <Badge className="mb-6 bg-white/80 text-purple-700 border border-purple-200 backdrop-blur-xl px-4 py-2 text-sm rounded-full shadow-lg">
-              <Users className="w-4 h-4 mr-2" />
-              Social Features
-            </Badge>
-            <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-8">
-              Built for 
-              <span className="block bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mt-2">
-                Connection & Growth
-              </span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Every feature designed to foster meaningful relationships, facilitate personal growth, 
-              and create exclusive communities where like-minded individuals thrive together.
-            </p>
-          </div>
-          
-          <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {exclusiveFeatures.map((feature, index) => (
-              <Card key={index} className="group bg-white/90 border border-gray-200 hover:border-purple-300 backdrop-blur-xl rounded-3xl p-8 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/10 relative overflow-hidden">
-                {/* Premium Badge */}
-                <div className="absolute top-6 right-6">
-                  <Badge className="bg-purple-50 text-purple-700 border border-purple-200 backdrop-blur-xl text-xs px-3 py-1 rounded-full">
-                    {feature.badge}
-                  </Badge>
-                </div>
-                
-                {/* Luxury Gradient Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 via-transparent to-pink-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"></div>
-                
-                <CardHeader className="relative">
-                  <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-purple-200">
-                    <div className="text-purple-600 group-hover:text-purple-700 transition-colors duration-300">
-                      {feature.icon}
-                    </div>
-                  </div>
-                  <CardTitle className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-purple-700 transition-colors duration-300">
-                    {feature.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="relative">
-                  <p className="text-gray-600 leading-relaxed group-hover:text-gray-700 transition-colors duration-300">
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Membership Tiers Section */}
-      <section className="py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-slate-100"></div>
-        <div className="container mx-auto px-6 lg:px-8 relative">
-          <div className="text-center mb-20">
-            <Badge className="mb-6 bg-white/80 text-amber-700 border border-amber-200 backdrop-blur-xl px-4 py-2 text-sm rounded-full shadow-lg">
-              <Users className="w-4 h-4 mr-2" />
-              Community Tiers
-            </Badge>
-            <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-8">
-              Find Your
-              <span className="block bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent mt-2">
-                Growth Community
-              </span>
-            </h2>
-          </div>
-          
-          <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {membershipTiers.map((tier, index) => (
-              <Card key={index} className="group relative bg-white/95 border border-gray-200 hover:border-purple-300 backdrop-blur-xl rounded-3xl p-8 transition-all duration-500 hover:scale-105 hover:shadow-2xl overflow-hidden">
-                {/* Premium Gradient Border */}
-                <div className={`absolute inset-0 bg-gradient-to-r ${tier.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500 rounded-3xl`}></div>
-                <div className={`absolute inset-[1px] bg-white/95 rounded-3xl`}></div>
-                
-                <div className="relative">
-                  <CardHeader className="text-center pb-8">
-                    <div className={`w-20 h-20 bg-gradient-to-r ${tier.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                      <Crown className="w-10 h-10 text-white" />
-                    </div>
-                    <CardTitle className="text-3xl font-bold text-gray-900 mb-4">
-                      {tier.title}
-                    </CardTitle>
-                    <CardDescription className="text-gray-600 text-lg">
-                      {tier.description}
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-6">
-                    <div className="text-center">
-                      <div className="text-sm text-gray-500 mb-2">{tier.members}</div>
-                      <div className="text-2xl font-bold text-gray-900">{tier.value}</div>
-                      <div className="text-sm text-purple-600">Network Value</div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {tier.perks.map((perk, perkIndex) => (
-                        <div key={perkIndex} className="flex items-center text-gray-700">
-                          <CheckCircle className="w-5 h-5 text-green-600 mr-3 flex-shrink-0" />
-                          {perk}
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <Button className={`w-full bg-gradient-to-r ${tier.gradient} hover:opacity-90 text-white font-semibold py-3 rounded-full transition-all duration-300 hover:scale-105 shadow-lg`}>
-                      Request Access
-                    </Button>
-                  </CardContent>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Premium Testimonials Section */}
-      <section className="py-32 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-100 to-white"></div>
-        <div className="container mx-auto px-6 lg:px-8 relative">
-          <div className="text-center mb-20">
-            <Badge className="mb-6 bg-white/80 text-green-700 border border-green-200 backdrop-blur-xl px-4 py-2 text-sm rounded-full shadow-lg">
-              <Heart className="w-4 h-4 mr-2" />
-              Community Stories
-            </Badge>
-            <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-8">
-              Loved by
-              <span className="block bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mt-2">
-                Our Community
-              </span>
-            </h2>
-          </div>
-          
-          <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {premiumTestimonials.map((testimonial, index) => (
-              <Card key={index} className="group bg-white/95 border border-gray-200 hover:border-green-300 backdrop-blur-xl rounded-3xl p-8 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/10 relative overflow-hidden">
-                {/* Verified Badge */}
-                {testimonial.verified && (
-                  <div className="absolute top-6 right-6">
-                    <Badge className="bg-blue-50 text-blue-700 border border-blue-200 backdrop-blur-xl text-xs px-3 py-1 rounded-full flex items-center shadow-sm">
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Verified
-                    </Badge>
-                  </div>
-                )}
-                
-                <CardHeader className="relative">
-                  <div className="flex items-center mb-6">
-                    <div className="relative">
-                      <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                        {testimonial.avatar}
-                      </div>
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white flex items-center justify-center shadow-sm">
-                        <CheckCircle className="w-4 h-4 text-white" />
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <div className="font-bold text-gray-900 text-lg group-hover:text-green-700 transition-colors">
-                        {testimonial.name}
-                      </div>
-                      <div className="text-gray-600 text-sm">{testimonial.role}</div>
-                      <div className="text-green-600 text-xs font-medium">{testimonial.company}</div>
-                    </div>
-                  </div>
-                  <div className="flex space-x-1 mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400 group-hover:scale-110 transition-transform duration-300" style={{ transitionDelay: `${i * 0.1}s` }} />
-                    ))}
-                  </div>
-                </CardHeader>
-                <CardContent className="relative">
-                  <div className="text-4xl text-green-400/40 mb-4 font-serif">"</div>
-                  <p className="text-gray-700 leading-relaxed italic relative z-10 group-hover:text-gray-800 transition-colors duration-300">
-                    {testimonial.content}
-                  </p>
-                  <div className="text-4xl text-green-400/40 text-right mt-4 font-serif">"</div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Live Streaming Section */}
-      <section className="py-24 relative overflow-hidden bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="absolute inset-0">
-          <div className="absolute top-1/3 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-to-r from-pink-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        </div>
-        
-        <div className="container mx-auto px-6 lg:px-8 relative">
-          <div className="text-center max-w-4xl mx-auto mb-16">
-            <div className="mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-6 animate-pulse">
-                <Play className="w-8 h-8 text-white" />
-              </div>
-              <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
-                Go Live Like
-                <span className="block bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent mt-2">
-                  Azar & Instagram
-                </span>
-              </h2>
-              <p className="text-xl text-purple-100 mb-8 leading-relaxed">
-                Share your moments with the world through our advanced livestreaming platform. 
-                Connect with viewers, build your audience, and create unforgettable experiences.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
-            <Card className="bg-white/10 border-white/20 backdrop-blur-xl text-white">
-              <CardContent className="p-8 text-center">
-                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Radio className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Live Broadcasting</h3>
-                <p className="text-purple-100">Stream in HD quality with real-time interaction and professional-grade features.</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/10 border-white/20 backdrop-blur-xl text-white">
-              <CardContent className="p-8 text-center">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Interactive Chat</h3>
-                <p className="text-purple-100">Engage with your audience through live chat, reactions, and Q&A sessions.</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/10 border-white/20 backdrop-blur-xl text-white">
-              <CardContent className="p-8 text-center">
-                <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Eye className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">Discover Content</h3>
-                <p className="text-purple-100">Explore live streams from creators worldwide and join conversations that matter.</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="text-center">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button 
-                size="lg"
-                onClick={() => navigate('/azar-livestreams')}
-                className="group bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white shadow-2xl hover:shadow-red-500/25 transition-all duration-300 px-8 py-4 text-lg font-semibold rounded-full transform hover:scale-105"
-              >
-                <Play className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-                Start Broadcasting
-                <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </Button>
               
-              <Button 
-                size="lg"
-                variant="outline"
-                className="group border-2 border-white/30 hover:border-white/60 text-white hover:text-white bg-white/10 hover:bg-white/20 px-8 py-4 text-lg backdrop-blur-xl rounded-full transition-all duration-300 hover:scale-105"
-                onClick={() => navigate('/azar-livestreams')}
-              >
-                <Eye className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-                Watch Streams
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Exclusive CTA Section */}
-      <section className="py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/80 via-white to-pink-50/80"></div>
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-200/30 to-pink-200/30 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-200/30 to-cyan-200/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        </div>
-        
-        <div className="container mx-auto px-6 lg:px-8 relative">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="mb-8">
-              <Users className="w-16 h-16 text-purple-600 mx-auto mb-6 animate-pulse" />
-              <h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-8">
-                Ready to Build
-                <span className="block bg-gradient-to-r from-purple-600 via-pink-600 to-amber-600 bg-clip-text text-transparent mt-2">
-                  Meaningful Connections?
-                </span>
-              </h2>
-              <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-                Join thousands of individuals who are building lasting relationships and growing together. 
-                <span className="text-purple-600 font-medium"> Your community awaits.</span>
-              </p>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
-              <Button 
-                size="lg"
-                onClick={() => navigate(user ? '/communities' : '/auth')}
-                className="group bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 px-12 py-6 text-lg font-semibold rounded-full border border-purple-200 hover:border-purple-300 backdrop-blur-xl transform hover:scale-105"
-              >
-                <Users className="mr-3 w-5 h-5 text-pink-200 group-hover:rotate-12 transition-transform duration-300" />
-                {user ? 'Join Your Community' : 'Start Connecting'}
-                <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </Button>
-              
-              <Button 
-                size="lg"
-                variant="outline"
-                className="group border-2 border-gray-300 hover:border-purple-500 text-gray-700 hover:text-purple-700 bg-white/80 hover:bg-purple-50 px-12 py-6 text-lg backdrop-blur-xl rounded-full transition-all duration-300 hover:scale-105 shadow-lg"
-                onClick={() => navigate('/communities')}
-              >
-                <MessageCircle className="mr-3 w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-                Explore Groups
-              </Button>
-            </div>
-            
-            {/* Community Indicators */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto text-center">
-              <div className="flex items-center justify-center text-sm text-gray-600">
-                <Users className="w-4 h-4 mr-2 text-purple-600" />
-                <span>50K+ active members</span>
-              </div>
-              <div className="flex items-center justify-center text-sm text-gray-600">
-                <TrendingUp className="w-4 h-4 mr-2 text-pink-600" />
-                <span>Growing daily</span>
-              </div>
-              <div className="flex items-center justify-center text-sm text-gray-600">
-                <Heart className="w-4 h-4 mr-2 text-amber-600" />
-                <span>Meaningful connections</span>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Globe className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-2">Global Community</h3>
+                <p className="text-gray-600 text-sm">Connect with people from all around the world</p>
               </div>
             </div>
           </div>
