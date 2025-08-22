@@ -118,7 +118,7 @@ const Index = () => {
     // Simulate matching process
     setTimeout(() => {
       setIsSearching(false);
-      navigate('/random-video-chat');
+      navigate('/communities');
     }, 2000);
   };
 

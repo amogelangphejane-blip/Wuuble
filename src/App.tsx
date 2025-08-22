@@ -26,7 +26,7 @@ import NotFound from "./pages/NotFound";
 import Marketplace from "./pages/Marketplace";
 import CommunityLeaderboardPage from "./pages/CommunityLeaderboard";
 import AzarLivestreams from "./pages/AzarLivestreams";
-import RandomVideoChat from "./pages/RandomVideoChat";
+
 
 
 const queryClient = new QueryClient();
@@ -52,7 +52,6 @@ const App = () => {
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/random-video-chat" element={<RandomVideoChat />} />
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/connect-video-call" element={<ConnectVideoCall />} />
                 <Route path="/auth" element={<Auth />} />

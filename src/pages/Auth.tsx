@@ -43,10 +43,10 @@ const Auth = () => {
           <div className="flex items-center justify-center gap-2 mb-4">
             <Crown className="h-8 w-8 text-luxury" />
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Inner Circle
+              Community Hub
             </h1>
           </div>
-          <p className="text-muted-foreground">Join the exclusive community</p>
+          <p className="text-muted-foreground">Connect with your community</p>
         </div>
 
         <Card className="border-luxury/20 shadow-luxury">
