@@ -219,11 +219,22 @@ export class MockSignalingService extends SignalingService {
       availablePartner.partner = this;
       availablePartner.roomId = roomId;
       
-      // Simulate user joined events
+      // Simulate user joined events with realistic delay
       setTimeout(() => {
         this.events.onUserJoined?.(availablePartner.userId);
         availablePartner.events.onUserJoined?.(this.userId);
-      }, 500);
+      }, 1000 + Math.random() * 2000); // 1-3 second delay
+    } else {
+      // Simulate finding a partner after some time (for demo purposes)
+      // In a real app, this would wait for another user to join
+      setTimeout(() => {
+        // Check if we still need a partner and haven't been disconnected
+        if (this.roomId === roomId && !this.partner) {
+          // Create a mock partner for demo purposes
+          const mockPartnerId = 'demo-partner-' + Math.random().toString(36).substr(2, 9);
+          this.events.onUserJoined?.(mockPartnerId);
+        }
+      }, 3000 + Math.random() * 5000); // 3-8 second delay for demo partner
     }
   }
 
