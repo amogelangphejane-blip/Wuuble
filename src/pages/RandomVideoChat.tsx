@@ -3,9 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { VideoChat } from '@/components/VideoChat';
+import { ModernHeader } from '@/components/ModernHeader';
 import { 
   Video, 
   Users, 
@@ -28,7 +31,11 @@ import {
   MapPin,
   Languages,
   Search,
-  Shield
+  Shield,
+  Grid3X3,
+  List,
+  Filter,
+  TrendingUp
 } from 'lucide-react';
 
 interface OnlineUser {
@@ -45,6 +52,11 @@ const RandomVideoChat = () => {
   const [showVideoChat, setShowVideoChat] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Header state for search and filters (similar to landing page)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [filterType, setFilterType] = useState<'all' | 'live' | 'scheduled' | 'popular'>('all');
 
   // Mock online users for demonstration
   useEffect(() => {
@@ -75,6 +87,7 @@ const RandomVideoChat = () => {
   if (showVideoChat) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950 dark:via-blue-950 dark:to-indigo-950">
+        <ModernHeader />
         <div className="container mx-auto p-4">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
@@ -97,42 +110,48 @@ const RandomVideoChat = () => {
 
   if (isSearching) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950 dark:via-blue-950 dark:to-indigo-950 flex items-center justify-center">
-        <Card className="w-full max-w-md mx-4 border-0 shadow-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg">
-          <CardContent className="p-8 text-center">
-            <div className="relative mb-6">
-              <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center animate-pulse">
-                <Search className="w-10 h-10 text-white animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950 dark:via-blue-950 dark:to-indigo-950">
+        <ModernHeader />
+        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+          <Card className="w-full max-w-md mx-4 border-0 shadow-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg">
+            <CardContent className="p-8 text-center">
+              <div className="relative mb-6">
+                <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center animate-pulse">
+                  <Search className="w-10 h-10 text-white animate-spin" />
+                </div>
+                <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-ping opacity-20"></div>
               </div>
-              <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-ping opacity-20"></div>
-            </div>
-            <h3 className="text-xl font-semibold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              Finding your perfect match...
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              We're connecting you with someone amazing
-            </p>
-            <div className="flex justify-center">
-              <Button 
-                onClick={() => setIsSearching(false)} 
-                variant="outline" 
-                size="sm"
-              >
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <h3 className="text-xl font-semibold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                Finding your perfect match...
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                We're connecting you with someone amazing
+              </p>
+              <div className="flex justify-center">
+                <Button 
+                  onClick={() => setIsSearching(false)} 
+                  variant="outline" 
+                  size="sm"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950 dark:via-blue-950 dark:to-indigo-950">
-      {/* Header */}
-      <div className="border-b border-white/20 bg-white/10 dark:bg-gray-900/10 backdrop-blur-lg">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 relative overflow-hidden">
+      {/* Modern Header - Same as Landing Page */}
+      <ModernHeader />
+      
+      {/* Discover-style Header Section */}
+      <div className="bg-white border-b sticky top-16 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
                 <Crown className="w-6 h-6 text-white" />
@@ -144,31 +163,80 @@ const RandomVideoChat = () => {
                 <p className="text-sm text-muted-foreground">Random Video Chat</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                <Activity className="w-3 h-3 mr-1" />
-                {onlineUsers.filter(u => u.isActive).length} Online
-              </Badge>
-              <Button 
-                onClick={() => navigate('/communities')} 
-                variant="outline"
-                size="sm"
-              >
-                Communities
-              </Button>
-              <Button 
-                onClick={() => navigate('/profile')} 
-                variant="ghost"
-                size="sm"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
+            
+            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+              <Activity className="w-3 h-3 mr-1" />
+              {onlineUsers.filter(u => u.isActive).length} Online
+            </Badge>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search people, interests, or locations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Filters */}
+            <div className="flex items-center space-x-2">
+              <Select value={filterType} onValueChange={(value: 'all' | 'live' | 'scheduled' | 'popular') => setFilterType(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="live">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full" />
+                      <span>Live</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="popular">
+                    <div className="flex items-center space-x-2">
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Popular</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="scheduled">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-4 h-4" />
+                      <span>Scheduled</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* View Mode Toggle */}
+              <div className="flex items-center border rounded-md">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="rounded-r-none"
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="rounded-l-none"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950 dark:via-blue-950 dark:to-indigo-950 min-h-screen">
         <div className="max-w-6xl mx-auto">
           {/* Welcome Section */}
           <div className="text-center mb-12">
