@@ -36,6 +36,29 @@ export const uploadFile = async (
     throw new Error(`File type ${file.type} is not allowed`);
   }
 
+  // Check if storage bucket exists
+  try {
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    if (bucketsError) {
+      throw new Error(`Storage service error: ${bucketsError.message}`);
+    }
+    
+    const bucketExists = buckets.some(b => b.name === bucket);
+    if (!bucketExists) {
+      throw new Error(
+        `Storage bucket "${bucket}" does not exist. ` +
+        `The digital store requires storage buckets to be set up. ` +
+        `Please create the "${bucket}" bucket in your Supabase dashboard ` +
+        `or contact your administrator.`
+      );
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('bucket')) {
+      throw error; // Re-throw our custom bucket error
+    }
+    // For other errors, continue with upload attempt
+  }
+
   const fileExt = file.name.split('.').pop();
   const fileName = `${folder}/${crypto.randomUUID()}.${fileExt}`;
 
@@ -47,6 +70,20 @@ export const uploadFile = async (
     });
 
   if (error) {
+    // Provide more specific error messages for common issues
+    if (error.message.includes('bucket') || error.message.includes('not found')) {
+      throw new Error(
+        `Storage bucket "${bucket}" is not properly configured. ` +
+        `Please ensure the bucket exists and has the correct permissions. ` +
+        `Contact your administrator for help setting up the digital store.`
+      );
+    }
+    if (error.message.includes('policy') || error.message.includes('permission')) {
+      throw new Error(
+        `Upload permission denied. The storage bucket "${bucket}" may not have ` +
+        `the correct policies set up. Please contact your administrator.`
+      );
+    }
     throw new Error(`Upload failed: ${error.message}`);
   }
 
