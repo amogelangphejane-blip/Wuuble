@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Thumbnail System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .thumbnail-preview {
+            max-width: 300px;
+            max-height: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .stream-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stream-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+        .stream-thumbnail {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            background: linear-gradient(45deg, #6366f1, #ec4899);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Thumbnail System Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Database Connection Test</h2>
+        <p>Testing connection to Supabase...</p>
+        <div id="connection-status">Testing...</div>
+        <button onclick="testConnection()">Retry Connection</button>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Storage Buckets Test</h2>
+        <p>Checking if storage buckets exist...</p>
+        <div id="buckets-status">Testing...</div>
+        <button onclick="testBuckets()">Check Buckets</button>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Live Streams Test</h2>
+        <p>Loading live streams to check thumbnails...</p>
+        <div id="streams-status">Loading...</div>
+        <button onclick="loadStreams()">Reload Streams</button>
+        <div id="streams-list"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Thumbnail Upload Test</h2>
+        <p>Test uploading a thumbnail (requires a stream):</p>
+        <input type="file" id="thumbnail-file" accept="image/*">
+        <input type="text" id="stream-id" placeholder="Enter Stream ID" style="margin: 5px; padding: 8px;">
+        <button onclick="uploadThumbnail()">Upload Thumbnail</button>
+        <div id="upload-status"></div>
+        <img id="thumbnail-preview" class="thumbnail-preview" style="display: none;">
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        const supabaseUrl = 'YOUR_SUPABASE_URL'; // Replace with your URL
+        const supabaseKey = 'YOUR_SUPABASE_ANON_KEY'; // Replace with your anon key
+        
+        let supabase;
+        
+        // Try to get from localStorage or prompt user
+        function initializeSupabase() {
+            const url = localStorage.getItem('supabase_url') || prompt('Enter your Supabase URL:');
+            const key = localStorage.getItem('supabase_key') || prompt('Enter your Supabase Anon Key:');
+            
+            if (url && key) {
+                localStorage.setItem('supabase_url', url);
+                localStorage.setItem('supabase_key', key);
+                supabase = window.supabase.createClient(url, key);
+                return true;
+            }
+            return false;
+        }
+
+        async function testConnection() {
+            const statusDiv = document.getElementById('connection-status');
+            statusDiv.className = 'loading';
+            statusDiv.textContent = 'Testing connection...';
+            
+            if (!initializeSupabase()) {
+                statusDiv.className = 'error';
+                statusDiv.textContent = '❌ Failed to initialize Supabase client';
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase.from('live_streams').select('count').limit(1);
+                if (error) throw error;
+                
+                statusDiv.className = 'success';
+                statusDiv.textContent = '✅ Connected to Supabase successfully!';
+            } catch (error) {
+                statusDiv.className = 'error';
+                statusDiv.textContent = `❌ Connection failed: ${error.message}`;
+            }
+        }
+
+        async function testBuckets() {
+            const statusDiv = document.getElementById('buckets-status');
+            statusDiv.className = 'loading';
+            statusDiv.textContent = 'Checking buckets...';
+            
+            try {
+                const { data: buckets, error } = await supabase.storage.listBuckets();
+                if (error) throw error;
+                
+                const expectedBuckets = ['stream-thumbnails', 'stream-segments', 'stream-recordings', 'stream-chat-attachments'];
+                const existingBuckets = buckets.map(b => b.name);
+                
+                let status = '✅ Bucket Status:\n';
+                expectedBuckets.forEach(bucket => {
+                    const exists = existingBuckets.includes(bucket);
+                    status += `${exists ? '✅' : '❌'} ${bucket}\n`;
+                });
+                
+                statusDiv.className = expectedBuckets.every(b => existingBuckets.includes(b)) ? 'success' : 'error';
+                statusDiv.innerHTML = status.replace(/\n/g, '<br>');
+            } catch (error) {
+                statusDiv.className = 'error';
+                statusDiv.textContent = `❌ Failed to check buckets: ${error.message}`;
+            }
+        }
+
+        async function loadStreams() {
+            const statusDiv = document.getElementById('streams-status');
+            const listDiv = document.getElementById('streams-list');
+            
+            statusDiv.className = 'loading';
+            statusDiv.textContent = 'Loading streams...';
+            listDiv.innerHTML = '';
+            
+            try {
+                const { data: streams, error } = await supabase
+                    .from('live_streams')
+                    .select(`
+                        id, 
+                        title, 
+                        thumbnail_url, 
+                        display_image_url, 
+                        status,
+                        profiles(display_name)
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                    
+                if (error) throw error;
+                
+                statusDiv.className = 'success';
+                statusDiv.textContent = `✅ Loaded ${streams.length} streams`;
+                
+                if (streams.length === 0) {
+                    listDiv.innerHTML = '<p>No streams found. Create a stream first to test thumbnails.</p>';
+                    return;
+                }
+                
+                listDiv.className = 'stream-list';
+                streams.forEach(stream => {
+                    const card = document.createElement('div');
+                    card.className = 'stream-card';
+                    
+                    const hasThumbnail = stream.thumbnail_url || stream.display_image_url;
+                    const thumbnailUrl = stream.thumbnail_url || stream.display_image_url;
+                    
+                    card.innerHTML = `
+                        <div class="stream-thumbnail" ${thumbnailUrl ? `style="background: none;"` : ''}>
+                            ${thumbnailUrl ? 
+                                `<img src="${thumbnailUrl}" alt="Thumbnail" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">` : 
+                                'No Thumbnail'
+                            }
+                        </div>
+                        <h4 style="margin: 10px 0 5px 0; font-size: 14px;">${stream.title}</h4>
+                        <p style="margin: 0; font-size: 12px; color: #666;">
+                            ID: ${stream.id}<br>
+                            Status: ${stream.status}<br>
+                            Creator: ${stream.profiles?.display_name || 'Unknown'}<br>
+                            Thumbnail: ${hasThumbnail ? '✅ Yes' : '❌ No'}
+                        </p>
+                    `;
+                    
+                    listDiv.appendChild(card);
+                });
+                
+            } catch (error) {
+                statusDiv.className = 'error';
+                statusDiv.textContent = `❌ Failed to load streams: ${error.message}`;
+            }
+        }
+
+        async function uploadThumbnail() {
+            const fileInput = document.getElementById('thumbnail-file');
+            const streamIdInput = document.getElementById('stream-id');
+            const statusDiv = document.getElementById('upload-status');
+            const previewImg = document.getElementById('thumbnail-preview');
+            
+            const file = fileInput.files[0];
+            const streamId = streamIdInput.value.trim();
+            
+            if (!file) {
+                statusDiv.className = 'error';
+                statusDiv.textContent = '❌ Please select a file';
+                return;
+            }
+            
+            if (!streamId) {
+                statusDiv.className = 'error';
+                statusDiv.textContent = '❌ Please enter a stream ID';
+                return;
+            }
+            
+            statusDiv.className = 'loading';
+            statusDiv.textContent = '⏳ Uploading thumbnail...';
+            previewImg.style.display = 'none';
+            
+            try {
+                // Generate filename
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${streamId}/thumbnail-${Date.now()}.${fileExt}`;
+                
+                // Upload to stream-thumbnails bucket
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('stream-thumbnails')
+                    .upload(fileName, file, {
+                        cacheControl: '3600',
+                        upsert: true
+                    });
+                
+                if (uploadError) throw uploadError;
+                
+                // Get public URL
+                const { data: urlData } = supabase.storage
+                    .from('stream-thumbnails')
+                    .getPublicUrl(fileName);
+                
+                // Update stream record
+                const { error: updateError } = await supabase
+                    .from('live_streams')
+                    .update({ 
+                        thumbnail_url: urlData.publicUrl,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', streamId);
+                
+                if (updateError) throw updateError;
+                
+                statusDiv.className = 'success';
+                statusDiv.textContent = '✅ Thumbnail uploaded successfully!';
+                
+                // Show preview
+                previewImg.src = urlData.publicUrl;
+                previewImg.style.display = 'block';
+                
+                // Reload streams to show updated thumbnail
+                setTimeout(loadStreams, 1000);
+                
+            } catch (error) {
+                statusDiv.className = 'error';
+                statusDiv.textContent = `❌ Upload failed: ${error.message}`;
+            }
+        }
+
+        // Initialize tests on page load
+        window.onload = function() {
+            if (initializeSupabase()) {
+                testConnection();
+                testBuckets();
+                loadStreams();
+            }
+        };
+    </script>
+</body>
+</html>

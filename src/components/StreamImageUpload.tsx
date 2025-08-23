@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { streamImageService, StreamImage } from '@/services/streamImageService';
+import { thumbnailService } from '@/services/thumbnailService';
 import {
   Upload,
   Image as ImageIcon,
@@ -17,7 +17,7 @@ import {
 interface StreamImageUploadProps {
   streamId?: string;
   currentImage?: string;
-  onImageUploaded?: (image: StreamImage) => void;
+  onImageUploaded?: (imageUrl: string) => void;
   onImageRemoved?: () => void;
   disabled?: boolean;
   className?: string;
@@ -85,14 +85,14 @@ export const StreamImageUpload: React.FC<StreamImageUploadProps> = ({
     setError(null);
 
     try {
-      const uploadedImage = await streamImageService.uploadDisplayImage(streamId, file, {
+      const thumbnailUrl = await thumbnailService.uploadThumbnail(streamId, file, {
         maxSizeBytes: maxSizeMB * 1024 * 1024
       });
 
-      onImageUploaded?.(uploadedImage);
+      onImageUploaded?.(thumbnailUrl);
       setPreviewUrl(null);
     } catch (err: any) {
-      setError(err.message || 'Failed to upload image');
+      setError(err.message || 'Failed to upload thumbnail');
       setPreviewUrl(null);
     } finally {
       setIsUploading(false);
@@ -162,7 +162,7 @@ export const StreamImageUpload: React.FC<StreamImageUploadProps> = ({
               <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
                 <img
                   src={previewUrl || currentImage}
-                  alt="Stream display image"
+                  alt="Stream thumbnail"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -230,10 +230,10 @@ export const StreamImageUpload: React.FC<StreamImageUploadProps> = ({
                 
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Add Display Image
+                    Add Stream Thumbnail
                   </h3>
                   <p className="text-gray-500 text-sm mb-4">
-                    Upload a custom image that viewers will see on the discover page
+                    Upload a custom thumbnail that viewers will see on the discover page
                   </p>
                   
                   <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-400">
@@ -285,7 +285,7 @@ export const StreamImageUpload: React.FC<StreamImageUploadProps> = ({
       {/* Tips */}
       {!hasImage && (
         <div className="text-sm text-gray-500 space-y-1">
-          <p>💡 <strong>Tips for great display images:</strong></p>
+          <p>💡 <strong>Tips for great thumbnails:</strong></p>
           <ul className="list-disc list-inside space-y-1 ml-4">
             <li>Use high-quality images with good lighting</li>
             <li>Keep important content in the center (safe area)</li>

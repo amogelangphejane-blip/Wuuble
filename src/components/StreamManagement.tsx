@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { StreamImageUpload } from './StreamImageUpload';
-import { streamImageService, StreamImage } from '@/services/streamImageService';
+import { thumbnailService } from '@/services/thumbnailService';
 import { LiveStream } from '@/services/livestreamService';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -40,44 +40,34 @@ export const StreamManagement: React.FC<StreamManagementProps> = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [streamImages, setStreamImages] = useState<StreamImage[]>([]);
+  const [currentThumbnail, setCurrentThumbnail] = useState<string | null>(stream.thumbnail_url || null);
   const [formData, setFormData] = useState({
     title: stream.title,
     description: stream.description || '',
   });
 
-  // Load existing images when dialog opens
+  // Update current thumbnail when stream prop changes
   useEffect(() => {
-    if (isOpen) {
-      loadStreamImages();
-    }
-  }, [isOpen]);
+    setCurrentThumbnail(stream.thumbnail_url || null);
+  }, [stream.thumbnail_url]);
 
-  const loadStreamImages = async () => {
-    try {
-      const images = await streamImageService.getStreamImages(stream.id, 'display');
-      setStreamImages(images);
-    } catch (err: any) {
-      console.error('Failed to load stream images:', err);
-    }
-  };
-
-  const handleImageUploaded = async (image: StreamImage) => {
-    setStreamImages(prev => [image, ...prev.filter(img => img.id !== image.id)]);
+  const handleImageUploaded = async (thumbnailUrl: string) => {
+    setCurrentThumbnail(thumbnailUrl);
     
-    // Update the stream display image URL
-    await updateStreamInfo({ display_image_url: image.image_url });
-    
-    setSuccess('Display image updated successfully!');
+    setSuccess('Thumbnail updated successfully!');
     setTimeout(() => setSuccess(null), 3000);
   };
 
   const handleImageRemoved = async () => {
-    // Remove display image from stream
-    await updateStreamInfo({ display_image_url: null });
-    
-    setSuccess('Display image removed successfully!');
-    setTimeout(() => setSuccess(null), 3000);
+    try {
+      await thumbnailService.deleteThumbnail(stream.id);
+      setCurrentThumbnail(null);
+      
+      setSuccess('Thumbnail removed successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to remove thumbnail');
+    }
   };
 
   const updateStreamInfo = async (updates: Partial<LiveStream>) => {
@@ -121,7 +111,7 @@ export const StreamManagement: React.FC<StreamManagementProps> = ({
     }
   };
 
-  const currentDisplayImage = streamImages.find(img => img.is_active);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -243,56 +233,27 @@ export const StreamManagement: React.FC<StreamManagementProps> = ({
             </CardContent>
           </Card>
 
-          {/* Display Image Management */}
+          {/* Thumbnail Management */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
                 <ImageIcon className="w-5 h-5 mr-2" />
-                Display Image
+                Stream Thumbnail
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 mb-4">
-                This image will be shown to viewers on the discover page and stream previews.
+                This thumbnail will be shown to viewers on the discover page and stream previews.
               </p>
               
               <StreamImageUpload
                 streamId={stream.id}
-                currentImage={stream.display_image_url || currentDisplayImage?.image_url}
+                currentImage={currentThumbnail}
                 onImageUploaded={handleImageUploaded}
                 onImageRemoved={handleImageRemoved}
                 showPreview={true}
-                maxSizeMB={5}
+                maxSizeMB={2}
               />
-              
-              {/* Previous Images */}
-              {streamImages.length > 1 && (
-                <div className="mt-6">
-                  <h4 className="font-medium mb-3">Previous Images</h4>
-                  <div className="grid grid-cols-3 gap-3">
-                    {streamImages
-                      .filter(img => !img.is_active)
-                      .slice(0, 6)
-                      .map(img => (
-                        <div 
-                          key={img.id} 
-                          className="aspect-video bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all"
-                          onClick={() => streamImageService.setActiveDisplayImage(img.id).then(() => {
-                            handleImageUploaded(img);
-                            loadStreamImages();
-                          })}
-                        >
-                          <img 
-                            src={img.image_url} 
-                            alt="Previous display image"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))
-                    }
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
