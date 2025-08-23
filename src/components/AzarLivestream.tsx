@@ -11,7 +11,9 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useLivestream } from '@/hooks/useLivestream';
 import { LivestreamChat } from './LivestreamChat';
+import { StreamImageUpload } from './StreamImageUpload';
 import { supabase } from '@/integrations/supabase/client';
+import { StreamImage } from '@/services/streamImageService';
 import {
   Video,
   VideoOff,
@@ -66,6 +68,7 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
     visibility: 'community_only' as 'public' | 'community_only',
     communityId: '',
   });
+  const [streamDisplayImage, setStreamDisplayImage] = useState<StreamImage | null>(null);
   const [userCommunities, setUserCommunities] = useState<Array<{ id: string; name: string }>>([]);
 
   const {
@@ -176,6 +179,20 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
       });
       
       setShowCreateDialog(false);
+      
+      // Reset form
+      setStreamForm({
+        title: '',
+        description: '',
+        tags: [],
+        maxViewers: 1000,
+        enableChat: true,
+        enableReactions: true,
+        visibility: 'community_only',
+        communityId: '',
+      });
+      setStreamDisplayImage(null);
+      
       await startBroadcast(newStream.id);
     } catch (error) {
       console.error('Failed to create stream:', error);
@@ -285,11 +302,11 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
                       Go Live
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
+                  <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Start Your Livestream</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       <div>
                         <Label htmlFor="title">Stream Title</Label>
                         <Input
@@ -307,6 +324,21 @@ export const AzarLivestream: React.FC<AzarLivestreamProps> = ({
                           onChange={(e) => setStreamForm(prev => ({ ...prev, description: e.target.value }))}
                           placeholder="Tell viewers what to expect..."
                           rows={3}
+                        />
+                      </div>
+                      
+                      {/* Display Image Upload */}
+                      <div>
+                        <Label>Display Image</Label>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Add a custom image that viewers will see on the discover page
+                        </p>
+                        <StreamImageUpload
+                          currentImage={streamDisplayImage?.image_url}
+                          onImageUploaded={(image) => setStreamDisplayImage(image)}
+                          onImageRemoved={() => setStreamDisplayImage(null)}
+                          showPreview={true}
+                          maxSizeMB={3}
                         />
                       </div>
                       <div className="flex items-center justify-between">

@@ -56,6 +56,7 @@ export interface LiveStream {
   is_recorded: boolean;
   recording_url?: string;
   thumbnail_url?: string;
+  display_image_url?: string;
   tags?: string[];
   visibility: 'public' | 'community_only';
   settings: {

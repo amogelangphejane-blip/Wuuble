@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useLivestream } from '@/hooks/useLivestream';
 import { useAuth } from '@/hooks/useAuth';
 import { LiveStream } from '@/services/livestreamService';
+import { StreamManagement } from './StreamManagement';
 import {
   Search,
   Eye,
@@ -163,7 +164,13 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
       <div className="relative">
         {/* Thumbnail */}
         <div className="aspect-video bg-gradient-to-br from-purple-600 to-pink-600 relative overflow-hidden">
-          {stream.thumbnail_url ? (
+          {stream.display_image_url ? (
+            <img 
+              src={stream.display_image_url} 
+              alt={stream.title}
+              className="w-full h-full object-cover"
+            />
+          ) : stream.thumbnail_url ? (
             <img 
               src={stream.thumbnail_url} 
               alt={stream.title}
@@ -277,34 +284,44 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
 
             {/* More options - only show for stream creator */}
             {user?.id === stream.creator_id && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm('Are you sure you want to delete this stream? This action cannot be undone.')) {
-                        deleteStream(stream.id);
-                      }
-                    }}
-                    className="text-red-600 focus:text-red-600"
-                  >
-                    <Trash className="w-4 h-4 mr-2" />
-                    Delete Stream
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex space-x-2">
+                <StreamManagement
+                  stream={stream}
+                  onStreamUpdated={(updatedStream) => {
+                    // Update the stream in the list
+                    loadStreams();
+                  }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm('Are you sure you want to delete this stream? This action cannot be undone.')) {
+                          deleteStream(stream.id);
+                        }
+                      }}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash className="w-4 h-4 mr-2" />
+                      Delete Stream
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             )}
           </div>
         </CardContent>
@@ -322,7 +339,13 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
         <div className="flex items-center space-x-4">
           {/* Thumbnail */}
           <div className="w-32 h-20 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg relative overflow-hidden flex-shrink-0">
-            {stream.thumbnail_url ? (
+            {stream.display_image_url ? (
+              <img 
+                src={stream.display_image_url} 
+                alt={stream.title}
+                className="w-full h-full object-cover"
+              />
+            ) : stream.thumbnail_url ? (
               <img 
                 src={stream.thumbnail_url} 
                 alt={stream.title}
@@ -395,34 +418,44 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
 
               {/* More options - only show for stream creator */}
               {user?.id === stream.creator_id && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm('Are you sure you want to delete this stream? This action cannot be undone.')) {
-                          deleteStream(stream.id);
-                        }
-                      }}
-                      className="text-red-600 focus:text-red-600"
-                    >
-                      <Trash className="w-4 h-4 mr-2" />
-                      Delete Stream
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex space-x-2">
+                  <StreamManagement
+                    stream={stream}
+                    onStreamUpdated={(updatedStream) => {
+                      // Update the stream in the list
+                      loadStreams();
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Are you sure you want to delete this stream? This action cannot be undone.')) {
+                            deleteStream(stream.id);
+                          }
+                        }}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash className="w-4 h-4 mr-2" />
+                        Delete Stream
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               )}
             </div>
           </div>
