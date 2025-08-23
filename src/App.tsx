@@ -26,6 +26,7 @@ import CommunityGroupCall from "./pages/CommunityGroupCall";
 import TestGroupCall from "./pages/TestGroupCall";
 import NotFound from "./pages/NotFound";
 import Marketplace from "./pages/Marketplace";
+import Favorites from "./pages/Favorites";
 import CommunityLeaderboardPage from "./pages/CommunityLeaderboard";
 import AzarLivestreams from "./pages/AzarLivestreams";
 import LoadingDemo from "./pages/LoadingDemo";
@@ -92,6 +93,7 @@ const App = () => {
                 <Route path="/seller-dashboard" element={<SellerDashboard />} />
                 <Route path="/my-library" element={<BuyerLibrary />} />
                 <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/favorites" element={<Favorites />} />
                 
                 {/* Azar Livestream Routes */}
                 <Route path="/azar-livestreams" element={<AzarLivestreams />} />

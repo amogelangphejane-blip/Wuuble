@@ -21,11 +21,19 @@ import {
   User,
   Calendar,
   TrendingUp,
-  Package
+  Package,
+  Sparkles,
+  Gift,
+  Palette,
+  Home,
+  Camera,
+  Zap
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useWishlist } from '@/hooks/useWishlist';
 import { getProducts, getProductCategories, addToWishlist, removeFromWishlist } from '@/services/storeService';
 import { ProductCheckout } from '@/components/ProductCheckout';
+import { ProductDetailModal } from '@/components/ProductDetailModal';
 import type { 
   DigitalProduct, 
   ProductCategory, 
@@ -33,11 +41,22 @@ import type {
   MarketplaceProps 
 } from '@/types/store';
 
+// Etsy-style category data
+const etsyCategories = [
+  { id: 'handmade', name: 'Handmade', icon: Palette, color: 'bg-orange-100 text-orange-600' },
+  { id: 'vintage', name: 'Vintage', icon: Calendar, color: 'bg-amber-100 text-amber-600' },
+  { id: 'craft-supplies', name: 'Craft Supplies', icon: Sparkles, color: 'bg-purple-100 text-purple-600' },
+  { id: 'gifts', name: 'Gifts', icon: Gift, color: 'bg-red-100 text-red-600' },
+  { id: 'home-living', name: 'Home & Living', icon: Home, color: 'bg-green-100 text-green-600' },
+  { id: 'art', name: 'Art & Collectibles', icon: Camera, color: 'bg-blue-100 text-blue-600' },
+];
+
 export const DigitalMarketplace: React.FC<MarketplaceProps> = ({ 
   initialFilters = {}, 
   communityId 
 }) => {
   const { toast } = useToast();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const [products, setProducts] = useState<DigitalProduct[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +74,7 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
   const [totalCount, setTotalCount] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DigitalProduct | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showProductDetail, setShowProductDetail] = useState(false);
 
   // Load categories on component mount
   useEffect(() => {
@@ -140,32 +160,8 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
     }
   };
 
-  const handleWishlistToggle = async (productId: string, isInWishlist: boolean) => {
-    try {
-      if (isInWishlist) {
-        const result = await removeFromWishlist(productId);
-        if (result.success) {
-          toast({
-            title: "Removed from wishlist",
-            description: "Product removed from your wishlist",
-          });
-        }
-      } else {
-        const result = await addToWishlist(productId);
-        if (result.success) {
-          toast({
-            title: "Added to wishlist",
-            description: "Product added to your wishlist",
-          });
-        }
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update wishlist",
-        variant: "destructive",
-      });
-    }
+  const handleWishlistToggle = (product: DigitalProduct) => {
+    toggleWishlist(product);
   };
 
   const handleBuyNow = (product: DigitalProduct) => {
@@ -173,9 +169,19 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
     setShowCheckout(true);
   };
 
+  const handleProductClick = (product: DigitalProduct) => {
+    setSelectedProduct(product);
+    setShowProductDetail(true);
+  };
+
   const handleCheckoutClose = () => {
     setSelectedProduct(null);
     setShowCheckout(false);
+  };
+
+  const handleProductDetailClose = () => {
+    setSelectedProduct(null);
+    setShowProductDetail(false);
   };
 
   const handlePurchaseSuccess = () => {
@@ -193,23 +199,89 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
     }).format(price);
   };
 
+  // Etsy-style hero section
+  const HeroSection = () => (
+    <div className="relative bg-gradient-to-r from-orange-50 via-amber-50 to-yellow-50 py-16 px-6 rounded-2xl mb-8 overflow-hidden">
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="20" height="20" xmlns="http://www.w3.org/2000/svg"%3E%3Cdefs%3E%3Cpattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"%3E%3Cpath d="M 20 0 L 0 0 0 20" fill="none" stroke="%23f97316" stroke-width="0.5" opacity="0.1"/%3E%3C/pattern%3E%3C/defs%3E%3Crect width="100%25" height="100%25" fill="url(%23grid)" /%3E%3C/svg%3E')] opacity-30"></div>
+      
+      <div className="relative max-w-4xl mx-auto text-center">
+        <h1 className="text-5xl font-bold text-gray-900 mb-4">
+          Discover unique items, directly from 
+          <span className="text-orange-600"> creative entrepreneurs</span>
+        </h1>
+        <p className="text-xl text-gray-700 mb-8">
+          Find handmade, vintage, and creative goods made by talented sellers around the world
+        </p>
+        
+        {/* Hero Search Bar */}
+        <div className="max-w-2xl mx-auto">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <Input
+              type="text"
+              placeholder="Search for anything..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 pr-4 py-4 text-lg border-2 border-orange-200 focus:border-orange-400 rounded-full shadow-lg"
+            />
+            <Button 
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full bg-orange-600 hover:bg-orange-700"
+              onClick={() => loadProducts(true)}
+            >
+              Search
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Etsy-style category cards
+  const CategorySection = () => (
+    <div className="mb-8">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Shop by category</h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {etsyCategories.map((category) => {
+          const IconComponent = category.icon;
+          return (
+            <Card 
+              key={category.id} 
+              className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-orange-200"
+              onClick={() => setSelectedCategory(category.id)}
+            >
+              <CardContent className="p-6 text-center">
+                <div className={`w-16 h-16 rounded-full ${category.color} flex items-center justify-center mx-auto mb-3`}>
+                  <IconComponent className="h-8 w-8" />
+                </div>
+                <h3 className="font-semibold text-sm text-gray-900">{category.name}</h3>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   const renderProductCard = (product: DigitalProduct) => (
-    <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-200">
-      <div className="relative">
+    <Card key={product.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-md overflow-hidden cursor-pointer">
+      <div className="relative" onClick={() => handleProductClick(product)}>
         {product.thumbnail_url ? (
           <img
             src={product.thumbnail_url}
             alt={product.title}
-            className="w-full h-48 object-cover rounded-t-lg"
+            className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-48 bg-gradient-to-br from-primary/10 to-primary/5 rounded-t-lg flex items-center justify-center">
-            <Package className="h-16 w-16 text-muted-foreground" />
+          <div className="w-full h-56 bg-gradient-to-br from-orange-100 via-amber-100 to-yellow-100 flex items-center justify-center">
+            <Package className="h-20 w-20 text-orange-300" />
           </div>
         )}
         
         {product.featured && (
-          <Badge className="absolute top-2 left-2 bg-yellow-500 text-yellow-900">
+          <Badge className="absolute top-3 left-3 bg-orange-600 text-white border-0 shadow-lg">
+            <Sparkles className="h-3 w-3 mr-1" />
             Featured
           </Badge>
         )}
@@ -217,70 +289,67 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
         <Button
           variant="ghost"
           size="sm"
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={() => handleWishlistToggle(product.id, false)} // TODO: Track wishlist state
+          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white shadow-lg rounded-full"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleWishlistToggle(product);
+          }}
         >
-          <Heart className="h-4 w-4" />
+          <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? 'fill-red-500 text-red-500' : 'text-red-500'}`} />
         </Button>
       </div>
       
       <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-lg line-clamp-2">{product.title}</h3>
-          <span className="text-lg font-bold text-primary ml-2">
-            {formatPrice(product.price)}
-          </span>
+        <h3 className="font-semibold text-lg line-clamp-2 text-gray-900 mb-2" onClick={() => handleProductClick(product)}>
+          {product.title}
+        </h3>
+        
+        <div className="flex items-center space-x-2 mb-3">
+          <Avatar className="h-6 w-6">
+            <AvatarFallback className="bg-orange-100 text-orange-600 text-xs">
+              <User className="h-3 w-3" />
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-sm text-gray-600 font-medium">Creative Shop</span>
         </div>
         
-        <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
-          {product.description}
-        </p>
-        
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <Avatar className="h-6 w-6">
-              <AvatarFallback>
-                <User className="h-4 w-4" />
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-sm text-muted-foreground">
-              Digital Seller
-            </span>
-          </div>
-          
-          {product.rating > 0 && (
-            <div className="flex items-center space-x-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-medium">{product.rating.toFixed(1)}</span>
-              <span className="text-xs text-muted-foreground">({product.rating_count})</span>
+        {product.rating > 0 && (
+          <div className="flex items-center space-x-1 mb-3">
+            <div className="flex">
+              {[...Array(5)].map((_, i) => (
+                <Star 
+                  key={i} 
+                  className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+                />
+              ))}
             </div>
-          )}
-        </div>
+            <span className="text-sm text-gray-600">({product.rating_count})</span>
+          </div>
+        )}
         
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <Download className="h-4 w-4" />
-            <span>{product.total_sales} sales</span>
-          </div>
-          
-          <Button size="sm" className="ml-auto" onClick={() => handleBuyNow(product)}>
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Buy Now
+          <span className="text-xl font-bold text-gray-900">
+            {formatPrice(product.price)}
+          </span>
+          <Button 
+            size="sm" 
+            className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleBuyNow(product);
+            }}
+          >
+            Add to cart
           </Button>
         </div>
         
         {product.tags && product.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
-            {product.tags.slice(0, 3).map((tag, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
+            {product.tags.slice(0, 2).map((tag, index) => (
+              <Badge key={index} variant="secondary" className="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200">
                 {tag}
               </Badge>
             ))}
-            {product.tags.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
-                +{product.tags.length - 3}
-              </Badge>
-            )}
           </div>
         )}
       </CardContent>
@@ -353,12 +422,13 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
+        <HeroSection />
         <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/4 mb-4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-80 bg-muted rounded-lg"></div>
+          <div className="h-8 bg-orange-100 rounded w-1/4 mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-80 bg-orange-50 rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -367,21 +437,76 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Marketplace</h1>
-          <p className="text-muted-foreground">
-            {totalCount} products available {communityId ? 'in this community' : ''}
-          </p>
+    <div className="space-y-8">
+      {/* Hero Section */}
+      <HeroSection />
+      
+      {/* Category Section */}
+      <CategorySection />
+
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center gap-4 p-6 bg-white rounded-lg shadow-sm border">
+        <div className="flex items-center space-x-2">
+          <Filter className="h-4 w-4 text-gray-500" />
+          <span className="text-sm font-medium text-gray-700">Filter by:</span>
         </div>
         
+        {/* Category Filter */}
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="All categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {etsyCategories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        {/* Sort */}
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="created_at">Most Recent</SelectItem>
+            <SelectItem value="price">Price: Low to High</SelectItem>
+            <SelectItem value="rating">Customer Review</SelectItem>
+            <SelectItem value="total_sales">Bestselling</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        {/* Price Range */}
         <div className="flex items-center space-x-2">
+          <Input
+            placeholder="Min"
+            value={priceRange.min}
+            onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+            type="number"
+            min="0"
+            className="w-20"
+          />
+          <span className="text-gray-400">to</span>
+          <Input
+            placeholder="Max"
+            value={priceRange.max}
+            onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+            type="number"
+            min="0"
+            className="w-20"
+          />
+        </div>
+
+        <div className="ml-auto flex items-center space-x-2">
+          <span className="text-sm text-gray-600">{totalCount} results</span>
           <Button
             variant={viewMode === 'grid' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setViewMode('grid')}
+            className="bg-orange-600 hover:bg-orange-700"
           >
             <Grid3X3 className="h-4 w-4" />
           </Button>
@@ -395,88 +520,44 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            {/* Category Filter */}
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="All categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* Sort */}
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="created_at">Newest</SelectItem>
-                <SelectItem value="price">Price: Low to High</SelectItem>
-                <SelectItem value="rating">Highest Rated</SelectItem>
-                <SelectItem value="total_sales">Best Selling</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            {/* Price Range */}
-            <div className="flex space-x-2">
-              <Input
-                placeholder="Min $"
-                value={priceRange.min}
-                onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
-                type="number"
-                min="0"
-              />
-              <Input
-                placeholder="Max $"
-                value={priceRange.max}
-                onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
-                type="number"
-                min="0"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Products */}
+      {/* Products Section */}
       {products.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Products Found</h3>
-            <p className="text-muted-foreground">
-              {searchQuery || selectedCategory !== 'all' 
-                ? "Try adjusting your search or filters" 
-                : "Be the first to add products to this marketplace!"
-              }
-            </p>
-          </CardContent>
-        </Card>
+        <div className="text-center py-16 bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl">
+          <Package className="h-24 w-24 mx-auto text-orange-300 mb-6" />
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">No Products Found</h3>
+          <p className="text-gray-600 max-w-md mx-auto mb-6">
+            {searchQuery || selectedCategory !== 'all' 
+              ? "We couldn't find any products matching your criteria. Try adjusting your search or filters." 
+              : "Discover amazing handmade and vintage items. Be the first to explore our growing marketplace!"
+            }
+          </p>
+          <Button 
+            onClick={() => {
+              setSearchQuery('');
+              setSelectedCategory('all');
+              setPriceRange({ min: '', max: '' });
+            }}
+            className="bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            Browse All Products
+          </Button>
+        </div>
       ) : (
         <>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {selectedCategory !== 'all' 
+                ? `${etsyCategories.find(cat => cat.id === selectedCategory)?.name || 'Category'} Products`
+                : 'All Products'
+              }
+            </h2>
+            <p className="text-gray-600">
+              {totalCount.toLocaleString()} unique items found
+            </p>
+          </div>
+
           {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
               {products.map(renderProductCard)}
             </div>
           ) : (
@@ -486,18 +567,43 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
           )}
           
           {hasMore && (
-            <div className="text-center">
+            <div className="text-center mt-12">
               <Button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
                 variant="outline"
                 size="lg"
+                className="border-orange-300 text-orange-600 hover:bg-orange-50 px-8 py-3"
               >
-                {loadingMore ? "Loading..." : "Load More Products"}
+                {loadingMore ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  "Show more products"
+                )}
               </Button>
             </div>
           )}
         </>
+      )}
+
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          isOpen={showProductDetail}
+          onClose={handleProductDetailClose}
+          onBuyNow={(product) => {
+            setShowProductDetail(false);
+            handleBuyNow(product);
+          }}
+          onAddToWishlist={(productId) => {
+            const product = products.find(p => p.id === productId);
+            if (product) handleWishlistToggle(product);
+          }}
+        />
       )}
 
       {/* Checkout Dialog */}
