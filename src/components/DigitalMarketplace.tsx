@@ -133,6 +133,12 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
             description: "The marketplace database needs to be set up. Please run the setup script or contact your administrator.",
             variant: "destructive",
           });
+        } else if (result.error?.message?.includes('bucket')) {
+          toast({
+            title: "Storage Setup Required",
+            description: "The marketplace storage buckets need to be created. Please check the setup documentation or contact your administrator.",
+            variant: "destructive",
+          });
         } else {
           toast({
             title: "Error",
