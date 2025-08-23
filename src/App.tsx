@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
+import { LoadingProvider } from "@/contexts/LoadingContext";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
@@ -27,6 +29,7 @@ import Marketplace from "./pages/Marketplace";
 import CommunityLeaderboardPage from "./pages/CommunityLeaderboard";
 import AzarLivestreams from "./pages/AzarLivestreams";
 import LoadingDemo from "./pages/LoadingDemo";
+import SplashDemo from "./pages/SplashDemo";
 
 
 
@@ -46,11 +49,13 @@ const App = () => {
         disableTransitionOnChange
         themes={["light", "dark", "system", "theme-ocean", "theme-forest", "theme-sunset", "theme-purple"]}
       >
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+        <LoadingProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <GlobalLoadingOverlay />
+              <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/home" element={<Home />} />
@@ -96,14 +101,18 @@ const App = () => {
                 {/* Loading Demo Route */}
                 <Route path="/loading-demo" element={<LoadingDemo />} />
                 
+                {/* Splash Demo Route */}
+                <Route path="/splash-demo" element={<SplashDemo />} />
+                
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+      </LoadingProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
   );
 };
 
