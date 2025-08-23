@@ -169,12 +169,50 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
               src={stream.display_image_url} 
               alt={stream.title}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                // If display image fails, try thumbnail_url as fallback
+                const target = e.target as HTMLImageElement;
+                if (stream.thumbnail_url && target.src !== stream.thumbnail_url) {
+                  console.log(`[LivestreamDiscovery] Display image failed for stream ${stream.id}, trying thumbnail fallback`);
+                  target.src = stream.thumbnail_url;
+                } else {
+                  // Both failed, hide the image and show fallback
+                  console.log(`[LivestreamDiscovery] All images failed for stream ${stream.id}`);
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent && !parent.querySelector('.thumbnail-fallback')) {
+                    const fallback = document.createElement('div');
+                    fallback.className = 'thumbnail-fallback w-full h-full flex items-center justify-center';
+                    fallback.innerHTML = '<div class="w-12 h-12 text-white/80"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
+                    parent.appendChild(fallback);
+                  }
+                }
+              }}
+              onLoad={() => {
+                console.log(`[LivestreamDiscovery] Image loaded successfully for stream ${stream.id}`);
+              }}
             />
           ) : stream.thumbnail_url ? (
             <img 
               src={stream.thumbnail_url} 
               alt={stream.title}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                // Thumbnail failed, show fallback
+                console.log(`[LivestreamDiscovery] Thumbnail failed for stream ${stream.id}`);
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent && !parent.querySelector('.thumbnail-fallback')) {
+                  const fallback = document.createElement('div');
+                  fallback.className = 'thumbnail-fallback w-full h-full flex items-center justify-center';
+                  fallback.innerHTML = '<div class="w-12 h-12 text-white/80"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
+                  parent.appendChild(fallback);
+                }
+              }}
+              onLoad={() => {
+                console.log(`[LivestreamDiscovery] Thumbnail loaded successfully for stream ${stream.id}`);
+              }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -344,12 +382,50 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
                 src={stream.display_image_url} 
                 alt={stream.title}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  // If display image fails, try thumbnail_url as fallback
+                  const target = e.target as HTMLImageElement;
+                  if (stream.thumbnail_url && target.src !== stream.thumbnail_url) {
+                    console.log(`[LivestreamDiscovery] Display image failed for stream ${stream.id}, trying thumbnail fallback`);
+                    target.src = stream.thumbnail_url;
+                  } else {
+                    // Both failed, hide the image and show fallback
+                    console.log(`[LivestreamDiscovery] All images failed for stream ${stream.id}`);
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent && !parent.querySelector('.thumbnail-fallback')) {
+                      const fallback = document.createElement('div');
+                      fallback.className = 'thumbnail-fallback w-full h-full flex items-center justify-center';
+                      fallback.innerHTML = '<div class="w-6 h-6 text-white/80"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
+                      parent.appendChild(fallback);
+                    }
+                  }
+                }}
+                onLoad={() => {
+                  console.log(`[LivestreamDiscovery] Image loaded successfully for stream ${stream.id}`);
+                }}
               />
             ) : stream.thumbnail_url ? (
               <img 
                 src={stream.thumbnail_url} 
                 alt={stream.title}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Thumbnail failed, show fallback
+                  console.log(`[LivestreamDiscovery] Thumbnail failed for stream ${stream.id}`);
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent && !parent.querySelector('.thumbnail-fallback')) {
+                    const fallback = document.createElement('div');
+                    fallback.className = 'thumbnail-fallback w-full h-full flex items-center justify-center';
+                    fallback.innerHTML = '<div class="w-6 h-6 text-white/80"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
+                    parent.appendChild(fallback);
+                  }
+                }}
+                onLoad={() => {
+                  console.log(`[LivestreamDiscovery] Thumbnail loaded successfully for stream ${stream.id}`);
+                }}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
