@@ -120,21 +120,25 @@
 
     <script>
         // Initialize Supabase client
-        const supabaseUrl = 'YOUR_SUPABASE_URL'; // Replace with your URL
-        const supabaseKey = 'YOUR_SUPABASE_ANON_KEY'; // Replace with your anon key
-        
         let supabase;
         
         // Try to get from localStorage or prompt user
         function initializeSupabase() {
-            const url = localStorage.getItem('supabase_url') || prompt('Enter your Supabase URL:');
+            const url = localStorage.getItem('supabase_url') || prompt('Enter your Supabase URL (e.g., https://your-project.supabase.co):');
             const key = localStorage.getItem('supabase_key') || prompt('Enter your Supabase Anon Key:');
             
             if (url && key) {
                 localStorage.setItem('supabase_url', url);
                 localStorage.setItem('supabase_key', key);
-                supabase = window.supabase.createClient(url, key);
-                return true;
+                try {
+                    supabase = window.supabase.createClient(url, key);
+                    console.log('✅ Supabase client initialized successfully');
+                    return true;
+                } catch (error) {
+                    console.error('❌ Failed to initialize Supabase client:', error);
+                    alert('Failed to initialize Supabase client. Check your URL and key.');
+                    return false;
+                }
             }
             return false;
         }
@@ -279,11 +283,17 @@
             previewImg.style.display = 'none';
             
             try {
+                console.log('🔄 Starting thumbnail upload process...');
+                console.log('File details:', { name: file.name, size: file.size, type: file.type });
+                console.log('Stream ID:', streamId);
+                
                 // Generate filename
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${streamId}/thumbnail-${Date.now()}.${fileExt}`;
+                console.log('Generated filename:', fileName);
                 
                 // Upload to stream-thumbnails bucket
+                console.log('📤 Uploading to stream-thumbnails bucket...');
                 const { data: uploadData, error: uploadError } = await supabase.storage
                     .from('stream-thumbnails')
                     .upload(fileName, file, {
@@ -291,14 +301,23 @@
                         upsert: true
                     });
                 
-                if (uploadError) throw uploadError;
+                if (uploadError) {
+                    console.error('❌ Upload error:', uploadError);
+                    throw new Error(`Upload failed: ${uploadError.message}`);
+                }
+                
+                console.log('✅ Upload successful:', uploadData);
                 
                 // Get public URL
+                console.log('🔗 Getting public URL...');
                 const { data: urlData } = supabase.storage
                     .from('stream-thumbnails')
                     .getPublicUrl(fileName);
                 
+                console.log('Public URL:', urlData.publicUrl);
+                
                 // Update stream record
+                console.log('💾 Updating stream record...');
                 const { error: updateError } = await supabase
                     .from('live_streams')
                     .update({ 
@@ -307,10 +326,15 @@
                     })
                     .eq('id', streamId);
                 
-                if (updateError) throw updateError;
+                if (updateError) {
+                    console.error('❌ Database update error:', updateError);
+                    throw new Error(`Database update failed: ${updateError.message}`);
+                }
+                
+                console.log('✅ Database updated successfully');
                 
                 statusDiv.className = 'success';
-                statusDiv.textContent = '✅ Thumbnail uploaded successfully!';
+                statusDiv.innerHTML = `✅ Thumbnail uploaded successfully!<br><small>URL: ${urlData.publicUrl}</small>`;
                 
                 // Show preview
                 previewImg.src = urlData.publicUrl;
@@ -320,8 +344,18 @@
                 setTimeout(loadStreams, 1000);
                 
             } catch (error) {
+                console.error('❌ Full error details:', error);
                 statusDiv.className = 'error';
-                statusDiv.textContent = `❌ Upload failed: ${error.message}`;
+                statusDiv.innerHTML = `❌ Upload failed: ${error.message}<br><small>Check browser console for details</small>`;
+                
+                // Add specific error guidance
+                if (error.message.includes('not found')) {
+                    statusDiv.innerHTML += '<br><br>💡 <strong>Likely cause:</strong> stream-thumbnails bucket does not exist. Run fix-thumbnail-system.sql to create it.';
+                } else if (error.message.includes('permission')) {
+                    statusDiv.innerHTML += '<br><br>💡 <strong>Likely cause:</strong> Permission denied. Make sure you are logged in and own this stream.';
+                } else if (error.message.includes('policy')) {
+                    statusDiv.innerHTML += '<br><br>💡 <strong>Likely cause:</strong> Storage policies not configured. Run fix-thumbnail-system.sql to set them up.';
+                }
             }
         }
 
