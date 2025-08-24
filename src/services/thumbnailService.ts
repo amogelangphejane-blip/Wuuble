@@ -6,6 +6,7 @@ export interface ThumbnailUploadOptions {
   maxWidth?: number;
   maxHeight?: number;
   quality?: number;
+  debug?: boolean;
 }
 
 class ThumbnailService {
@@ -14,11 +15,18 @@ class ThumbnailService {
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
     maxWidth: 1280,
     maxHeight: 720,
-    quality: 0.8
+    quality: 0.8,
+    debug: false
   };
 
+  private debugLog(message: string, data?: any) {
+    if (this.defaultOptions.debug || localStorage.getItem('thumbnail_debug') === 'true') {
+      console.log(`[ThumbnailService] ${message}`, data);
+    }
+  }
+
   /**
-   * Upload a thumbnail for a stream to the new stream-thumbnails bucket
+   * Upload a thumbnail for a stream to the stream-thumbnails bucket
    */
   async uploadThumbnail(
     streamId: string,
@@ -27,39 +35,59 @@ class ThumbnailService {
   ): Promise<string> {
     const opts = { ...this.defaultOptions, ...options };
     
+    this.debugLog('Starting thumbnail upload', { streamId, fileName: file.name, fileSize: file.size });
+    
     // Validate file
     await this.validateFile(file, opts);
     
     // Get current user
     const { data: user, error: authError } = await supabase.auth.getUser();
-    if (authError || !user.user) {
+    if (authError) {
+      this.debugLog('Authentication error', authError);
+      throw new Error(`Authentication failed: ${authError.message}`);
+    }
+    
+    if (!user.user) {
       throw new Error('You must be logged in to upload thumbnails');
     }
+
+    this.debugLog('User authenticated', { userId: user.user.id });
 
     // Verify user owns the stream
     const { data: stream, error: streamError } = await supabase
       .from('live_streams')
-      .select('creator_id')
+      .select('creator_id, title')
       .eq('id', streamId)
       .single();
 
     if (streamError) {
+      this.debugLog('Stream lookup error', streamError);
+      throw new Error(`Stream not found: ${streamError.message}`);
+    }
+
+    if (!stream) {
       throw new Error('Stream not found');
     }
 
     if (stream.creator_id !== user.user.id) {
+      this.debugLog('Permission denied', { streamCreator: stream.creator_id, currentUser: user.user.id });
       throw new Error('You can only upload thumbnails to your own streams');
     }
+
+    this.debugLog('Stream ownership verified', { streamTitle: stream.title });
 
     try {
       // Process image if needed
       const processedFile = await this.processImage(file, opts);
+      this.debugLog('Image processed', { originalSize: file.size, processedSize: processedFile.size });
       
       // Generate filename - using streamId as folder name as per our bucket policy
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `${streamId}/thumbnail-${Date.now()}.${fileExt}`;
       
-      // Upload to new stream-thumbnails bucket
+      this.debugLog('Uploading to storage', { fileName, bucketId: 'stream-thumbnails' });
+      
+      // Upload to stream-thumbnails bucket
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('stream-thumbnails')
         .upload(fileName, processedFile, {
@@ -68,8 +96,11 @@ class ThumbnailService {
         });
 
       if (uploadError) {
+        this.debugLog('Upload error', uploadError);
         throw new Error(`Upload failed: ${uploadError.message}`);
       }
+
+      this.debugLog('File uploaded successfully', uploadData);
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -79,6 +110,8 @@ class ThumbnailService {
       if (!urlData.publicUrl) {
         throw new Error('Failed to get thumbnail URL');
       }
+
+      this.debugLog('Public URL generated', { publicUrl: urlData.publicUrl });
 
       // Update the live_streams table with the new thumbnail URL
       const { error: updateError } = await supabase
@@ -90,6 +123,7 @@ class ThumbnailService {
         .eq('id', streamId);
 
       if (updateError) {
+        this.debugLog('Database update error', updateError);
         // Clean up uploaded file if database update fails
         await supabase.storage
           .from('stream-thumbnails')
@@ -97,8 +131,10 @@ class ThumbnailService {
         throw new Error(`Failed to update stream: ${updateError.message}`);
       }
 
+      this.debugLog('Thumbnail upload completed successfully', { publicUrl: urlData.publicUrl });
       return urlData.publicUrl;
     } catch (error: any) {
+      this.debugLog('Thumbnail upload failed', error);
       throw new Error(`Thumbnail upload failed: ${error.message}`);
     }
   }
@@ -107,23 +143,37 @@ class ThumbnailService {
    * Get thumbnail URL for a stream
    */
   async getThumbnailUrl(streamId: string): Promise<string | null> {
+    this.debugLog('Getting thumbnail URL', { streamId });
+    
     const { data: stream, error } = await supabase
       .from('live_streams')
-      .select('thumbnail_url')
+      .select('thumbnail_url, display_image_url')
       .eq('id', streamId)
       .single();
 
-    if (error || !stream) {
+    if (error) {
+      this.debugLog('Error getting thumbnail URL', error);
       return null;
     }
 
-    return stream.thumbnail_url;
+    if (!stream) {
+      this.debugLog('Stream not found');
+      return null;
+    }
+
+    // Return display_image_url if available, otherwise thumbnail_url
+    const thumbnailUrl = stream.display_image_url || stream.thumbnail_url;
+    this.debugLog('Thumbnail URL retrieved', { thumbnailUrl, hasDisplayImage: !!stream.display_image_url, hasThumbnail: !!stream.thumbnail_url });
+    
+    return thumbnailUrl;
   }
 
   /**
    * Delete thumbnail for a stream
    */
   async deleteThumbnail(streamId: string): Promise<void> {
+    this.debugLog('Deleting thumbnail', { streamId });
+    
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) {
       throw new Error('You must be logged in to delete thumbnails');
@@ -137,6 +187,7 @@ class ThumbnailService {
       .single();
 
     if (streamError || !stream) {
+      this.debugLog('Stream lookup error for deletion', streamError);
       throw new Error('Stream not found');
     }
 
@@ -145,6 +196,7 @@ class ThumbnailService {
     }
 
     if (!stream.thumbnail_url) {
+      this.debugLog('No thumbnail to delete');
       return; // No thumbnail to delete
     }
 
@@ -154,12 +206,15 @@ class ThumbnailService {
       const pathParts = url.pathname.split('/');
       const fileName = pathParts.slice(-2).join('/'); // Get "streamId/filename.ext"
 
+      this.debugLog('Deleting from storage', { fileName });
+
       // Delete from storage
       const { error: storageError } = await supabase.storage
         .from('stream-thumbnails')
         .remove([fileName]);
 
       if (storageError) {
+        this.debugLog('Storage deletion warning', storageError);
         console.warn('Failed to delete thumbnail from storage:', storageError);
       }
 
@@ -173,9 +228,13 @@ class ThumbnailService {
         .eq('id', streamId);
 
       if (updateError) {
+        this.debugLog('Database update error during deletion', updateError);
         throw new Error(`Failed to update stream: ${updateError.message}`);
       }
+
+      this.debugLog('Thumbnail deleted successfully');
     } catch (error: any) {
+      this.debugLog('Thumbnail deletion failed', error);
       throw new Error(`Thumbnail deletion failed: ${error.message}`);
     }
   }
@@ -184,6 +243,8 @@ class ThumbnailService {
    * Validate uploaded file
    */
   private async validateFile(file: File, options: ThumbnailUploadOptions): Promise<void> {
+    this.debugLog('Validating file', { fileName: file.name, fileSize: file.size, fileType: file.type });
+    
     // Check file size
     if (options.maxSizeBytes && file.size > options.maxSizeBytes) {
       throw new Error(`File size must be less than ${Math.round(options.maxSizeBytes / 1024 / 1024)}MB`);
@@ -197,6 +258,7 @@ class ThumbnailService {
     // Check if it's actually an image
     try {
       const dimensions = await this.getImageDimensions(file);
+      this.debugLog('Image dimensions', dimensions);
       
       // Check dimensions
       if (options.maxWidth && dimensions.width > options.maxWidth) {
@@ -207,6 +269,7 @@ class ThumbnailService {
         throw new Error(`Image height must be less than ${options.maxHeight}px`);
       }
     } catch (error) {
+      this.debugLog('Image validation error', error);
       throw new Error('Invalid image file');
     }
   }
@@ -227,6 +290,7 @@ class ThumbnailService {
 
       img.onload = () => {
         let { width, height } = img;
+        this.debugLog('Original image dimensions', { width, height });
 
         // Calculate new dimensions if resizing is needed
         if (options.maxWidth && width > options.maxWidth) {
@@ -238,6 +302,8 @@ class ThumbnailService {
           width = (width * options.maxHeight) / height;
           height = options.maxHeight;
         }
+
+        this.debugLog('Processed image dimensions', { width, height });
 
         // Set canvas size
         canvas.width = width;
@@ -260,6 +326,7 @@ class ThumbnailService {
               lastModified: Date.now()
             });
 
+            this.debugLog('Image processing completed', { originalSize: file.size, processedSize: processedFile.size });
             resolve(processedFile);
           },
           file.type,
@@ -297,6 +364,66 @@ class ThumbnailService {
 
       img.src = URL.createObjectURL(file);
     });
+  }
+
+  /**
+   * Enable debug mode
+   */
+  enableDebug() {
+    localStorage.setItem('thumbnail_debug', 'true');
+    this.debugLog('Debug mode enabled');
+  }
+
+  /**
+   * Disable debug mode
+   */
+  disableDebug() {
+    localStorage.removeItem('thumbnail_debug');
+    console.log('[ThumbnailService] Debug mode disabled');
+  }
+
+  /**
+   * Check if thumbnail service is properly configured
+   */
+  async checkConfiguration(): Promise<{ isConfigured: boolean; issues: string[] }> {
+    const issues: string[] = [];
+    
+    try {
+      // Check if user is authenticated
+      const { data: user, error: authError } = await supabase.auth.getUser();
+      if (authError || !user.user) {
+        issues.push('User not authenticated');
+      }
+
+      // Check if bucket exists and is accessible
+      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+      if (bucketError) {
+        issues.push(`Cannot access storage buckets: ${bucketError.message}`);
+      } else {
+        const hasThumbnailBucket = buckets.some(b => b.name === 'stream-thumbnails');
+        if (!hasThumbnailBucket) {
+          issues.push('stream-thumbnails bucket does not exist');
+        }
+      }
+
+      // Check if we can query live_streams table
+      const { error: streamError } = await supabase
+        .from('live_streams')
+        .select('id')
+        .limit(1);
+      
+      if (streamError) {
+        issues.push(`Cannot access live_streams table: ${streamError.message}`);
+      }
+
+    } catch (error: any) {
+      issues.push(`Configuration check failed: ${error.message}`);
+    }
+
+    return {
+      isConfigured: issues.length === 0,
+      issues
+    };
   }
 }
 
