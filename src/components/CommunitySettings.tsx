@@ -33,7 +33,6 @@ import {
 interface Community {
   id: string;
   name: string;
-  description: string;
   avatar_url?: string | null;
   is_private: boolean;
   member_count: number;
@@ -65,7 +64,6 @@ interface CommunitySettingsProps {
 interface CommunitySettings {
   // Basic Info
   name: string;
-  description: string;
   avatar_url: string | null;
   
   // Privacy & Visibility
@@ -104,7 +102,6 @@ export const CommunitySettings = ({
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [settings, setSettings] = useState<CommunitySettings>({
     name: community.name,
-    description: community.description || '',
     avatar_url: community.avatar_url,
     is_private: community.is_private,
     join_approval_required: false,
@@ -159,7 +156,6 @@ export const CommunitySettings = ({
     setSettings(prev => ({
       ...prev,
       name: community.name,
-      description: community.description || '',
       avatar_url: community.avatar_url,
       is_private: community.is_private,
       discoverable_in_search: !community.is_private
@@ -177,9 +173,7 @@ export const CommunitySettings = ({
       newErrors.name = 'Community name must be less than 50 characters';
     }
 
-    if (settings.description.length > 500) {
-      newErrors.description = 'Description must be less than 500 characters';
-    }
+
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -201,7 +195,6 @@ export const CommunitySettings = ({
         .from('communities')
         .update({
           name: settings.name,
-          description: settings.description,
           avatar_url: settings.avatar_url,
           is_private: settings.is_private,
           updated_at: new Date().toISOString()
@@ -377,23 +370,6 @@ export const CommunitySettings = ({
                   {errors.name && (
                     <p className="text-sm text-red-500">{errors.name}</p>
                   )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={settings.description}
-                    onChange={(e) => setSettings({ ...settings, description: e.target.value })}
-                    placeholder="Describe your community..."
-                    className={`min-h-[100px] resize-none ${errors.description ? 'border-red-500' : ''}`}
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    {errors.description && (
-                      <span className="text-red-500">{errors.description}</span>
-                    )}
-                    <span className="ml-auto">{settings.description.length}/500</span>
-                  </div>
                 </div>
 
                 <div className="space-y-2">
