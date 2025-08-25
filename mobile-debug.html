@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mobile Storage Debug</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+        .test-box { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { background: #4CAF50; color: white; padding: 12px 20px; border: none; border-radius: 4px; font-size: 16px; width: 100%; margin: 5px 0; }
+        .error { color: red; font-weight: bold; }
+        .success { color: green; font-weight: bold; }
+        .result { background: #f9f9f9; padding: 10px; margin: 10px 0; border-radius: 4px; white-space: pre-wrap; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>📱 Mobile Debug Tool</h1>
+    
+    <div class="test-box">
+        <h3>Step 1: Check Supabase Connection</h3>
+        <button onclick="testConnection()">Test Connection</button>
+        <div id="connectionResult" class="result"></div>
+    </div>
+    
+    <div class="test-box">
+        <h3>Step 2: Check Authentication</h3>
+        <button onclick="checkAuth()">Check If Logged In</button>
+        <div id="authResult" class="result"></div>
+    </div>
+    
+    <div class="test-box">
+        <h3>Step 3: List Storage Buckets</h3>
+        <button onclick="listBuckets()">List Buckets</button>
+        <div id="bucketsResult" class="result"></div>
+    </div>
+    
+    <div class="test-box">
+        <h3>Step 4: Test Image Upload</h3>
+        <input type="file" id="testFile" accept="image/*" style="margin: 10px 0;">
+        <button onclick="testUpload()">Test Upload</button>
+        <div id="uploadResult" class="result"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Replace with your Supabase credentials
+        const supabaseUrl = 'https://tgmflbglhmnrliredlbn.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        async function testConnection() {
+            const result = document.getElementById('connectionResult');
+            try {
+                result.innerHTML = '🔄 Testing connection...';
+                const { data, error } = await supabase.from('live_streams').select('count').limit(1);
+                if (error) {
+                    result.innerHTML = `❌ Connection failed: ${error.message}`;
+                    result.className = 'result error';
+                } else {
+                    result.innerHTML = '✅ Connection successful!';
+                    result.className = 'result success';
+                }
+            } catch (err) {
+                result.innerHTML = `❌ Error: ${err.message}`;
+                result.className = 'result error';
+            }
+        }
+        
+        async function checkAuth() {
+            const result = document.getElementById('authResult');
+            try {
+                result.innerHTML = '🔄 Checking authentication...';
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error) {
+                    result.innerHTML = `❌ Auth error: ${error.message}`;
+                    result.className = 'result error';
+                } else if (user) {
+                    result.innerHTML = `✅ Logged in as: ${user.email}\nUser ID: ${user.id}`;
+                    result.className = 'result success';
+                } else {
+                    result.innerHTML = '❌ Not logged in';
+                    result.className = 'result error';
+                }
+            } catch (err) {
+                result.innerHTML = `❌ Error: ${err.message}`;
+                result.className = 'result error';
+            }
+        }
+        
+        async function listBuckets() {
+            const result = document.getElementById('bucketsResult');
+            try {
+                result.innerHTML = '🔄 Listing storage buckets...';
+                const { data: buckets, error } = await supabase.storage.listBuckets();
+                if (error) {
+                    result.innerHTML = `❌ Buckets error: ${error.message}`;
+                    result.className = 'result error';
+                } else {
+                    const bucketNames = buckets.map(b => b.id).join(', ');
+                    result.innerHTML = `✅ Found buckets: ${bucketNames || 'None'}`;
+                    result.className = 'result success';
+                    
+                    // Check specifically for stream-images
+                    const hasStreamImages = buckets.find(b => b.id === 'stream-images');
+                    if (hasStreamImages) {
+                        result.innerHTML += '\n✅ stream-images bucket exists!';
+                    } else {
+                        result.innerHTML += '\n❌ stream-images bucket missing!';
+                    }
+                }
+            } catch (err) {
+                result.innerHTML = `❌ Error: ${err.message}`;
+                result.className = 'result error';
+            }
+        }
+        
+        async function testUpload() {
+            const result = document.getElementById('uploadResult');
+            const fileInput = document.getElementById('testFile');
+            
+            if (!fileInput.files[0]) {
+                result.innerHTML = '❌ Please select a file first';
+                result.className = 'result error';
+                return;
+            }
+            
+            try {
+                result.innerHTML = '🔄 Testing upload...';
+                const file = fileInput.files[0];
+                const fileName = `test/${Date.now()}_${file.name}`;
+                
+                const { data, error } = await supabase.storage
+                    .from('stream-images')
+                    .upload(fileName, file);
+                    
+                if (error) {
+                    result.innerHTML = `❌ Upload failed: ${error.message}`;
+                    result.className = 'result error';
+                } else {
+                    result.innerHTML = `✅ Upload successful!\nPath: ${data.path}`;
+                    result.className = 'result success';
+                }
+            } catch (err) {
+                result.innerHTML = `❌ Error: ${err.message}`;
+                result.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>
