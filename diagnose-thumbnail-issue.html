@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnose Thumbnail Issue</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .thumbnail-test {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stream-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        .thumbnail-container {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(45deg, #6366f1, #ec4899);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .thumbnail-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .stream-info {
+            padding: 15px;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Thumbnail Issue Diagnostic Tool</h1>
+    
+    <div class="test-section">
+        <h2>1. Supabase Connection</h2>
+        <p>First, let's establish a connection to your Supabase instance:</p>
+        <input type="text" id="supabase-url" placeholder="Your Supabase URL" style="width: 300px; padding: 8px; margin: 5px;">
+        <input type="text" id="supabase-key" placeholder="Your Supabase Anon Key" style="width: 300px; padding: 8px; margin: 5px;">
+        <button onclick="initializeConnection()">Connect</button>
+        <div id="connection-status">Not connected</div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Storage Bucket Analysis</h2>
+        <p>Checking if required storage buckets exist and are properly configured:</p>
+        <div id="bucket-status">Connect first to check buckets</div>
+        <button onclick="checkBuckets()" disabled id="bucket-check-btn">Check Buckets</button>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Live Streams Analysis</h2>
+        <p>Loading live streams to analyze thumbnail configuration:</p>
+        <div id="streams-status">Connect first to check streams</div>
+        <button onclick="loadStreams()" disabled id="streams-check-btn">Load Streams</button>
+        <div id="streams-data"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Thumbnail URL Testing</h2>
+        <p>Testing thumbnail URL accessibility:</p>
+        <div id="thumbnail-test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Storage Policies Check</h2>
+        <p>Checking storage policies for the stream-thumbnails bucket:</p>
+        <div id="policies-status">Connect first to check policies</div>
+        <button onclick="checkPolicies()" disabled id="policies-check-btn">Check Policies</button>
+    </div>
+
+    <script>
+        let supabase;
+        let streams = [];
+
+        function initializeConnection() {
+            const url = document.getElementById('supabase-url').value || localStorage.getItem('supabase_url');
+            const key = document.getElementById('supabase-key').value || localStorage.getItem('supabase_key');
+            
+            if (!url || !key) {
+                document.getElementById('connection-status').innerHTML = '❌ Please provide both URL and key';
+                return;
+            }
+            
+            localStorage.setItem('supabase_url', url);
+            localStorage.setItem('supabase_key', key);
+            
+            try {
+                supabase = window.supabase.createClient(url, key);
+                document.getElementById('connection-status').innerHTML = '✅ Connection initialized';
+                
+                // Enable other buttons
+                document.getElementById('bucket-check-btn').disabled = false;
+                document.getElementById('streams-check-btn').disabled = false;
+                document.getElementById('policies-check-btn').disabled = false;
+                
+                // Auto-run checks
+                checkBuckets();
+                loadStreams();
+                
+            } catch (error) {
+                document.getElementById('connection-status').innerHTML = `❌ Connection failed: ${error.message}`;
+            }
+        }
+
+        async function checkBuckets() {
+            const statusDiv = document.getElementById('bucket-status');
+            statusDiv.innerHTML = '⏳ Checking buckets...';
+            
+            try {
+                const { data: buckets, error } = await supabase.storage.listBuckets();
+                if (error) throw error;
+                
+                const expectedBuckets = ['stream-thumbnails', 'stream-images', 'stream-segments', 'stream-recordings'];
+                const existingBuckets = buckets.map(b => b.name);
+                
+                let html = '<h3>Bucket Status:</h3>';
+                expectedBuckets.forEach(bucketName => {
+                    const exists = existingBuckets.includes(bucketName);
+                    html += `<div>${exists ? '✅' : '❌'} <strong>${bucketName}</strong></div>`;
+                });
+                
+                html += '<h4>All Buckets Found:</h4>';
+                html += '<pre>' + JSON.stringify(buckets, null, 2) + '</pre>';
+                
+                statusDiv.innerHTML = html;
+                statusDiv.className = 'test-section ' + (expectedBuckets.every(b => existingBuckets.includes(b)) ? 'success' : 'error');
+                
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Failed to check buckets: ${error.message}`;
+                statusDiv.className = 'test-section error';
+            }
+        }
+
+        async function loadStreams() {
+            const statusDiv = document.getElementById('streams-status');
+            const dataDiv = document.getElementById('streams-data');
+            
+            statusDiv.innerHTML = '⏳ Loading streams...';
+            
+            try {
+                const { data: streamsData, error } = await supabase
+                    .from('live_streams')
+                    .select(`
+                        id, 
+                        title, 
+                        thumbnail_url, 
+                        display_image_url, 
+                        status,
+                        created_at,
+                        profiles(display_name)
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                    
+                if (error) throw error;
+                
+                streams = streamsData;
+                statusDiv.innerHTML = `✅ Loaded ${streams.length} streams`;
+                statusDiv.className = 'test-section success';
+                
+                // Display streams
+                let html = '<div class="thumbnail-test">';
+                streams.forEach(stream => {
+                    const thumbnailUrl = stream.thumbnail_url || stream.display_image_url;
+                    html += `
+                        <div class="stream-card">
+                            <div class="thumbnail-container">
+                                ${thumbnailUrl ? 
+                                    `<img src="${thumbnailUrl}" alt="Thumbnail" class="thumbnail-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                     <div style="display:none; color: white; text-align: center;">
+                                         <div>❌ Failed to load</div>
+                                         <div style="font-size: 12px; margin-top: 5px;">URL: ${thumbnailUrl}</div>
+                                     </div>` : 
+                                    '<div>No Thumbnail Set</div>'
+                                }
+                            </div>
+                            <div class="stream-info">
+                                <h4 style="margin: 0 0 10px 0; font-size: 14px;">${stream.title}</h4>
+                                <div style="font-size: 12px; color: #666;">
+                                    <div><strong>ID:</strong> ${stream.id}</div>
+                                    <div><strong>Status:</strong> ${stream.status}</div>
+                                    <div><strong>Creator:</strong> ${stream.profiles?.display_name || 'Unknown'}</div>
+                                    <div><strong>Thumbnail URL:</strong> ${stream.thumbnail_url || 'None'}</div>
+                                    <div><strong>Display Image URL:</strong> ${stream.display_image_url || 'None'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                dataDiv.innerHTML = html;
+                
+                // Test thumbnail URLs
+                testThumbnailUrls();
+                
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Failed to load streams: ${error.message}`;
+                statusDiv.className = 'test-section error';
+            }
+        }
+
+        async function testThumbnailUrls() {
+            const resultsDiv = document.getElementById('thumbnail-test-results');
+            let html = '<h3>Thumbnail URL Accessibility Test:</h3>';
+            
+            const thumbnailUrls = streams
+                .map(s => s.thumbnail_url || s.display_image_url)
+                .filter(url => url);
+            
+            if (thumbnailUrls.length === 0) {
+                html += '<div>❌ No thumbnail URLs found to test</div>';
+            } else {
+                for (const url of thumbnailUrls) {
+                    html += `<div>Testing: <code>${url}</code> `;
+                    try {
+                        const response = await fetch(url, { method: 'HEAD' });
+                        if (response.ok) {
+                            html += '✅ Accessible</div>';
+                        } else {
+                            html += `❌ HTTP ${response.status} ${response.statusText}</div>`;
+                        }
+                    } catch (error) {
+                        html += `❌ Network error: ${error.message}</div>`;
+                    }
+                }
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        async function checkPolicies() {
+            const statusDiv = document.getElementById('policies-status');
+            statusDiv.innerHTML = '⏳ Checking storage policies...';
+            
+            try {
+                // Try to check if we can access the bucket
+                const { data, error } = await supabase.storage
+                    .from('stream-thumbnails')
+                    .list('', { limit: 1 });
+                
+                if (error) {
+                    statusDiv.innerHTML = `❌ Cannot access stream-thumbnails bucket: ${error.message}`;
+                    statusDiv.className = 'test-section error';
+                } else {
+                    statusDiv.innerHTML = '✅ Can access stream-thumbnails bucket';
+                    statusDiv.className = 'test-section success';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Policy check failed: ${error.message}`;
+                statusDiv.className = 'test-section error';
+            }
+        }
+
+        // Auto-load saved credentials on page load
+        window.onload = function() {
+            const savedUrl = localStorage.getItem('supabase_url');
+            const savedKey = localStorage.getItem('supabase_key');
+            
+            if (savedUrl) document.getElementById('supabase-url').value = savedUrl;
+            if (savedKey) document.getElementById('supabase-key').value = savedKey;
+            
+            if (savedUrl && savedKey) {
+                initializeConnection();
+            }
+        };
+    </script>
+</body>
+</html>
