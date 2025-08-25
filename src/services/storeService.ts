@@ -235,7 +235,7 @@ export const createProduct = async (
         bucket: 'product-images',
         folder: `thumbnails/${user.id}`,
         maxSize: 5 * 1024 * 1024,
-        allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        allowedTypes: [], // Allow all types - bucket will enforce MIME restrictions
       });
     }
 
@@ -246,7 +246,7 @@ export const createProduct = async (
             bucket: 'product-images',
             folder: `previews/${user.id}`,
             maxSize: 5 * 1024 * 1024,
-            allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+            allowedTypes: [], // Allow all types - bucket will enforce MIME restrictions
           })
         )
       );
@@ -318,7 +318,7 @@ export const updateProduct = async (
         bucket: 'product-images',
         folder: `thumbnails/${user.id}`,
         maxSize: 5 * 1024 * 1024,
-        allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        allowedTypes: [], // Allow all types - bucket will enforce MIME restrictions
       });
     }
 
@@ -329,7 +329,7 @@ export const updateProduct = async (
             bucket: 'product-images',
             folder: `previews/${user.id}`,
             maxSize: 5 * 1024 * 1024,
-            allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+            allowedTypes: [], // Allow all types - bucket will enforce MIME restrictions
           })
         )
       );
@@ -603,7 +603,7 @@ export const createOrUpdateSellerProfile = async (
         bucket: 'product-images',
         folder: `banners/${user.id}`,
         maxSize: 5 * 1024 * 1024,
-        allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        allowedTypes: [], // Allow all types - bucket will enforce MIME restrictions
       });
     }
 
