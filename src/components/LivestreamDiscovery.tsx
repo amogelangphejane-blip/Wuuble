@@ -180,6 +180,12 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
               alt={stream.title}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
+          ) : stream.profiles?.avatar_url ? (
+            <img 
+              src={stream.profiles.avatar_url} 
+              alt={stream.title}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400">
               <Play className="w-16 h-16 text-white/90 drop-shadow-lg" />
@@ -365,6 +371,12 @@ export const LivestreamDiscovery: React.FC<LivestreamDiscoveryProps> = ({
             ) : stream.thumbnail_url ? (
               <img 
                 src={stream.thumbnail_url} 
+                alt={stream.title}
+                className="w-full h-full object-cover"
+              />
+            ) : stream.profiles?.avatar_url ? (
+              <img 
+                src={stream.profiles.avatar_url} 
                 alt={stream.title}
                 className="w-full h-full object-cover"
               />
