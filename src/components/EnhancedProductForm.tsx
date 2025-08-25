@@ -325,7 +325,7 @@ export const EnhancedProductForm: React.FC<EnhancedProductFormProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8 min-h-0">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
