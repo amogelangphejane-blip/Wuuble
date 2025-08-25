@@ -6,14 +6,19 @@ const path = require('path');
 require('dotenv').config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('❌ Missing required environment variables:');
   console.error('- VITE_SUPABASE_URL');
-  console.error('- SUPABASE_SERVICE_ROLE_KEY');
+  console.error('- SUPABASE_SERVICE_ROLE_KEY (or VITE_SUPABASE_ANON_KEY as fallback)');
   console.error('\nPlease set these in your .env file');
   process.exit(1);
+}
+
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn('⚠️  Using ANON key as fallback. Some operations may fail.');
+  console.warn('   For full functionality, add SUPABASE_SERVICE_ROLE_KEY to .env');
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
