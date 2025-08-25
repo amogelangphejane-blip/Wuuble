@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Product Creation</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a8b;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Product Creation Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>🔌 Supabase Connection Test</h2>
+        <button onclick="testSupabaseConnection()">Test Connection</button>
+        <div id="connection-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Database Tables Test</h2>
+        <button onclick="testDatabaseTables()">Test Tables</button>
+        <div id="tables-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📂 Storage Buckets Test</h2>
+        <button onclick="testStorageBuckets()">Test Storage</button>
+        <div id="storage-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>👤 Authentication Test</h2>
+        <button onclick="testAuth()">Test Auth</button>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Product Categories Test</h2>
+        <button onclick="testProductCategories()">Test Categories</button>
+        <div id="categories-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Test Logs</h2>
+        <div id="test-logs" class="log"></div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8";
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('test-logs');
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logDiv.textContent += logEntry;
+            console.log(logEntry);
+        }
+
+        async function testSupabaseConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.innerHTML = '<p>Testing connection...</p>';
+            
+            try {
+                log('Testing Supabase connection...');
+                const { data, error } = await supabase.from('profiles').select('count').limit(1);
+                
+                if (error) {
+                    throw new Error(`Connection error: ${error.message}`);
+                }
+                
+                resultDiv.innerHTML = '<p class="success">✅ Connection successful!</p>';
+                log('Supabase connection successful', 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Connection failed: ${error.message}</p>`;
+                log(`Connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDatabaseTables() {
+            const resultDiv = document.getElementById('tables-result');
+            resultDiv.innerHTML = '<p>Testing database tables...</p>';
+            
+            const tables = [
+                'product_categories',
+                'digital_products',
+                'seller_profiles',
+                'product_orders'
+            ];
+            
+            let results = [];
+            
+            for (const table of tables) {
+                try {
+                    log(`Testing table: ${table}`);
+                    const { data, error } = await supabase.from(table).select('*').limit(1);
+                    
+                    if (error) {
+                        results.push(`❌ ${table}: ${error.message}`);
+                        log(`Table ${table} error: ${error.message}`, 'error');
+                    } else {
+                        results.push(`✅ ${table}: OK`);
+                        log(`Table ${table} accessible`, 'success');
+                    }
+                } catch (error) {
+                    results.push(`❌ ${table}: ${error.message}`);
+                    log(`Table ${table} exception: ${error.message}`, 'error');
+                }
+            }
+            
+            resultDiv.innerHTML = `<div>${results.map(r => `<p>${r}</p>`).join('')}</div>`;
+        }
+
+        async function testStorageBuckets() {
+            const resultDiv = document.getElementById('storage-result');
+            resultDiv.innerHTML = '<p>Testing storage buckets...</p>';
+            
+            try {
+                log('Testing storage buckets...');
+                const { data, error } = await supabase.storage.listBuckets();
+                
+                if (error) {
+                    throw new Error(`Storage error: ${error.message}`);
+                }
+                
+                const buckets = data.map(bucket => bucket.name);
+                const requiredBuckets = ['digital-products', 'product-images'];
+                const missing = requiredBuckets.filter(b => !buckets.includes(b));
+                
+                if (missing.length > 0) {
+                    resultDiv.innerHTML = `<p class="error">❌ Missing buckets: ${missing.join(', ')}</p>`;
+                    log(`Missing storage buckets: ${missing.join(', ')}`, 'error');
+                } else {
+                    resultDiv.innerHTML = '<p class="success">✅ All required buckets exist!</p>';
+                    log('All storage buckets available', 'success');
+                }
+                
+                log(`Available buckets: ${buckets.join(', ')}`);
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Storage test failed: ${error.message}</p>`;
+                log(`Storage test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAuth() {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.innerHTML = '<p>Testing authentication...</p>';
+            
+            try {
+                log('Testing authentication...');
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error) {
+                    throw new Error(`Auth error: ${error.message}`);
+                }
+                
+                if (user) {
+                    resultDiv.innerHTML = `<p class="success">✅ User authenticated: ${user.email}</p>`;
+                    log(`User authenticated: ${user.email}`, 'success');
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ No user authenticated</p>';
+                    log('No user authenticated', 'warning');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Auth test failed: ${error.message}</p>`;
+                log(`Auth test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testProductCategories() {
+            const resultDiv = document.getElementById('categories-result');
+            resultDiv.innerHTML = '<p>Testing product categories...</p>';
+            
+            try {
+                log('Testing product categories...');
+                const { data, error } = await supabase
+                    .from('product_categories')
+                    .select('*')
+                    .limit(10);
+                
+                if (error) {
+                    throw new Error(`Categories error: ${error.message}`);
+                }
+                
+                if (data && data.length > 0) {
+                    const categoryList = data.map(cat => `• ${cat.name}`).join('<br>');
+                    resultDiv.innerHTML = `<p class="success">✅ Found ${data.length} categories:</p><div>${categoryList}</div>`;
+                    log(`Found ${data.length} product categories`, 'success');
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ No product categories found</p>';
+                    log('No product categories found', 'warning');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Categories test failed: ${error.message}</p>`;
+                log(`Categories test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Run initial connection test
+        window.addEventListener('load', () => {
+            log('Test suite loaded');
+            testSupabaseConnection();
+        });
+    </script>
+</body>
+</html>
