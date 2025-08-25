@@ -17,14 +17,9 @@ import {
   Menu, 
   X,
   MessageCircle,
-  ShoppingBag,
-  Package,
-  Library,
   Radio,
   Video,
-  Home,
-  ShoppingCart,
-  Heart
+  Home
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,22 +27,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { validateAvatarUrl } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { useShoppingCart } from '@/components/ShoppingCart';
-import { useWishlist } from '@/hooks/useWishlist';
+
 
 interface ModernHeaderProps {
   showAuthButtons?: boolean;
-  onCartClick?: () => void;
 }
 
-export const ModernHeader = ({ showAuthButtons = true, onCartClick }: ModernHeaderProps) => {
+export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile } = useAuth();
   const { toast } = useToast();
-  const { getTotalItems } = useShoppingCart();
-  const { getWishlistCount } = useWishlist();
 
   const handleSignOut = async () => {
     try {
@@ -90,12 +81,6 @@ export const ModernHeader = ({ showAuthButtons = true, onCartClick }: ModernHead
       href: '/azar-livestreams',
       icon: Video,
       active: location.pathname.startsWith('/azar-livestreams')
-    },
-    {
-      label: 'Marketplace',
-      href: '/marketplace',
-      icon: ShoppingBag,
-      active: location.pathname.includes('/marketplace') || location.pathname.includes('/store')
     }
   ];
 
@@ -147,37 +132,7 @@ export const ModernHeader = ({ showAuthButtons = true, onCartClick }: ModernHead
 
           {/* Right Section */}
           <div className="flex items-center space-x-4">
-            {/* Favorites */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate('/favorites')}
-              className="relative"
-            >
-              <Heart className="h-4 w-4" />
-              {getWishlistCount() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {getWishlistCount()}
-                </span>
-              )}
-            </Button>
 
-            {/* Shopping Cart */}
-            {onCartClick && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onCartClick}
-                className="relative"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                {getTotalItems() > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {getTotalItems()}
-                  </span>
-                )}
-              </Button>
-            )}
 
             {/* Theme Toggle */}
             <ThemeToggle />
@@ -220,15 +175,7 @@ export const ModernHeader = ({ showAuthButtons = true, onCartClick }: ModernHead
                       <Users className="mr-2 h-4 w-4" />
                       My Communities
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/seller-dashboard')}>
-                      <Package className="mr-2 h-4 w-4" />
-                      Seller Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate('/my-library')}>
-                      <Library className="mr-2 h-4 w-4" />
-                      My Library
-                    </DropdownMenuItem>
+
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="mr-2 h-4 w-4" />
