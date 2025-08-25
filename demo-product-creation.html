@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Product - Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-4">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold">Digital Store</h1>
+                <nav class="flex space-x-4">
+                    <a href="#" class="hover:text-orange-200">Dashboard</a>
+                    <a href="#" class="hover:text-orange-200">Products</a>
+                    <a href="#" class="hover:text-orange-200">Orders</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Breadcrumb -->
+        <nav class="text-sm breadcrumbs mb-6">
+            <ol class="flex space-x-2 text-gray-600">
+                <li><a href="#" class="hover:text-orange-600">Dashboard</a></li>
+                <li class="before:content-['/'] before:mx-2">Products</li>
+                <li class="before:content-['/'] before:mx-2 text-orange-600">Create New Product</li>
+            </ol>
+        </nav>
+
+        <!-- Product Form -->
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg">
+                <!-- Header -->
+                <div class="border-b border-gray-200 p-6">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="file-text" class="h-6 w-6 text-orange-600"></i>
+                        <h2 class="text-2xl font-bold text-gray-900">Create New Product</h2>
+                    </div>
+                    <p class="text-gray-600 mt-2">Fill in the details to list your digital product</p>
+                </div>
+
+                <!-- Form Content -->
+                <div class="p-6">
+                    <form class="space-y-8">
+                        <!-- Basic Information -->
+                        <section class="space-y-6">
+                            <h3 class="text-lg font-semibold text-gray-900">Basic Information</h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Product Title -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Product Title *
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Enter a descriptive title for your product"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                        value="Premium React Component Library"
+                                    >
+                                    <p class="text-sm text-gray-500 mt-1">31/100 characters</p>
+                                </div>
+
+                                <!-- Description -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Description *
+                                    </label>
+                                    <textarea 
+                                        rows="6"
+                                        placeholder="Describe your product, its features, and what customers will get..."
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                    >A comprehensive collection of modern React components built with TypeScript and Tailwind CSS. Includes 50+ components, documentation, and source code. Perfect for building professional web applications quickly.</textarea>
+                                    <p class="text-sm text-gray-500 mt-1">247/2000 characters</p>
+                                </div>
+
+                                <!-- Price -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Price (USD) *
+                                    </label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i data-lucide="dollar-sign" class="h-4 w-4 text-gray-400"></i>
+                                        </div>
+                                        <input 
+                                            type="number" 
+                                            min="0.01" 
+                                            step="0.01"
+                                            placeholder="9.99"
+                                            value="49.99"
+                                            class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                        >
+                                    </div>
+                                </div>
+
+                                <!-- Category -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Category *
+                                    </label>
+                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                                        <option value="">Select a category</option>
+                                        <option value="templates" selected>Templates</option>
+                                        <option value="software">Software</option>
+                                        <option value="graphics">Graphics</option>
+                                        <option value="tutorials">Tutorials</option>
+                                    </select>
+                                </div>
+
+                                <!-- Download Limit -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Download Limit (Optional)
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        min="1"
+                                        placeholder="Unlimited"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                    >
+                                    <p class="text-sm text-gray-500 mt-1">Leave empty for unlimited downloads</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Tags Section -->
+                        <section class="space-y-4 border-t pt-8">
+                            <h3 class="text-lg font-semibold text-gray-900">Tags</h3>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Product Tags</label>
+                                <div class="flex gap-2 mb-3">
+                                    <div class="relative flex-1">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i data-lucide="tag" class="h-4 w-4 text-gray-400"></i>
+                                        </div>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Add a tag..."
+                                            class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                        >
+                                    </div>
+                                    <button type="button" class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                        <i data-lucide="plus" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                                <!-- Existing Tags -->
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
+                                        react
+                                        <button type="button" class="ml-2 hover:text-red-600">
+                                            <i data-lucide="x" class="h-3 w-3"></i>
+                                        </button>
+                                    </span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
+                                        typescript
+                                        <button type="button" class="ml-2 hover:text-red-600">
+                                            <i data-lucide="x" class="h-3 w-3"></i>
+                                        </button>
+                                    </span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
+                                        components
+                                        <button type="button" class="ml-2 hover:text-red-600">
+                                            <i data-lucide="x" class="h-3 w-3"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-2">3/10 tags</p>
+                            </div>
+                        </section>
+
+                        <!-- File Uploads Section -->
+                        <section class="space-y-6 border-t pt-8">
+                            <h3 class="text-lg font-semibold text-gray-900">Files</h3>
+
+                            <!-- Product File -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Product File *</label>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-300 hover:bg-orange-50 cursor-pointer transition-colors">
+                                    <div class="flex items-center justify-center space-x-3">
+                                        <i data-lucide="file-text" class="h-8 w-8 text-orange-600"></i>
+                                        <div class="text-left">
+                                            <p class="font-medium text-gray-900">react-components-v2.zip</p>
+                                            <p class="text-sm text-gray-500">15.2 MB</p>
+                                        </div>
+                                        <button type="button" class="text-gray-400 hover:text-red-600">
+                                            <i data-lucide="x" class="h-4 w-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Thumbnail -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail Image</label>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-300 hover:bg-orange-50 cursor-pointer transition-colors">
+                                    <div class="flex items-center justify-center space-x-3">
+                                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRkY2QjM1Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg0NFY0NEgyMFYyMFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=" alt="Thumbnail" class="w-16 h-16 object-cover rounded-lg">
+                                        <div class="text-left">
+                                            <p class="font-medium text-gray-900">thumbnail.png</p>
+                                            <p class="text-sm text-gray-500">248 KB</p>
+                                        </div>
+                                        <button type="button" class="text-gray-400 hover:text-red-600">
+                                            <i data-lucide="x" class="h-4 w-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preview Images -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Preview Images (2/5)</label>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange-300 hover:bg-orange-50 cursor-pointer transition-colors mb-4">
+                                    <i data-lucide="image" class="h-12 w-12 mx-auto text-gray-400 mb-4"></i>
+                                    <p class="text-lg font-medium text-gray-900">Add Preview Images</p>
+                                    <p class="text-sm text-gray-500">Show customers what they'll get (Max: 5 images, 5MB each)</p>
+                                </div>
+
+                                <!-- Preview Grid -->
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div class="relative">
+                                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRkY2QjM1Ii8+CjxwYXRoIGQ9Ik0yNSAyNUg3NVY3NUgyNVYyNVoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=" alt="Preview 1" class="w-full h-24 object-cover rounded-lg">
+                                        <button type="button" class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs hover:bg-red-600">
+                                            <i data-lucide="x" class="h-3 w-3"></i>
+                                        </button>
+                                    </div>
+                                    <div class="relative">
+                                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjNjY3RUVBIi8+CjxwYXRoIGQ9Ik0yNSAyNUg3NVY3NUgyNVYyNVoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=" alt="Preview 2" class="w-full h-24 object-cover rounded-lg">
+                                        <button type="button" class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs hover:bg-red-600">
+                                            <i data-lucide="x" class="h-3 w-3"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Submit Buttons -->
+                        <div class="flex justify-end space-x-4 border-t pt-8">
+                            <button type="button" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 flex items-center space-x-2">
+                                <span>Create Product</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages Demo -->
+    <div class="fixed bottom-4 right-4 space-y-2">
+        <!-- Success Toast -->
+        <div class="bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2 hidden" id="success-toast">
+            <i data-lucide="check-circle" class="h-5 w-5"></i>
+            <span>Product created successfully!</span>
+        </div>
+        
+        <!-- Error Toast -->
+        <div class="bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2 hidden" id="error-toast">
+            <i data-lucide="alert-circle" class="h-5 w-5"></i>
+            <span>Please fix the errors before submitting</span>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Demo form interactions
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            const submitBtn = document.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 animate-spin mr-2"></i>Creating Product...';
+            submitBtn.disabled = true;
+            
+            // Simulate API call
+            setTimeout(() => {
+                // Show success toast
+                document.getElementById('success-toast').classList.remove('hidden');
+                
+                // Reset button
+                submitBtn.innerHTML = 'Create Product';
+                submitBtn.disabled = false;
+                
+                // Hide toast after 3 seconds
+                setTimeout(() => {
+                    document.getElementById('success-toast').classList.add('hidden');
+                }, 3000);
+            }, 2000);
+        });
+
+        // Tag input functionality
+        const tagInput = document.querySelector('input[placeholder="Add a tag..."]');
+        const addTagBtn = document.querySelector('button[type="button"]');
+        
+        function addTag() {
+            const tagValue = tagInput.value.trim();
+            if (tagValue) {
+                // Create new tag element (simplified demo)
+                console.log('Adding tag:', tagValue);
+                tagInput.value = '';
+            }
+        }
+        
+        addTagBtn.addEventListener('click', addTag);
+        tagInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addTag();
+            }
+        });
+    </script>
+</body>
+</html>
