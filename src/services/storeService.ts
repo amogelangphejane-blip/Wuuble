@@ -709,16 +709,95 @@ export const getSellerAnalytics = async (): Promise<ApiResponse<SellerAnalytics>
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // This would typically involve multiple queries and data aggregation
-    // For now, returning a basic structure
+    // Get seller profile for basic stats
+    const { data: sellerProfile } = await supabase
+      .from('seller_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    // Get total products count
+    const { count: totalProducts } = await supabase
+      .from('digital_products')
+      .select('*', { count: 'exact', head: true })
+      .eq('seller_id', user.id);
+
+    // Get average rating across all products
+    const { data: ratingData } = await supabase
+      .from('digital_products')
+      .select('rating, rating_count')
+      .eq('seller_id', user.id)
+      .gt('rating_count', 0);
+
+    const averageRating = ratingData && ratingData.length > 0
+      ? ratingData.reduce((sum, product) => sum + (product.rating * product.rating_count), 0) /
+        ratingData.reduce((sum, product) => sum + product.rating_count, 0)
+      : 0;
+
+    // Get monthly earnings for the last 12 months
+    const { data: monthlyData } = await supabase
+      .from('product_orders')
+      .select('total_amount, created_at')
+      .eq('seller_id', user.id)
+      .eq('status', 'completed')
+      .gte('created_at', new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString())
+      .order('created_at', { ascending: false });
+
+    // Process monthly earnings
+    const monthlyEarnings = Array.from({ length: 12 }, (_, i) => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = date.toISOString().slice(0, 7); // YYYY-MM format
+      
+      const monthData = monthlyData?.filter(order => 
+        order.created_at.slice(0, 7) === monthKey
+      ) || [];
+      
+      return {
+        month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        earnings: monthData.reduce((sum, order) => sum + Number(order.total_amount), 0),
+        sales: monthData.length
+      };
+    }).reverse();
+
+    // Get top products by sales
+    const { data: topProductsData } = await supabase
+      .from('digital_products')
+      .select(`
+        *,
+        orders:product_orders!inner(total_amount)
+      `)
+      .eq('seller_id', user.id)
+      .eq('orders.status', 'completed')
+      .order('total_sales', { ascending: false })
+      .limit(5);
+
+    const topProducts = topProductsData?.map(product => ({
+      product,
+      sales: product.total_sales,
+      earnings: product.orders?.reduce((sum: number, order: any) => sum + Number(order.total_amount), 0) || 0
+    })) || [];
+
+    // Get recent orders
+    const { data: recentOrders } = await supabase
+      .from('product_orders')
+      .select(`
+        *,
+        product:digital_products(*),
+        buyer:auth.users(id, email, user_metadata)
+      `)
+      .eq('seller_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
     const analytics: SellerAnalytics = {
-      total_earnings: 0,
-      total_sales: 0,
-      total_products: 0,
-      average_rating: 0,
-      monthly_earnings: [],
-      top_products: [],
-      recent_orders: [],
+      total_earnings: sellerProfile?.total_earnings || 0,
+      total_sales: sellerProfile?.total_sales || 0,
+      total_products: totalProducts || 0,
+      average_rating: Number(averageRating.toFixed(2)) || 0,
+      monthly_earnings: monthlyEarnings,
+      top_products: topProducts,
+      recent_orders: recentOrders || [],
     };
 
     return { data: analytics, success: true };
