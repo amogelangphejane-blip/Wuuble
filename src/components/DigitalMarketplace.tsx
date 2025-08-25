@@ -34,6 +34,7 @@ import { useWishlist } from '@/hooks/useWishlist';
 import { getProducts, getProductCategories, addToWishlist, removeFromWishlist } from '@/services/storeService';
 import { ProductCheckout } from '@/components/ProductCheckout';
 import { ProductDetailModal } from '@/components/ProductDetailModal';
+import { AdvancedSearchFilters } from '@/components/AdvancedSearchFilters';
 import type { 
   DigitalProduct, 
   ProductCategory, 
@@ -61,20 +62,24 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(initialFilters.query || '');
-  const [selectedCategory, setSelectedCategory] = useState(initialFilters.category_id || 'all');
-  const [sortBy, setSortBy] = useState(initialFilters.sort_by || 'created_at');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [priceRange, setPriceRange] = useState({
-    min: initialFilters.min_price || '',
-    max: initialFilters.max_price || ''
-  });
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DigitalProduct | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showProductDetail, setShowProductDetail] = useState(false);
+  const [filters, setFilters] = useState<ProductSearchFilters>({
+    query: initialFilters.query || '',
+    category_id: initialFilters.category_id || undefined,
+    sort_by: initialFilters.sort_by || 'created_at',
+    sort_order: 'desc',
+    min_price: initialFilters.min_price,
+    max_price: initialFilters.max_price,
+    community_id: communityId,
+    page: 1,
+    limit: 20,
+  });
 
   // Load categories on component mount
   useEffect(() => {
@@ -84,7 +89,7 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
   // Load products when filters change
   useEffect(() => {
     loadProducts(true);
-  }, [searchQuery, selectedCategory, sortBy, priceRange, communityId]);
+  }, [filters]);
 
   const loadCategories = async () => {
     const result = await getProductCategories();
@@ -101,20 +106,13 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
       setLoadingMore(true);
     }
 
-    const filters: ProductSearchFilters = {
-      query: searchQuery || undefined,
-      category_id: selectedCategory !== 'all' ? selectedCategory : undefined,
-      sort_by: sortBy as any,
-      sort_order: 'desc',
+    const searchFilters: ProductSearchFilters = {
+      ...filters,
       page: reset ? 1 : currentPage,
-      limit: 20,
-      min_price: priceRange.min ? parseFloat(priceRange.min) : undefined,
-      max_price: priceRange.max ? parseFloat(priceRange.max) : undefined,
-      community_id: communityId,
     };
 
     try {
-      const result = await getProducts(filters);
+      const result = await getProducts(searchFilters);
       
       if (result.success && result.data) {
         if (reset) {
@@ -222,8 +220,8 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
             <Input
               type="text"
               placeholder="Search for anything..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={filters.query || ''}
+              onChange={(e) => setFilters(prev => ({ ...prev, query: e.target.value, page: 1 }))}
               className="pl-12 pr-4 py-4 text-lg border-2 border-orange-200 focus:border-orange-400 rounded-full shadow-lg"
             />
             <Button 
@@ -249,7 +247,7 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
             <Card 
               key={category.id} 
               className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-orange-200"
-              onClick={() => setSelectedCategory(category.id)}
+              onClick={() => setFilters(prev => ({ ...prev, category_id: category.id, page: 1 }))}
             >
               <CardContent className="p-6 text-center">
                 <div className={`w-16 h-16 rounded-full ${category.color} flex items-center justify-center mx-auto mb-3`}>
@@ -444,150 +442,118 @@ export const DigitalMarketplace: React.FC<MarketplaceProps> = ({
       {/* Category Section */}
       <CategorySection />
 
-      {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-4 p-6 bg-white rounded-lg shadow-sm border">
-        <div className="flex items-center space-x-2">
-          <Filter className="h-4 w-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">Filter by:</span>
-        </div>
-        
-        {/* Category Filter */}
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="All categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {etsyCategories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        {/* Sort */}
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="created_at">Most Recent</SelectItem>
-            <SelectItem value="price">Price: Low to High</SelectItem>
-            <SelectItem value="rating">Customer Review</SelectItem>
-            <SelectItem value="total_sales">Bestselling</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        {/* Price Range */}
-        <div className="flex items-center space-x-2">
-          <Input
-            placeholder="Min"
-            value={priceRange.min}
-            onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
-            type="number"
-            min="0"
-            className="w-20"
-          />
-          <span className="text-gray-400">to</span>
-          <Input
-            placeholder="Max"
-            value={priceRange.max}
-            onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
-            type="number"
-            min="0"
-            className="w-20"
+      {/* Advanced Search Filters */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-1">
+          <AdvancedSearchFilters
+            categories={categories}
+            filters={filters}
+            onFiltersChange={setFilters}
+            onClearFilters={() => setFilters({
+              query: '',
+              sort_by: 'created_at',
+              sort_order: 'desc',
+              community_id: communityId,
+              page: 1,
+              limit: 20,
+            })}
+            totalResults={totalCount}
           />
         </div>
-
-        <div className="ml-auto flex items-center space-x-2">
-          <span className="text-sm text-gray-600">{totalCount} results</span>
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-            className="bg-orange-600 hover:bg-orange-700"
-          >
-            <Grid3X3 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Products Section */}
-      {products.length === 0 ? (
-        <div className="text-center py-16 bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl">
-          <Package className="h-24 w-24 mx-auto text-orange-300 mb-6" />
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">No Products Found</h3>
-          <p className="text-gray-600 max-w-md mx-auto mb-6">
-            {searchQuery || selectedCategory !== 'all' 
-              ? "We couldn't find any products matching your criteria. Try adjusting your search or filters." 
-              : "Discover amazing handmade and vintage items. Be the first to explore our growing marketplace!"
-            }
-          </p>
-          <Button 
-            onClick={() => {
-              setSearchQuery('');
-              setSelectedCategory('all');
-              setPriceRange({ min: '', max: '' });
-            }}
-            className="bg-orange-600 hover:bg-orange-700 text-white"
-          >
-            Browse All Products
-          </Button>
-        </div>
-      ) : (
-        <>
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {selectedCategory !== 'all' 
-                ? `${etsyCategories.find(cat => cat.id === selectedCategory)?.name || 'Category'} Products`
-                : 'All Products'
-              }
-            </h2>
-            <p className="text-gray-600">
-              {totalCount.toLocaleString()} unique items found
-            </p>
-          </div>
-
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-              {products.map(renderProductCard)}
+        
+        <div className="lg:col-span-3 space-y-6">
+          {/* View Mode Toggle */}
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-gray-900">
+                {filters.category_id 
+                  ? `${etsyCategories.find(cat => cat.id === filters.category_id)?.name || 'Category'} Products`
+                  : 'All Products'
+                }
+              </h2>
+              <Badge variant="secondary">{totalCount.toLocaleString()} results</Badge>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {products.map(renderProductList)}
-            </div>
-          )}
-          
-          {hasMore && (
-            <div className="text-center mt-12">
+            
+            <div className="flex items-center space-x-2">
               <Button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                variant="outline"
-                size="lg"
-                className="border-orange-300 text-orange-600 hover:bg-orange-50 px-8 py-3"
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className="bg-orange-600 hover:bg-orange-700"
               >
-                {loadingMore ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
-                    <span>Loading...</span>
-                  </div>
-                ) : (
-                  "Show more products"
-                )}
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
               </Button>
             </div>
+          </div>
+
+          {/* Products Section */}
+          {products.length === 0 ? (
+            <div className="text-center py-16 bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl">
+              <Package className="h-24 w-24 mx-auto text-orange-300 mb-6" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">No Products Found</h3>
+              <p className="text-gray-600 max-w-md mx-auto mb-6">
+                {filters.query || filters.category_id 
+                  ? "We couldn't find any products matching your criteria. Try adjusting your search or filters." 
+                  : "Discover amazing handmade and vintage items. Be the first to explore our growing marketplace!"
+                }
+              </p>
+              <Button 
+                onClick={() => setFilters({
+                  query: '',
+                  sort_by: 'created_at',
+                  sort_order: 'desc',
+                  community_id: communityId,
+                  page: 1,
+                  limit: 20,
+                })}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                Browse All Products
+              </Button>
+            </div>
+          ) : (
+            <>
+              {viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {products.map(renderProductCard)}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {products.map(renderProductList)}
+                </div>
+              )}
+              
+              {hasMore && (
+                <div className="text-center mt-12">
+                  <Button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    variant="outline"
+                    size="lg"
+                    className="border-orange-300 text-orange-600 hover:bg-orange-50 px-8 py-3"
+                  >
+                    {loadingMore ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                        <span>Loading...</span>
+                      </div>
+                    ) : (
+                      "Show more products"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
+      </div>
 
       {/* Product Detail Modal */}
       {selectedProduct && (

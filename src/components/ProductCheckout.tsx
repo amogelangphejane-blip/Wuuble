@@ -23,7 +23,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { createOrder, updateOrderStatus } from '@/services/storeService';
-import type { DigitalProduct, ProductOrder } from '@/types/store';
+import { paymentService } from '@/services/paymentService';
+import type { DigitalProduct, ProductOrder, CheckoutSession } from '@/types/store';
 
 interface ProductCheckoutProps {
   product: DigitalProduct;
