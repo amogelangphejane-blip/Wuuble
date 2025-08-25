@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { StorageSetupHelper } from '@/components/StorageSetupHelper';
 import type { CreateProductForm, UpdateProductForm, ProductCategory } from '@/types/store';
 
 interface FileUploadProgress {
@@ -75,6 +76,7 @@ export const EnhancedProductForm: React.FC<EnhancedProductFormProps> = ({
   // Validation state
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [storageError, setStorageError] = useState<string | null>(null);
 
   // File size limits (in bytes)
   const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; // 5MB
@@ -165,9 +167,16 @@ export const EnhancedProductForm: React.FC<EnhancedProductFormProps> = ({
       const uploadProgress = await handleFileUpload(file, 'thumbnail', MAX_THUMBNAIL_SIZE);
       setThumbnailFile(uploadProgress);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload thumbnail";
+      
+      // Check if this is a storage configuration error
+      if (errorMessage.includes('bucket') || errorMessage.includes('storage') || errorMessage.includes('policy')) {
+        setStorageError(errorMessage);
+      }
+      
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload thumbnail",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -198,9 +207,16 @@ export const EnhancedProductForm: React.FC<EnhancedProductFormProps> = ({
       const newUploads = await Promise.all(uploadPromises);
       setPreviewFiles(prev => [...prev, ...newUploads]);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload preview images";
+      
+      // Check if this is a storage configuration error
+      if (errorMessage.includes('bucket') || errorMessage.includes('storage') || errorMessage.includes('policy')) {
+        setStorageError(errorMessage);
+      }
+      
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload preview images",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -217,9 +233,16 @@ export const EnhancedProductForm: React.FC<EnhancedProductFormProps> = ({
       // Clear any existing product file error
       setErrors(prev => ({ ...prev, productFile: '' }));
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload product file";
+      
+      // Check if this is a storage configuration error
+      if (errorMessage.includes('bucket') || errorMessage.includes('storage') || errorMessage.includes('policy')) {
+        setStorageError(errorMessage);
+      }
+      
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload product file",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -308,9 +331,16 @@ export const EnhancedProductForm: React.FC<EnhancedProductFormProps> = ({
 
       await onSubmit(submitData);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to save product";
+      
+      // Check if this is a storage configuration error
+      if (errorMessage.includes('bucket') || errorMessage.includes('storage') || errorMessage.includes('policy')) {
+        setStorageError(errorMessage);
+      }
+      
       toast({
         title: "Submission failed",
-        description: error instanceof Error ? error.message : "Failed to save product",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -326,6 +356,13 @@ export const EnhancedProductForm: React.FC<EnhancedProductFormProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 min-h-0">
+      {storageError && (
+        <StorageSetupHelper 
+          error={storageError} 
+          onDismiss={() => setStorageError(null)}
+        />
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
