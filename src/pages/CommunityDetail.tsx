@@ -27,7 +27,6 @@ import {
   Radio,
   Info,
   Trash2,
-  ShoppingBag,
   Trophy
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -40,7 +39,7 @@ import { QuickAccess } from '@/components/QuickAccess';
 import { CommunityAbout } from '@/components/CommunityAbout';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
 import { CommunitySettings } from '@/components/CommunitySettings';
-import { DigitalMarketplace } from '@/components/DigitalMarketplace';
+
 import { CommunityLeaderboard } from '@/components/CommunityLeaderboard';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { validateAvatarUrl } from '@/lib/utils';
@@ -331,8 +330,7 @@ const CommunityDetail = () => {
     { id: 'quick-access', label: 'Quick Access', icon: Zap },
 
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
-    { id: 'about', label: 'About', icon: Info },
-    { id: 'store', label: 'Store', icon: ShoppingBag }
+    { id: 'about', label: 'About', icon: Info }
   ];
 
   if (authLoading || loading) {
@@ -757,9 +755,7 @@ const CommunityDetail = () => {
                 />
               )}
 
-              {activeTab === 'store' && (
-                <DigitalMarketplace communityId={community.id} />
-              )}
+
             </div>
 
             {/* Sidebar - Only show for non-discussions tabs */}
