@@ -47,7 +47,20 @@ export const uploadFile = async (
     });
 
   if (error) {
-    throw new Error(`Upload failed: ${error.message}`);
+    // Provide more helpful error messages
+    let errorMessage = error.message;
+    
+    if (error.message.includes('Invalid bucket')) {
+      errorMessage = `Storage bucket '${bucket}' does not exist. Please run the marketplace setup script or create the bucket manually in your Supabase dashboard.`;
+    } else if (error.message.includes('row-level security policy')) {
+      errorMessage = `Storage access denied. The '${bucket}' bucket may be missing proper access policies. Please check your storage configuration.`;
+    } else if (error.message.includes('exceeded the maximum allowed size')) {
+      errorMessage = `File too large for bucket '${bucket}'. Please check the bucket's file size limits in your Supabase dashboard.`;
+    } else if (error.message.includes('not allowed')) {
+      errorMessage = `File type not allowed in bucket '${bucket}'. Please check the bucket's MIME type restrictions.`;
+    }
+    
+    throw new Error(`Upload failed: ${errorMessage}`);
   }
 
   const { data: { publicUrl } } = supabase.storage
@@ -222,7 +235,7 @@ export const createProduct = async (
         bucket: 'product-images',
         folder: `thumbnails/${user.id}`,
         maxSize: 5 * 1024 * 1024,
-        allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        allowedTypes: [], // Allow all types - bucket will enforce MIME restrictions
       });
     }
 
@@ -233,7 +246,7 @@ export const createProduct = async (
             bucket: 'product-images',
             folder: `previews/${user.id}`,
             maxSize: 5 * 1024 * 1024,
-            allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+            allowedTypes: [], // Allow all types - bucket will enforce MIME restrictions
           })
         )
       );
@@ -305,7 +318,7 @@ export const updateProduct = async (
         bucket: 'product-images',
         folder: `thumbnails/${user.id}`,
         maxSize: 5 * 1024 * 1024,
-        allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        allowedTypes: [], // Allow all types - bucket will enforce MIME restrictions
       });
     }
 
@@ -316,7 +329,7 @@ export const updateProduct = async (
             bucket: 'product-images',
             folder: `previews/${user.id}`,
             maxSize: 5 * 1024 * 1024,
-            allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+            allowedTypes: [], // Allow all types - bucket will enforce MIME restrictions
           })
         )
       );
@@ -590,7 +603,7 @@ export const createOrUpdateSellerProfile = async (
         bucket: 'product-images',
         folder: `banners/${user.id}`,
         maxSize: 5 * 1024 * 1024,
-        allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        allowedTypes: [], // Allow all types - bucket will enforce MIME restrictions
       });
     }
 
