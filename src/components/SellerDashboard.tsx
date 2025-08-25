@@ -94,6 +94,20 @@ export const SellerDashboard: React.FC = () => {
     }
   }, [user]);
 
+  // Reset dialog scroll position when it opens
+  useEffect(() => {
+    if (showProductDialog) {
+      const timer = setTimeout(() => {
+        const dialogContent = document.querySelector('[data-radix-dialog-content]');
+        if (dialogContent) {
+          dialogContent.scrollTop = 0;
+        }
+      }, 150);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showProductDialog]);
+
   const loadDashboardData = async () => {
     setLoading(true);
     try {
@@ -558,24 +572,22 @@ export const SellerDashboard: React.FC = () => {
 
       {/* Enhanced Product Form Dialog */}
       <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden p-0">
-          <div className="overflow-y-auto p-6">
-            <EnhancedProductForm
-              categories={categories}
-              initialData={editingProduct ? {
-                title: editingProduct.title,
-                description: editingProduct.description,
-                price: editingProduct.price,
-                category_id: editingProduct.category_id || '',
-                tags: editingProduct.tags || [],
-                download_limit: editingProduct.download_limit,
-              } : undefined}
-              mode={isCreatingProduct ? 'create' : 'edit'}
-              onSubmit={handleSaveProduct}
-              onCancel={() => setShowProductDialog(false)}
-              loading={loading}
-            />
-          </div>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-6">
+          <EnhancedProductForm
+            categories={categories}
+            initialData={editingProduct ? {
+              title: editingProduct.title,
+              description: editingProduct.description,
+              price: editingProduct.price,
+              category_id: editingProduct.category_id || '',
+              tags: editingProduct.tags || [],
+              download_limit: editingProduct.download_limit,
+            } : undefined}
+            mode={isCreatingProduct ? 'create' : 'edit'}
+            onSubmit={handleSaveProduct}
+            onCancel={() => setShowProductDialog(false)}
+            loading={loading}
+          />
         </DialogContent>
       </Dialog>
     </div>
