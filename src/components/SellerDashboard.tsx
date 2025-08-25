@@ -28,10 +28,13 @@ import {
   ShoppingCart,
   FileText,
   Image as ImageIcon,
-  Tag
+  Tag,
+  Sparkles
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { SellerOnboardingWizard } from '@/components/SellerOnboardingWizard';
+import { EnhancedProductForm } from '@/components/EnhancedProductForm';
 import {
   getProducts,
   getProductCategories,
@@ -68,6 +71,8 @@ export const SellerDashboard: React.FC = () => {
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [editingProduct, setEditingProduct] = useState<DigitalProduct | null>(null);
   const [showProductDialog, setShowProductDialog] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isNewSeller, setIsNewSeller] = useState(false);
 
   // Form state for product creation/editing
   const [productForm, setProductForm] = useState<Partial<CreateProductForm>>({
@@ -109,6 +114,10 @@ export const SellerDashboard: React.FC = () => {
 
       if (profileResult.success && profileResult.data) {
         setSellerProfile(profileResult.data);
+      } else {
+        // New seller - show onboarding
+        setIsNewSeller(true);
+        setShowOnboarding(true);
       }
 
       if (productsResult.success && productsResult.data) {
@@ -165,39 +174,10 @@ export const SellerDashboard: React.FC = () => {
     setShowProductDialog(true);
   };
 
-  const handleSaveProduct = async () => {
-    if (!productForm.title || !productForm.description || !productForm.price) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (isCreatingProduct && !productFiles.product) {
-      toast({
-        title: "Error",
-        description: "Please upload a product file",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleSaveProduct = async (data: CreateProductForm | UpdateProductForm) => {
     try {
       if (isCreatingProduct) {
-        const createData: CreateProductForm = {
-          title: productForm.title!,
-          description: productForm.description!,
-          price: productForm.price!,
-          tags: productForm.tags!,
-          category_id: productForm.category_id,
-          thumbnail_file: productFiles.thumbnail,
-          preview_files: productFiles.previews,
-          product_file: productFiles.product!,
-        };
-
-        const result = await createProduct(createData);
+        const result = await createProduct(data as CreateProductForm);
         if (result.success) {
           toast({
             title: "Success",
@@ -209,18 +189,7 @@ export const SellerDashboard: React.FC = () => {
           throw new Error(result.error?.message);
         }
       } else if (editingProduct) {
-        const updateData: UpdateProductForm = {
-          title: productForm.title,
-          description: productForm.description,
-          price: productForm.price,
-          tags: productForm.tags,
-          category_id: productForm.category_id,
-          thumbnail_file: productFiles.thumbnail,
-          preview_files: productFiles.previews.length > 0 ? productFiles.previews : undefined,
-          product_file: productFiles.product,
-        };
-
-        const result = await updateProduct(editingProduct.id, updateData);
+        const result = await updateProduct(editingProduct.id, data as UpdateProductForm);
         if (result.success) {
           toast({
             title: "Success",
@@ -287,6 +256,27 @@ export const SellerDashboard: React.FC = () => {
     );
   }
 
+  // Show onboarding for new sellers
+  if (showOnboarding) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-amber-50/20 to-yellow-50/30 py-8">
+        <div className="container mx-auto px-4">
+          <SellerOnboardingWizard
+            onComplete={() => {
+              setShowOnboarding(false);
+              setIsNewSeller(false);
+              loadDashboardData();
+            }}
+            onSkip={() => {
+              setShowOnboarding(false);
+              setIsNewSeller(false);
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -297,10 +287,22 @@ export const SellerDashboard: React.FC = () => {
             Manage your digital products and track your sales
           </p>
         </div>
-        <Button onClick={handleCreateProduct}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Product
-        </Button>
+        <div className="flex gap-2">
+          {!sellerProfile && (
+            <Button 
+              variant="outline" 
+              onClick={() => setShowOnboarding(true)}
+              className="border-orange-300 text-orange-600 hover:bg-orange-50"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Complete Setup
+            </Button>
+          )}
+          <Button onClick={handleCreateProduct}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -554,127 +556,25 @@ export const SellerDashboard: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Product Dialog */}
+      {/* Enhanced Product Form Dialog */}
       <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {isCreatingProduct ? 'Create New Product' : 'Edit Product'}
-            </DialogTitle>
-            <DialogDescription>
-              {isCreatingProduct 
-                ? 'Add a new digital product to your store'
-                : 'Update your product information'
-              }
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="product-title">Title *</Label>
-              <Input
-                id="product-title"
-                value={productForm.title || ''}
-                onChange={(e) => setProductForm(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Product title"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="product-description">Description *</Label>
-              <Textarea
-                id="product-description"
-                value={productForm.description || ''}
-                onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe your product"
-                rows={4}
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="product-price">Price *</Label>
-                <Input
-                  id="product-price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={productForm.price || ''}
-                  onChange={(e) => setProductForm(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                  placeholder="0.00"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="product-category">Category</Label>
-                <Select
-                  value={productForm.category_id || ''}
-                  onValueChange={(value) => setProductForm(prev => ({ ...prev, category_id: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="product-tags">Tags</Label>
-              <Input
-                id="product-tags"
-                value={productForm.tags?.join(', ') || ''}
-                onChange={(e) => setProductForm(prev => ({ 
-                  ...prev, 
-                  tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean)
-                }))}
-                placeholder="tag1, tag2, tag3"
-              />
-            </div>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Product File {isCreatingProduct && '*'}</Label>
-                <Input
-                  type="file"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setProductFiles(prev => ({ ...prev, product: file }));
-                    }
-                  }}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Thumbnail Image</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setProductFiles(prev => ({ ...prev, thumbnail: file }));
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-4">
-              <Button variant="outline" onClick={() => setShowProductDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveProduct}>
-                {isCreatingProduct ? 'Create Product' : 'Update Product'}
-              </Button>
-            </div>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden p-0">
+          <div className="overflow-y-auto p-6">
+            <EnhancedProductForm
+              categories={categories}
+              initialData={editingProduct ? {
+                title: editingProduct.title,
+                description: editingProduct.description,
+                price: editingProduct.price,
+                category_id: editingProduct.category_id || '',
+                tags: editingProduct.tags || [],
+                download_limit: editingProduct.download_limit,
+              } : undefined}
+              mode={isCreatingProduct ? 'create' : 'edit'}
+              onSubmit={handleSaveProduct}
+              onCancel={() => setShowProductDialog(false)}
+              loading={loading}
+            />
           </div>
         </DialogContent>
       </Dialog>
