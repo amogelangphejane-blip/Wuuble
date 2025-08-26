@@ -37,6 +37,12 @@ const planSchema = z.object({
   trial_days: z.number().min(0).max(365).optional(),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
   max_members: z.number().min(1).optional()
+}).refine((data) => {
+  // Ensure at least one pricing option is provided
+  return data.price_monthly || data.price_yearly;
+}, {
+  message: "At least one pricing option (monthly or yearly) is required",
+  path: ["price_monthly"]
 });
 
 type PlanFormData = z.infer<typeof planSchema>;
@@ -84,6 +90,8 @@ export const SubscriptionPlanManager: React.FC<SubscriptionPlanManagerProps> = (
   const watchedFeatures = watch('features') || [];
 
   const onSubmit = (data: PlanFormData) => {
+    console.log('Form submission data:', data);
+    
     if (editingPlan) {
       updatePlan({
         planId: editingPlan.id,
@@ -91,10 +99,14 @@ export const SubscriptionPlanManager: React.FC<SubscriptionPlanManagerProps> = (
       });
       setEditingPlan(null);
     } else {
-      createPlan({
+      const createData = {
         ...data,
-        community_id: communityId
-      } as CreateSubscriptionPlanRequest);
+        community_id: communityId,
+        trial_days: data.trial_days || 0 // Ensure trial_days has a default value
+      } as CreateSubscriptionPlanRequest;
+      
+      console.log('Creating plan with data:', createData);
+      createPlan(createData);
       setIsCreateDialogOpen(false);
     }
     reset();

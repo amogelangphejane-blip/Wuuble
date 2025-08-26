@@ -171,13 +171,43 @@ export const useSubscriptions = (communityId?: string) => {
   // Create subscription plan mutation
   const createPlanMutation = useMutation({
     mutationFn: async (planData: CreateSubscriptionPlanRequest) => {
+      console.log('Creating subscription plan with data:', planData);
+      
+      // Validate required fields
+      if (!planData.community_id) {
+        throw new Error('Community ID is required');
+      }
+      if (!planData.name || planData.name.trim() === '') {
+        throw new Error('Plan name is required');
+      }
+      if (!planData.features || planData.features.length === 0) {
+        throw new Error('At least one feature is required');
+      }
+      
       const { data, error } = await supabase
         .from('community_subscription_plans')
         .insert(planData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error creating subscription plan:', error);
+        
+        // Provide more specific error messages based on common database errors
+        if (error.code === '23503') {
+          throw new Error('Invalid community ID - the community may not exist or you may not have access to it');
+        } else if (error.code === '23505') {
+          throw new Error('A subscription plan with this name already exists in this community');
+        } else if (error.code === '42501') {
+          throw new Error('Permission denied - you may not have permission to create subscription plans for this community');
+        } else if (error.message?.includes('violates row-level security')) {
+          throw new Error('Access denied - only community creators can create subscription plans');
+        } else if (error.message?.includes('violates check constraint')) {
+          throw new Error('Invalid data provided - please check all required fields');
+        }
+        
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -188,9 +218,11 @@ export const useSubscriptions = (communityId?: string) => {
       });
     },
     onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown error occurred');
+      console.error('Failed to create subscription plan:', error);
       toast({
         title: "Error",
-        description: `Failed to create subscription plan: ${error.message}`,
+        description: `Failed to create subscription plan: ${errorMessage}`,
         variant: "destructive",
       });
     }
@@ -217,9 +249,11 @@ export const useSubscriptions = (communityId?: string) => {
       });
     },
     onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown error occurred');
+      console.error('Failed to update subscription plan:', error);
       toast({
         title: "Error",
-        description: `Failed to update subscription plan: ${error.message}`,
+        description: `Failed to update subscription plan: ${errorMessage}`,
         variant: "destructive",
       });
     }
@@ -267,9 +301,11 @@ export const useSubscriptions = (communityId?: string) => {
       });
     },
     onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown error occurred');
+      console.error('Failed to subscribe:', error);
       toast({
         title: "Error",
-        description: `Failed to subscribe: ${error.message}`,
+        description: `Failed to subscribe: ${errorMessage}`,
         variant: "destructive",
       });
     }
@@ -301,9 +337,11 @@ export const useSubscriptions = (communityId?: string) => {
       });
     },
     onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown error occurred');
+      console.error('Failed to cancel subscription:', error);
       toast({
         title: "Error",
-        description: `Failed to cancel subscription: ${error.message}`,
+        description: `Failed to cancel subscription: ${errorMessage}`,
         variant: "destructive",
       });
     }
