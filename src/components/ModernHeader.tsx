@@ -19,7 +19,8 @@ import {
   MessageCircle,
   Radio,
   Video,
-  Home
+  Home,
+  Mail
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -75,6 +76,12 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
       href: '/chat',
       icon: MessageCircle,
       active: location.pathname.startsWith('/chat')
+    },
+    {
+      label: 'Messages',
+      href: '/messages',
+      icon: Mail,
+      active: location.pathname.startsWith('/messages')
     },
     {
       label: 'Live Streams',

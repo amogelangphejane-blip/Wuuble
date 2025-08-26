@@ -9,6 +9,7 @@ import { LoadingProvider } from "@/contexts/LoadingContext";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
+import Messages from "./pages/Messages";
 import Auth from "./pages/Auth";
 import Communities from "./pages/Communities";
 import CommunityDetail from "./pages/CommunityDetail";
@@ -59,6 +60,7 @@ const App = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/chat" element={<Chat />} />
+                <Route path="/messages" element={<Messages />} />
                 <Route path="/connect-video-call" element={<ConnectVideoCall />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/communities" element={<Communities />} />
