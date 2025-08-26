@@ -20,50 +20,70 @@ export interface ErrorObject {
 export function extractErrorMessage(error: unknown, fallbackMessage = 'Unknown error occurred'): string {
   console.error('Extracting error message from:', error);
   console.error('Error type:', typeof error);
+  console.error('Error constructor:', error?.constructor?.name);
   
+  // Handle null or undefined
+  if (error === null || error === undefined) {
+    console.error('Error is null or undefined');
+    return fallbackMessage;
+  }
+  
+  // Handle Error instances
   if (error instanceof Error) {
-    return error.message;
+    const message = error.message;
+    console.log('Error instance message:', message);
+    return message || fallbackMessage;
   }
   
+  // Handle string errors
   if (typeof error === 'string') {
-    return error;
+    const trimmed = error.trim();
+    console.log('String error:', trimmed);
+    return trimmed || fallbackMessage;
   }
   
+  // Handle object errors (like Supabase errors)
   if (error && typeof error === 'object') {
     const errorObj = error as ErrorObject;
+    console.log('Object error properties:', Object.keys(errorObj));
     
     // Try different error message properties in order of preference
-    if (errorObj.message) {
-      return errorObj.message;
+    const candidates = [
+      errorObj.message,
+      errorObj.error_description,
+      errorObj.details,
+      errorObj.hint
+    ];
+    
+    for (const candidate of candidates) {
+      if (candidate && typeof candidate === 'string' && candidate.trim()) {
+        console.log('Found error message:', candidate);
+        return candidate.trim();
+      }
     }
     
-    if (errorObj.error_description) {
-      return errorObj.error_description;
-    }
-    
-    if (errorObj.details) {
-      return errorObj.details;
-    }
-    
-    if (errorObj.hint) {
-      return errorObj.hint;
-    }
-    
+    // Try code-based message
     if (errorObj.code) {
-      return `Database error (code: ${errorObj.code})`;
+      const codeMessage = `Database error (code: ${errorObj.code})`;
+      console.log('Using code-based message:', codeMessage);
+      return codeMessage;
     }
     
     // Try to stringify the error object if it has useful information
     try {
       const stringified = JSON.stringify(errorObj);
-      if (stringified && stringified !== '{}') {
-        console.error('Error object stringified:', stringified);
+      console.error('Error object stringified:', stringified);
+      if (stringified && stringified !== '{}' && stringified !== 'null') {
+        // If the stringified object has useful info, use a generic message
+        // but log the details for debugging
+        return `An error occurred. Check the console for details.`;
       }
-    } catch {
-      // Ignore JSON.stringify errors
+    } catch (stringifyError) {
+      console.error('Failed to stringify error:', stringifyError);
     }
   }
   
+  console.error('No error message found, using fallback:', fallbackMessage);
   return fallbackMessage;
 }
 

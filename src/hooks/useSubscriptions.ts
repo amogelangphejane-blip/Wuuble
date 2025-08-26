@@ -220,7 +220,32 @@ export const useSubscriptions = (communityId?: string) => {
     },
     onError: (error) => {
       console.error('Failed to create subscription plan:', error);
-      const errorMessage = handleError(error, 'create');
+      console.error('Error type:', typeof error);
+      console.error('Error keys:', Object.keys(error || {}));
+      
+      // Enhanced error handling with fallback
+      let errorMessage;
+      try {
+        errorMessage = handleError(error, 'create');
+        console.log('Processed error message:', errorMessage);
+      } catch (handlingError) {
+        console.error('Error in handleError function:', handlingError);
+        // Fallback error handling
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        } else if (error && typeof error === 'object') {
+          errorMessage = error.message || error.error_description || error.details || JSON.stringify(error);
+        } else {
+          errorMessage = 'An unexpected error occurred. Please try again.';
+        }
+      }
+      
+      // Ensure we never show "undefined" or empty messages
+      if (!errorMessage || errorMessage === 'undefined' || errorMessage.trim() === '') {
+        errorMessage = 'An unexpected error occurred. Please check your connection and try again.';
+      }
       
       toast({
         title: "Error",
@@ -252,7 +277,21 @@ export const useSubscriptions = (communityId?: string) => {
     },
     onError: (error) => {
       console.error('Failed to update subscription plan:', error);
-      const errorMessage = handleError(error, 'update');
+      console.error('Error type:', typeof error);
+      
+      let errorMessage;
+      try {
+        errorMessage = handleError(error, 'update');
+      } catch (handlingError) {
+        console.error('Error in handleError function:', handlingError);
+        errorMessage = error instanceof Error ? error.message : 
+                      (typeof error === 'string' ? error : 
+                      'An unexpected error occurred. Please try again.');
+      }
+      
+      if (!errorMessage || errorMessage === 'undefined' || errorMessage.trim() === '') {
+        errorMessage = 'An unexpected error occurred. Please check your connection and try again.';
+      }
       
       toast({
         title: "Error",
@@ -305,7 +344,21 @@ export const useSubscriptions = (communityId?: string) => {
     },
     onError: (error) => {
       console.error('Failed to subscribe:', error);
-      const errorMessage = handleError(error, 'subscribe');
+      console.error('Error type:', typeof error);
+      
+      let errorMessage;
+      try {
+        errorMessage = handleError(error, 'subscribe');
+      } catch (handlingError) {
+        console.error('Error in handleError function:', handlingError);
+        errorMessage = error instanceof Error ? error.message : 
+                      (typeof error === 'string' ? error : 
+                      'An unexpected error occurred. Please try again.');
+      }
+      
+      if (!errorMessage || errorMessage === 'undefined' || errorMessage.trim() === '') {
+        errorMessage = 'An unexpected error occurred. Please check your connection and try again.';
+      }
       
       toast({
         title: "Error",
@@ -342,7 +395,21 @@ export const useSubscriptions = (communityId?: string) => {
     },
     onError: (error) => {
       console.error('Failed to cancel subscription:', error);
-      const errorMessage = handleError(error, 'cancel');
+      console.error('Error type:', typeof error);
+      
+      let errorMessage;
+      try {
+        errorMessage = handleError(error, 'cancel');
+      } catch (handlingError) {
+        console.error('Error in handleError function:', handlingError);
+        errorMessage = error instanceof Error ? error.message : 
+                      (typeof error === 'string' ? error : 
+                      'An unexpected error occurred. Please try again.');
+      }
+      
+      if (!errorMessage || errorMessage === 'undefined' || errorMessage.trim() === '') {
+        errorMessage = 'An unexpected error occurred. Please check your connection and try again.';
+      }
       
       toast({
         title: "Error",
