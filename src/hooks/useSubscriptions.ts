@@ -20,6 +20,34 @@ export const useSubscriptions = (communityId?: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Real-time subscription updates
+  useEffect(() => {
+    if (!communityId || !user?.id) return;
+
+    const subscription = supabase
+      .channel(`subscription_${communityId}_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'community_member_subscriptions',
+          filter: `community_id=eq.${communityId} and user_id=eq.${user.id}`
+        },
+        () => {
+          // Refetch subscription data
+          queryClient.invalidateQueries({ queryKey: ['user-subscription', communityId, user.id] });
+          queryClient.invalidateQueries({ queryKey: ['subscription-status', communityId, user.id] });
+          queryClient.invalidateQueries({ queryKey: ['has-active-subscription', communityId, user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [communityId, user?.id, queryClient]);
+
   // Fetch subscription plans for a community
   const {
     data: subscriptionPlans,

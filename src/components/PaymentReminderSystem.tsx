@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PaymentReminder, MemberSubscription } from '@/types/subscription';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { PaymentService } from '@/services/paymentService';
 
 interface PaymentReminderSystemProps {
   communityId?: string;
@@ -42,30 +43,50 @@ export const PaymentReminderSystem: React.FC<PaymentReminderSystemProps> = ({
     if (!user) return;
 
     try {
-      let query = supabase
-        .from('payment_reminders')
+      // First, get user's subscriptions
+      let subscriptionsQuery = supabase
+        .from('community_member_subscriptions')
         .select(`
-          *,
-          subscription:community_member_subscriptions(
-            *,
-            plan:community_subscription_plans(*),
-            community:communities(name)
-          )
+          id,
+          user_id,
+          community_id,
+          plan:community_subscription_plans(*),
+          community:communities(name)
         `)
-        .eq('subscription.user_id', user.id)
-        .gte('due_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last 7 days
-        .order('sent_at', { ascending: false });
+        .eq('user_id', user.id);
 
       if (communityId) {
-        query = query.eq('subscription.community_id', communityId);
+        subscriptionsQuery = subscriptionsQuery.eq('community_id', communityId);
       }
 
-      const { data, error } = await query;
+      const { data: subscriptions, error: subscriptionsError } = await subscriptionsQuery;
 
-      if (error) throw error;
+      if (subscriptionsError) throw subscriptionsError;
+      if (!subscriptions?.length) {
+        setReminders([]);
+        return;
+      }
+
+      // Then get reminders for those subscriptions
+      const subscriptionIds = subscriptions.map(s => s.id);
+      
+      const { data: reminders, error: remindersError } = await supabase
+        .from('payment_reminders')
+        .select('*')
+        .in('subscription_id', subscriptionIds)
+        .gte('due_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .order('sent_at', { ascending: false });
+
+      if (remindersError) throw remindersError;
+
+      // Manually join the data
+      const reminderWithSubscriptions = (reminders || []).map(reminder => ({
+        ...reminder,
+        subscription: subscriptions.find(s => s.id === reminder.subscription_id)
+      })).filter(reminder => reminder.subscription); // Filter out any orphaned reminders
 
       // Filter out dismissed reminders
-      const activeReminders = (data || []).filter(
+      const activeReminders = reminderWithSubscriptions.filter(
         reminder => !dismissedReminders.includes(reminder.id)
       );
 
@@ -119,21 +140,51 @@ export const PaymentReminderSystem: React.FC<PaymentReminderSystemProps> = ({
     }
   };
 
-  const handlePayNow = (reminder: PaymentReminder & { subscription: MemberSubscription }) => {
-    // In a real app, this would integrate with a payment processor
+  const handlePayNow = async (reminder: PaymentReminder & { subscription: MemberSubscription }) => {
+    const subscription = reminder.subscription;
+    const amount = subscription.billing_cycle === 'yearly' 
+      ? subscription.plan?.price_yearly 
+      : subscription.plan?.price_monthly;
+
+    if (!amount) {
+      toast({
+        title: "Error",
+        description: "Unable to determine payment amount",
+        variant: "destructive"
+      });
+      return;
+    }
+
     toast({
       title: "Payment Processing",
-      description: "Redirecting to payment portal...",
+      description: "Processing your payment...",
     });
-    
-    // For demo purposes, just dismiss the reminder
-    setTimeout(() => {
-      dismissReminder(reminder.id);
+
+    try {
+      const result = await PaymentService.processPayment(subscription.id, amount);
+      
+      if (result.success) {
+        dismissReminder(reminder.id);
+        toast({
+          title: "Payment Successful",
+          description: "Your payment has been processed successfully.",
+        });
+        // Refresh the reminders list
+        fetchReminders();
+      } else {
+        toast({
+          title: "Payment Failed",
+          description: result.error || "Payment processing failed. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Payment Successful",
-        description: "Your payment has been processed successfully.",
+        title: "Payment Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
       });
-    }, 2000);
+    }
   };
 
   if (loading) {
@@ -301,17 +352,31 @@ export const usePaymentReminders = (communityId?: string) => {
 
     const fetchReminderCount = async () => {
       try {
-        let query = supabase
-          .from('payment_reminders')
-          .select('id', { count: 'exact', head: true })
-          .eq('subscription.user_id', user.id)
-          .gte('due_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+        // First get user's subscription IDs
+        let subscriptionsQuery = supabase
+          .from('community_member_subscriptions')
+          .select('id')
+          .eq('user_id', user.id);
 
         if (communityId) {
-          query = query.eq('subscription.community_id', communityId);
+          subscriptionsQuery = subscriptionsQuery.eq('community_id', communityId);
         }
 
-        const { count, error } = await query;
+        const { data: subscriptions, error: subscriptionsError } = await subscriptionsQuery;
+
+        if (subscriptionsError) throw subscriptionsError;
+        if (!subscriptions?.length) {
+          setReminderCount(0);
+          return;
+        }
+
+        const subscriptionIds = subscriptions.map(s => s.id);
+
+        const { count, error } = await supabase
+          .from('payment_reminders')
+          .select('id', { count: 'exact', head: true })
+          .in('subscription_id', subscriptionIds)
+          .gte('due_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
         if (error) throw error;
         setReminderCount(count || 0);
