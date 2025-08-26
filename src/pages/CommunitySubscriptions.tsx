@@ -22,6 +22,7 @@ import { SubscriptionPlanManager } from '@/components/SubscriptionPlanManager';
 import { SubscriptionTiers } from '@/components/SubscriptionTiers';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
 import { ModernHeader } from '@/components/ModernHeader';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 export default function CommunitySubscriptions() {
@@ -48,7 +49,6 @@ export default function CommunitySubscriptions() {
       if (!communityId) return;
       
       try {
-        const { supabase } = await import('@/integrations/supabase/client');
         const { data, error } = await supabase
           .from('communities')
           .select('*')
