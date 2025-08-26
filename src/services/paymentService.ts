@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SubscriptionPayment } from '@/types/subscription';
+import { StripeService } from './stripeService';
+import { isStripeEnabled } from '@/lib/stripe';
 
 export interface PaymentResult {
   success: boolean;
@@ -15,13 +17,45 @@ export class PaymentService {
   static async processPayment(
     subscriptionId: string, 
     amount: number, 
-    currency: string = 'USD'
+    currency: string = 'USD',
+    paymentMethodId?: string,
+    customerId?: string
   ): Promise<PaymentResult> {
     try {
-      // In a real implementation, this would integrate with Stripe, PayPal, etc.
-      // For now, we'll create a mock payment record
+      let paymentId: string;
+      let paymentMethod: string;
       
-      const mockPaymentId = `mock_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      if (isStripeEnabled() && paymentMethodId && customerId) {
+        // Process real Stripe payment
+        const stripeResult = await StripeService.createPaymentIntent({
+          subscriptionId,
+          amount: amount * 100, // Convert to cents
+          currency,
+          customerId,
+          metadata: {
+            subscription_id: subscriptionId
+          }
+        });
+        
+        if (!stripeResult.success) {
+          throw new Error(stripeResult.error);
+        }
+        
+        paymentId = stripeResult.paymentId!;
+        paymentMethod = 'stripe';
+      } else {
+        // Mock payment for development
+        paymentId = `mock_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        paymentMethod = 'mock';
+        
+        // Simulate payment processing delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Simulate 90% success rate for mock payments
+        if (Math.random() < 0.1) {
+          throw new Error('Mock payment failed - insufficient funds');
+        }
+      }
       
       // Create payment record in database
       const { data, error } = await supabase
@@ -31,8 +65,8 @@ export class PaymentService {
           amount,
           currency,
           status: 'completed',
-          payment_method: 'mock',
-          external_payment_id: mockPaymentId,
+          payment_method: paymentMethod,
+          external_payment_id: paymentId,
           paid_at: new Date().toISOString(),
           due_date: new Date().toISOString()
         })
@@ -53,7 +87,7 @@ export class PaymentService {
 
       return {
         success: true,
-        paymentId: mockPaymentId
+        paymentId
       };
     } catch (error) {
       console.error('Payment processing error:', error);
@@ -89,13 +123,31 @@ export class PaymentService {
   static async createPaymentIntent(
     subscriptionId: string,
     amount: number,
-    currency: string = 'USD'
+    currency: string = 'USD',
+    customerId?: string
   ): Promise<{ clientSecret?: string; error?: string }> {
-    // This would integrate with Stripe's createPaymentIntent API
-    // For now, return a mock client secret
-    return {
-      clientSecret: `pi_mock_${Date.now()}_secret_${Math.random().toString(36).substr(2, 9)}`
-    };
+    if (isStripeEnabled() && customerId) {
+      // Use real Stripe service
+      const result = await StripeService.createPaymentIntent({
+        subscriptionId,
+        amount: amount * 100, // Convert to cents
+        currency,
+        customerId,
+        metadata: {
+          subscription_id: subscriptionId
+        }
+      });
+      
+      return {
+        clientSecret: result.clientSecret,
+        error: result.error
+      };
+    } else {
+      // Return mock client secret for development
+      return {
+        clientSecret: `pi_mock_${Date.now()}_secret_${Math.random().toString(36).substr(2, 9)}`
+      };
+    }
   }
 
   /**
@@ -112,9 +164,25 @@ export class PaymentService {
    */
   static async cancelSubscription(subscriptionId: string): Promise<PaymentResult> {
     try {
-      // In a real implementation, this would also cancel recurring payments
-      // with the payment processor
+      // Get subscription details
+      const { data: subscription, error: fetchError } = await supabase
+        .from('community_member_subscriptions')
+        .select('stripe_subscription_id')
+        .eq('id', subscriptionId)
+        .single();
+        
+      if (fetchError) throw fetchError;
       
+      // Cancel Stripe subscription if it exists
+      if (subscription.stripe_subscription_id && isStripeEnabled()) {
+        const stripeResult = await StripeService.cancelSubscription(subscription.stripe_subscription_id);
+        if (!stripeResult.success) {
+          console.error('Failed to cancel Stripe subscription:', stripeResult.error);
+          // Continue with local cancellation even if Stripe fails
+        }
+      }
+      
+      // Update local subscription status
       const { error } = await supabase
         .from('community_member_subscriptions')
         .update({

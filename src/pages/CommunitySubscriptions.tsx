@@ -22,6 +22,7 @@ import { SubscriptionPlanManager } from '@/components/SubscriptionPlanManager';
 import { SubscriptionTiers } from '@/components/SubscriptionTiers';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
 import { ModernHeader } from '@/components/ModernHeader';
+import { CouponManager } from '@/components/CouponManager';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
@@ -146,9 +147,10 @@ export default function CommunitySubscriptions() {
         )}
 
         <Tabs defaultValue={isCreator ? "manage" : "plans"} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${isCreator ? 'grid-cols-4' : 'grid-cols-2'}`}>
             <TabsTrigger value="plans">Available Plans</TabsTrigger>
             {isCreator && <TabsTrigger value="manage">Manage Plans</TabsTrigger>}
+            {isCreator && <TabsTrigger value="coupons">Coupons</TabsTrigger>}
             <TabsTrigger value="billing">Billing & History</TabsTrigger>
           </TabsList>
 
@@ -185,6 +187,16 @@ export default function CommunitySubscriptions() {
           {isCreator && (
             <TabsContent value="manage" className="space-y-6">
               <SubscriptionPlanManager 
+                communityId={communityId!}
+                isCreator={isCreator}
+              />
+            </TabsContent>
+          )}
+
+          {/* Coupons Tab (Admin Only) */}
+          {isCreator && (
+            <TabsContent value="coupons" className="space-y-6">
+              <CouponManager
                 communityId={communityId!}
                 isCreator={isCreator}
               />
