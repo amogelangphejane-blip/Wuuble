@@ -25,6 +25,7 @@ import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useAuth } from '@/hooks/useAuth';
 import { PricingTier, SubscriptionPlan } from '@/types/subscription';
 import { formatDistanceToNow, addDays, format } from 'date-fns';
+import { StripePaymentForm } from './StripePaymentForm';
 
 interface SubscriptionTiersProps {
   communityId: string;
@@ -39,6 +40,7 @@ export const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
   const [isYearly, setIsYearly] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   const {
     subscriptionPlans,
@@ -60,18 +62,24 @@ export const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
     }
 
     setSelectedPlan(plan);
+    setBillingCycle(isYearly ? 'yearly' : 'monthly');
     setShowPaymentDialog(true);
   };
 
-  const confirmSubscription = () => {
+  const handlePaymentSuccess = (subscriptionId: string) => {
     if (!selectedPlan) return;
 
     subscribe({
       community_id: communityId,
       plan_id: selectedPlan.id,
-      billing_cycle: isYearly ? 'yearly' : 'monthly'
+      billing_cycle: billingCycle
     });
 
+    setShowPaymentDialog(false);
+    setSelectedPlan(null);
+  };
+
+  const handlePaymentCancel = () => {
     setShowPaymentDialog(false);
     setSelectedPlan(null);
   };
@@ -353,73 +361,28 @@ export const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
         })}
       </div>
 
-      {/* Payment Confirmation Dialog */}
+      {/* Payment Dialog */}
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Subscription</DialogTitle>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>Complete Your Subscription</DialogTitle>
             <DialogDescription>
-              You're about to subscribe to the {selectedPlan?.name} plan
+              Subscribe to {selectedPlan?.name} and start enjoying premium features
             </DialogDescription>
           </DialogHeader>
-
-          {selectedPlan && (
-            <div className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg space-y-2">
-                <div className="flex justify-between">
-                  <span>Plan:</span>
-                  <span className="font-semibold">{selectedPlan.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Billing:</span>
-                  <span className="font-semibold">
-                    {isYearly ? 'Yearly' : 'Monthly'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Price:</span>
-                  <span className="font-semibold">
-                    ${getPrice(selectedPlan).amount}/{getPrice(selectedPlan).period}
-                  </span>
-                </div>
-                {selectedPlan.trial_days > 0 && (
-                  <div className="flex justify-between">
-                    <span>Free Trial:</span>
-                    <span className="font-semibold text-green-600">
-                      {selectedPlan.trial_days} days
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {selectedPlan.trial_days > 0 && (
-                <Alert>
-                  <Gift className="h-4 w-4" />
-                  <AlertDescription>
-                    You won't be charged until your {selectedPlan.trial_days}-day free trial ends on{' '}
-                    {format(addDays(new Date(), selectedPlan.trial_days), 'MMMM dd, yyyy')}.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowPaymentDialog(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={confirmSubscription}
-                  disabled={isSubscribing}
-                  className="flex-1"
-                >
-                  {isSubscribing ? 'Processing...' : 'Confirm Subscription'}
-                </Button>
-              </div>
-            </div>
-          )}
+          
+          <div className="p-6 pt-0">
+            {selectedPlan && (
+              <StripePaymentForm
+                plan={selectedPlan}
+                communityId={communityId}
+                billingCycle={billingCycle}
+                onSuccess={handlePaymentSuccess}
+                onCancel={handlePaymentCancel}
+                disabled={isSubscribing}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

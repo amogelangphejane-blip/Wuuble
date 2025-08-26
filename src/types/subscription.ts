@@ -9,6 +9,9 @@ export interface SubscriptionPlan {
   features: string[];
   is_active: boolean;
   max_members?: number;
+  stripe_product_id?: string;
+  stripe_price_monthly?: string;
+  stripe_price_yearly?: string;
   created_at: string;
   updated_at: string;
 }
@@ -25,9 +28,14 @@ export interface MemberSubscription {
   trial_start?: string;
   trial_end?: string;
   cancelled_at?: string;
+  stripe_subscription_id?: string;
+  stripe_customer_id?: string;
+  coupon_id?: string;
+  discount_amount?: number;
   created_at: string;
   updated_at: string;
   plan?: SubscriptionPlan;
+  coupon?: SubscriptionCoupon;
 }
 
 export interface SubscriptionPayment {
@@ -140,4 +148,75 @@ export interface BillingHistory {
   total_paid: number;
   next_payment_date?: string;
   next_payment_amount?: number;
+}
+
+export interface SubscriptionCoupon {
+  id: string;
+  community_id: string;
+  code: string;
+  name: string;
+  description?: string;
+  discount_type: 'percentage' | 'fixed_amount';
+  discount_value: number;
+  currency: string;
+  max_uses?: number;
+  current_uses: number;
+  valid_from: string;
+  valid_until?: string;
+  applies_to: 'all' | 'first_payment' | 'recurring';
+  minimum_amount?: number;
+  is_active: boolean;
+  stripe_coupon_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CouponUsage {
+  id: string;
+  coupon_id: string;
+  user_id: string;
+  subscription_id?: string;
+  discount_amount: number;
+  used_at: string;
+  coupon?: SubscriptionCoupon;
+}
+
+export interface CreateCouponRequest {
+  community_id: string;
+  code: string;
+  name: string;
+  description?: string;
+  discount_type: 'percentage' | 'fixed_amount';
+  discount_value: number;
+  currency?: string;
+  max_uses?: number;
+  valid_from?: string;
+  valid_until?: string;
+  applies_to?: 'all' | 'first_payment' | 'recurring';
+  minimum_amount?: number;
+}
+
+export interface UpdateCouponRequest {
+  name?: string;
+  description?: string;
+  discount_value?: number;
+  max_uses?: number;
+  valid_until?: string;
+  applies_to?: 'all' | 'first_payment' | 'recurring';
+  minimum_amount?: number;
+  is_active?: boolean;
+}
+
+export interface CouponValidationResult {
+  valid: boolean;
+  coupon_id?: string;
+  discount_amount?: number;
+  error_message?: string;
+}
+
+export interface CouponStats {
+  total_coupons: number;
+  active_coupons: number;
+  total_uses: number;
+  total_discount_given: number;
 }
