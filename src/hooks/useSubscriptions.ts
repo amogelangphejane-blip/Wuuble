@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { handleError } from '@/utils/errorHandling';
 import {
   SubscriptionPlan,
   MemberSubscription,
@@ -218,8 +219,9 @@ export const useSubscriptions = (communityId?: string) => {
       });
     },
     onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown error occurred');
       console.error('Failed to create subscription plan:', error);
+      const errorMessage = handleError(error, 'create');
+      
       toast({
         title: "Error",
         description: `Failed to create subscription plan: ${errorMessage}`,
@@ -249,8 +251,9 @@ export const useSubscriptions = (communityId?: string) => {
       });
     },
     onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown error occurred');
       console.error('Failed to update subscription plan:', error);
+      const errorMessage = handleError(error, 'update');
+      
       toast({
         title: "Error",
         description: `Failed to update subscription plan: ${errorMessage}`,
@@ -301,8 +304,9 @@ export const useSubscriptions = (communityId?: string) => {
       });
     },
     onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown error occurred');
       console.error('Failed to subscribe:', error);
+      const errorMessage = handleError(error, 'subscribe');
+      
       toast({
         title: "Error",
         description: `Failed to subscribe: ${errorMessage}`,
@@ -337,8 +341,9 @@ export const useSubscriptions = (communityId?: string) => {
       });
     },
     onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Unknown error occurred');
       console.error('Failed to cancel subscription:', error);
+      const errorMessage = handleError(error, 'cancel');
+      
       toast({
         title: "Error",
         description: `Failed to cancel subscription: ${errorMessage}`,
