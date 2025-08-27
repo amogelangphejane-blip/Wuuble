@@ -25,7 +25,7 @@ import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useAuth } from '@/hooks/useAuth';
 import { PricingTier, SubscriptionPlan } from '@/types/subscription';
 import { formatDistanceToNow, addDays, format } from 'date-fns';
-import { StripePaymentForm } from './StripePaymentForm';
+import { EnhancedPaymentForm } from './EnhancedPaymentForm';
 
 interface SubscriptionTiersProps {
   communityId: string;
@@ -66,7 +66,7 @@ export const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
     setShowPaymentDialog(true);
   };
 
-  const handlePaymentSuccess = (subscriptionId: string) => {
+  const handlePaymentSuccess = (subscriptionId: string, paymentMethod?: string) => {
     if (!selectedPlan) return;
 
     subscribe({
@@ -373,7 +373,7 @@ export const SubscriptionTiers: React.FC<SubscriptionTiersProps> = ({
           
           <div className="p-6 pt-0">
             {selectedPlan && (
-              <StripePaymentForm
+              <EnhancedPaymentForm
                 plan={selectedPlan}
                 communityId={communityId}
                 billingCycle={billingCycle}

@@ -2,6 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { SubscriptionPayment } from '@/types/subscription';
 import { StripeService } from './stripeService';
 import { WalletService } from './walletService';
+import { PayPalService } from './paypalService';
+import { BankTransferService } from './bankTransferService';
 import { isStripeEnabled } from '@/lib/stripe';
 
 export interface PaymentResult {
@@ -18,48 +20,93 @@ export class PaymentService {
   /**
    * Process a payment for a subscription with platform fee handling
    * This now integrates with the wallet system and deducts platform fees
+   * Supports multiple payment methods: Stripe, PayPal, Bank Transfer
    */
   static async processPayment(
     subscriptionId: string, 
     amount: number, 
     currency: string = 'USD',
     paymentMethodId?: string,
-    customerId?: string
+    customerId?: string,
+    paymentMethodType?: 'card' | 'paypal' | 'bank_transfer'
   ): Promise<PaymentResult> {
     try {
       let externalPaymentId: string;
       let paymentMethod: string;
       
-      if (isStripeEnabled() && paymentMethodId && customerId) {
-        // Process real Stripe payment
-        const stripeResult = await StripeService.createPaymentIntent({
-          subscriptionId,
-          amount: amount * 100, // Convert to cents
-          currency,
-          customerId,
-          metadata: {
-            subscription_id: subscriptionId
+      // Determine payment method type
+      const methodType = paymentMethodType || 'card';
+      
+      switch (methodType) {
+        case 'card':
+          if (isStripeEnabled() && paymentMethodId && customerId) {
+            // Process real Stripe payment
+            const stripeResult = await StripeService.createPaymentIntent({
+              subscriptionId,
+              amount: amount * 100, // Convert to cents
+              currency,
+              customerId,
+              metadata: {
+                subscription_id: subscriptionId
+              }
+            });
+            
+            if (!stripeResult.success) {
+              throw new Error(stripeResult.error);
+            }
+            
+            externalPaymentId = stripeResult.paymentId!;
+            paymentMethod = 'stripe';
+          } else {
+            // Mock payment for development
+            externalPaymentId = `mock_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            paymentMethod = 'mock';
+            
+            // Simulate payment processing delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Simulate 90% success rate for mock payments
+            if (Math.random() < 0.1) {
+              throw new Error('Mock payment failed - insufficient funds');
+            }
           }
-        });
-        
-        if (!stripeResult.success) {
-          throw new Error(stripeResult.error);
-        }
-        
-        externalPaymentId = stripeResult.paymentId!;
-        paymentMethod = 'stripe';
-      } else {
-        // Mock payment for development
-        externalPaymentId = `mock_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        paymentMethod = 'mock';
-        
-        // Simulate payment processing delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate 90% success rate for mock payments
-        if (Math.random() < 0.1) {
-          throw new Error('Mock payment failed - insufficient funds');
-        }
+          break;
+
+        case 'paypal':
+          // Process PayPal payment
+          const paypalResult = await PayPalService.createPayment({
+            amount,
+            currency,
+            description: `Subscription payment for ${subscriptionId}`,
+            returnUrl: `${window.location.origin}/payment/success`,
+            cancelUrl: `${window.location.origin}/payment/cancel`,
+            metadata: {
+              subscription_id: subscriptionId
+            }
+          });
+          
+          if (!paypalResult.success) {
+            throw new Error(paypalResult.error);
+          }
+          
+          externalPaymentId = paypalResult.paymentId!;
+          paymentMethod = 'paypal';
+          
+          // For PayPal, we need to redirect user to approval URL
+          // This would be handled in the UI component
+          break;
+
+        case 'bank_transfer':
+          // For bank transfers, create a pending payment that requires manual confirmation
+          externalPaymentId = `bank_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          paymentMethod = 'bank_transfer';
+          
+          // Bank transfers are processed manually, so we create a pending payment
+          // The actual confirmation happens through admin interface
+          break;
+
+        default:
+          throw new Error(`Unsupported payment method: ${methodType}`);
       }
       
       // Process payment through wallet system with platform fee deduction
