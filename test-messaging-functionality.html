@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messaging Feature Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Messaging Feature Troubleshooting</h1>
+    <p>This tool helps diagnose and fix issues with the messaging system.</p>
+
+    <div class="test-section">
+        <h2>📡 Database Connection Test</h2>
+        <button onclick="testConnection()">Test Supabase Connection</button>
+        <div id="connection-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔑 Authentication Test</h2>
+        <div>
+            <input type="email" id="email" placeholder="Email" value="test@example.com">
+            <input type="password" id="password" placeholder="Password" value="password123">
+            <button onclick="testSignUp()">Test Sign Up</button>
+            <button onclick="testSignIn()">Test Sign In</button>
+            <button onclick="testSignOut()">Sign Out</button>
+        </div>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🗄️ Schema Verification</h2>
+        <button onclick="verifySchema()">Verify Messaging Schema</button>
+        <div id="schema-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>💬 Messaging Functions Test</h2>
+        <div>
+            <input type="text" id="search-query" placeholder="Search users..." value="test">
+            <button onclick="testUserSearch()">Test User Search</button>
+        </div>
+        <div>
+            <input type="text" id="other-user-id" placeholder="Other User ID">
+            <button onclick="testCreateConversation()">Test Create Conversation</button>
+        </div>
+        <div>
+            <input type="text" id="conversation-id" placeholder="Conversation ID">
+            <textarea id="message-content" placeholder="Message content" rows="3">Hello, this is a test message!</textarea>
+            <button onclick="testSendMessage()">Test Send Message</button>
+        </div>
+        <div id="messaging-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔄 Real-time Test</h2>
+        <button onclick="testRealtime()">Test Real-time Updates</button>
+        <button onclick="stopRealtime()">Stop Real-time</button>
+        <div id="realtime-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Debug Log</h2>
+        <button onclick="clearLog()">Clear Log</button>
+        <div id="debug-log" class="log"></div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8";
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let realtimeSubscription = null;
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('debug-log');
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="test-result ${type}">${message}</div>`;
+            log(`${type.toUpperCase()}: ${message}`);
+        }
+
+        async function testConnection() {
+            try {
+                log('Testing Supabase connection...');
+                const { data, error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                showResult('connection-result', '✅ Successfully connected to Supabase!', 'success');
+            } catch (error) {
+                showResult('connection-result', `❌ Connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSignUp() {
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                log(`Testing sign up for ${email}...`);
+                
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            display_name: 'Test User'
+                        }
+                    }
+                });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                showResult('auth-result', '✅ Sign up successful! Check email for confirmation.', 'success');
+            } catch (error) {
+                showResult('auth-result', `❌ Sign up failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSignIn() {
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                log(`Testing sign in for ${email}...`);
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                showResult('auth-result', `✅ Sign in successful! User: ${data.user.email}`, 'success');
+            } catch (error) {
+                showResult('auth-result', `❌ Sign in failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSignOut() {
+            try {
+                log('Testing sign out...');
+                const { error } = await supabase.auth.signOut();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                showResult('auth-result', '✅ Sign out successful!', 'success');
+            } catch (error) {
+                showResult('auth-result', `❌ Sign out failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function verifySchema() {
+            try {
+                log('Verifying messaging schema...');
+                
+                // Test conversations table
+                const { data: conversations, error: convError } = await supabase
+                    .from('conversations')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (convError) {
+                    throw new Error(`Conversations table error: ${convError.message}`);
+                }
+                
+                // Test messages table
+                const { data: messages, error: msgError } = await supabase
+                    .from('messages')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (msgError) {
+                    throw new Error(`Messages table error: ${msgError.message}`);
+                }
+                
+                // Test get_or_create_conversation function
+                const { data: funcData, error: funcError } = await supabase
+                    .rpc('get_or_create_conversation', {
+                        user1_id: '00000000-0000-0000-0000-000000000001',
+                        user2_id: '00000000-0000-0000-0000-000000000002'
+                    });
+                
+                let funcStatus = 'Function exists';
+                if (funcError && !funcError.message.includes('violates foreign key constraint')) {
+                    funcStatus = `Function error: ${funcError.message}`;
+                }
+                
+                showResult('schema-result', 
+                    `✅ Schema verified successfully!\n` +
+                    `📊 Conversations table: OK\n` +
+                    `📊 Messages table: OK\n` +
+                    `🔧 get_or_create_conversation: ${funcStatus}`, 
+                    'success'
+                );
+                
+            } catch (error) {
+                showResult('schema-result', `❌ Schema verification failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testUserSearch() {
+            try {
+                const query = document.getElementById('search-query').value;
+                log(`Testing user search for: ${query}`);
+                
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('id, user_id, display_name, avatar_url')
+                    .or(`display_name.ilike.%${query}%`)
+                    .limit(10);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                showResult('messaging-result', 
+                    `✅ User search successful!\n` +
+                    `Found ${profiles.length} users matching "${query}"\n` +
+                    `${profiles.map(p => `- ${p.display_name || 'No name'} (${p.user_id})`).join('\n')}`, 
+                    'success'
+                );
+                
+            } catch (error) {
+                showResult('messaging-result', `❌ User search failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCreateConversation() {
+            try {
+                const otherUserId = document.getElementById('other-user-id').value;
+                
+                if (!otherUserId) {
+                    throw new Error('Please enter another user ID');
+                }
+                
+                log(`Testing conversation creation with user: ${otherUserId}`);
+                
+                const { data: conversationId, error } = await supabase.rpc('get_or_create_conversation', {
+                    user1_id: (await supabase.auth.getUser()).data.user.id,
+                    user2_id: otherUserId,
+                });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                document.getElementById('conversation-id').value = conversationId;
+                
+                showResult('messaging-result', 
+                    `✅ Conversation created/retrieved successfully!\n` +
+                    `Conversation ID: ${conversationId}`, 
+                    'success'
+                );
+                
+            } catch (error) {
+                showResult('messaging-result', `❌ Create conversation failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSendMessage() {
+            try {
+                const conversationId = document.getElementById('conversation-id').value;
+                const content = document.getElementById('message-content').value;
+                
+                if (!conversationId || !content) {
+                    throw new Error('Please enter conversation ID and message content');
+                }
+                
+                log(`Testing message sending to conversation: ${conversationId}`);
+                
+                const { data: user } = await supabase.auth.getUser();
+                if (!user.user) {
+                    throw new Error('Please sign in first');
+                }
+                
+                const { data: message, error } = await supabase
+                    .from('messages')
+                    .insert({
+                        conversation_id: conversationId,
+                        sender_id: user.user.id,
+                        content: content.trim(),
+                    })
+                    .select()
+                    .single();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                showResult('messaging-result', 
+                    `✅ Message sent successfully!\n` +
+                    `Message ID: ${message.id}\n` +
+                    `Content: "${message.content}"`, 
+                    'success'
+                );
+                
+            } catch (error) {
+                showResult('messaging-result', `❌ Send message failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRealtime() {
+            try {
+                log('Testing real-time messaging...');
+                
+                realtimeSubscription = supabase
+                    .channel('test-messages')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: 'INSERT',
+                            schema: 'public',
+                            table: 'messages',
+                        },
+                        (payload) => {
+                            log(`📨 Real-time message received: ${JSON.stringify(payload.new)}`);
+                            showResult('realtime-result', 
+                                `✅ Real-time working!\n` +
+                                `New message: "${payload.new.content}"\n` +
+                                `From: ${payload.new.sender_id}`, 
+                                'success'
+                            );
+                        }
+                    )
+                    .subscribe((status) => {
+                        log(`Real-time subscription status: ${status}`);
+                        if (status === 'SUBSCRIBED') {
+                            showResult('realtime-result', '🔄 Real-time subscription active. Send a message to test!', 'info');
+                        }
+                    });
+                
+            } catch (error) {
+                showResult('realtime-result', `❌ Real-time test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function stopRealtime() {
+            if (realtimeSubscription) {
+                supabase.removeChannel(realtimeSubscription);
+                realtimeSubscription = null;
+                showResult('realtime-result', '⏹️ Real-time subscription stopped', 'info');
+                log('Real-time subscription stopped');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '';
+        }
+
+        // Auto-test connection on load
+        window.onload = () => {
+            log('🚀 Messaging troubleshooting tool loaded');
+            testConnection();
+        };
+    </script>
+</body>
+</html>

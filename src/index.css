@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Enhanced WhatsApp-style Messaging UI Animations */
+/* Enhanced Messaging UI Animations */
 @keyframes messageSlideIn {
   from {
     opacity: 0;
@@ -14,7 +14,7 @@
   }
 }
 
-@keyframes whatsappFadeIn {
+@keyframes fadeIn {
   from {
     opacity: 0;
   }
@@ -79,16 +79,16 @@
   }
 }
 
-/* WhatsApp-style utility classes */
+/* Messaging utility classes */
 .animate-messageSlideIn {
   animation: messageSlideIn 0.2s ease-out;
 }
 
-.animate-whatsappFadeIn {
-  animation: whatsappFadeIn 0.3s ease-out;
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
 }
 
-/* WhatsApp-style message tail */
+/* Message tail */
 .message-tail-right::before {
   content: '';
   position: absolute;
