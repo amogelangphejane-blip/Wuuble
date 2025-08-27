@@ -41,14 +41,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const getMessageStatus = () => {
     if (!isOwn) return null;
     
-    // WhatsApp-style status indicators
+    // Message status indicators
     // In a real implementation, this would be based on message.status
     const messageAge = Date.now() - new Date(message.created_at).getTime();
     const isRead = messageAge > 10000; // Simulate read status after 10 seconds
     const isDelivered = messageAge > 2000; // Simulate delivered status after 2 seconds
     
     if (isRead) {
-      return <CheckCheck className="h-3 w-3 text-[#4fc3f7]" />; // Blue checkmarks for read
+      return <CheckCheck className="h-3 w-3 text-blue-500" />; // Blue checkmarks for read
     } else if (isDelivered) {
       return <CheckCheck className="h-3 w-3 text-gray-400" />; // Gray checkmarks for delivered
     } else {
@@ -115,7 +115,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         "max-w-[75%] relative",
         isOwn ? "items-end" : "items-start"
       )}>
-        {/* Message content with WhatsApp-style design */}
+        {/* Message content */}
         <div className="relative group/message">
           <div 
             className={cn(
@@ -130,7 +130,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             role="article"
             aria-label={`Message content: ${message.content}`}
           >
-            {/* WhatsApp-style message tail */}
+            {/* Message tail */}
             {showAvatar && (
               <div 
                 className={cn(

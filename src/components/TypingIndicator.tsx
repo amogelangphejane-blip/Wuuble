@@ -13,7 +13,7 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
   return (
     <div 
       className={cn(
-        "flex items-center gap-1 mb-2 animate-whatsappFadeIn",
+        "flex items-center gap-1 mb-2 animate-fadeIn",
         className
       )}
     >
