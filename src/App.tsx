@@ -1,3 +1,4 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LoadingProvider } from "@/contexts/LoadingContext";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
+import { performanceMonitor } from "@/utils/performanceMonitor";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
 import Messages from "./pages/Messages";
@@ -41,6 +43,12 @@ console.log('🚀 App.tsx loaded - all imports successful');
 
 const App = () => {
   console.log('🎯 App component rendering');
+  
+  // Initialize performance monitoring
+  React.useEffect(() => {
+    performanceMonitor.recordPageView(window.location.pathname);
+    performanceMonitor.recordFeatureUsage('app_initialization');
+  }, []);
   
   return (
     <QueryClientProvider client={queryClient}>

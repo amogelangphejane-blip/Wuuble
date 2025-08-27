@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { WebRTCService, defaultWebRTCConfig, WebRTCConfig } from '@/services/webRTCService';
 import { SignalingService, createSignalingService, SignalingMessage } from '@/services/signalingService';
+import { ProductionSignalingService, createProductionSignalingService } from '@/services/productionSignalingService';
 import { FilterConfig, VideoFilterService } from '@/services/videoFilterService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,6 +18,7 @@ export interface ChatMessage {
 export interface UseVideoChatOptions {
   webRTCConfig?: WebRTCConfig;
   useMockSignaling?: boolean;
+  useProductionSignaling?: boolean;
   autoConnect?: boolean;
 }
 
