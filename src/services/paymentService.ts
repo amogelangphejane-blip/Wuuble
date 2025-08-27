@@ -1,18 +1,23 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SubscriptionPayment } from '@/types/subscription';
 import { StripeService } from './stripeService';
+import { WalletService } from './walletService';
 import { isStripeEnabled } from '@/lib/stripe';
 
 export interface PaymentResult {
   success: boolean;
   paymentId?: string;
+  transactionId?: string;
+  grossAmount?: number;
+  platformFee?: number;
+  creatorAmount?: number;
   error?: string;
 }
 
 export class PaymentService {
   /**
-   * Process a payment for a subscription
-   * This is a mock implementation that should be replaced with actual payment processor integration
+   * Process a payment for a subscription with platform fee handling
+   * This now integrates with the wallet system and deducts platform fees
    */
   static async processPayment(
     subscriptionId: string, 
@@ -22,7 +27,7 @@ export class PaymentService {
     customerId?: string
   ): Promise<PaymentResult> {
     try {
-      let paymentId: string;
+      let externalPaymentId: string;
       let paymentMethod: string;
       
       if (isStripeEnabled() && paymentMethodId && customerId) {
@@ -41,11 +46,11 @@ export class PaymentService {
           throw new Error(stripeResult.error);
         }
         
-        paymentId = stripeResult.paymentId!;
+        externalPaymentId = stripeResult.paymentId!;
         paymentMethod = 'stripe';
       } else {
         // Mock payment for development
-        paymentId = `mock_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        externalPaymentId = `mock_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         paymentMethod = 'mock';
         
         // Simulate payment processing delay
@@ -57,37 +62,26 @@ export class PaymentService {
         }
       }
       
-      // Create payment record in database
-      const { data, error } = await supabase
-        .from('subscription_payments')
-        .insert({
-          subscription_id: subscriptionId,
-          amount,
-          currency,
-          status: 'completed',
-          payment_method: paymentMethod,
-          external_payment_id: paymentId,
-          paid_at: new Date().toISOString(),
-          due_date: new Date().toISOString()
-        })
-        .select()
-        .single();
+      // Process payment through wallet system with platform fee deduction
+      const result = await WalletService.processSubscriptionPayment(
+        subscriptionId,
+        amount,
+        currency,
+        paymentMethod,
+        externalPaymentId
+      );
 
-      if (error) throw error;
-
-      // Update subscription status to active if it was past_due
-      await supabase
-        .from('community_member_subscriptions')
-        .update({ 
-          status: 'active',
-          current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
-        })
-        .eq('id', subscriptionId);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       return {
         success: true,
-        paymentId
+        paymentId: result.payment_id,
+        transactionId: result.transaction_id,
+        grossAmount: result.gross_amount,
+        platformFee: result.platform_fee,
+        creatorAmount: result.creator_amount
       };
     } catch (error) {
       console.error('Payment processing error:', error);

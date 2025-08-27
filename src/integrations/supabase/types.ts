@@ -14,6 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
+      creator_wallets: {
+        Row: {
+          id: string
+          creator_id: string
+          balance: number
+          pending_balance: number
+          total_earned: number
+          total_withdrawn: number
+          currency: string
+          stripe_account_id: string | null
+          payout_method: Json
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          creator_id: string
+          balance?: number
+          pending_balance?: number
+          total_earned?: number
+          total_withdrawn?: number
+          currency?: string
+          stripe_account_id?: string | null
+          payout_method?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          creator_id?: string
+          balance?: number
+          pending_balance?: number
+          total_earned?: number
+          total_withdrawn?: number
+          currency?: string
+          stripe_account_id?: string | null
+          payout_method?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          id: string
+          wallet_id: string
+          transaction_type: string
+          amount: number
+          currency: string
+          description: string | null
+          reference_id: string | null
+          reference_type: string | null
+          status: string
+          metadata: Json
+          processed_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          wallet_id: string
+          transaction_type: string
+          amount: number
+          currency?: string
+          description?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          metadata?: Json
+          processed_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          wallet_id?: string
+          transaction_type?: string
+          amount?: number
+          currency?: string
+          description?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          metadata?: Json
+          processed_at?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            referencedRelation: "creator_wallets"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      platform_fee_config: {
+        Row: {
+          id: string
+          fee_percentage: number
+          minimum_fee: number
+          maximum_fee: number | null
+          currency: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          fee_percentage?: number
+          minimum_fee?: number
+          maximum_fee?: number | null
+          currency?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          fee_percentage?: number
+          minimum_fee?: number
+          maximum_fee?: number | null
+          currency?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payout_requests: {
+        Row: {
+          id: string
+          wallet_id: string
+          amount: number
+          currency: string
+          payout_method: Json
+          status: string
+          external_payout_id: string | null
+          failure_reason: string | null
+          requested_at: string
+          processed_at: string | null
+          completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          wallet_id: string
+          amount: number
+          currency?: string
+          payout_method: Json
+          status?: string
+          external_payout_id?: string | null
+          failure_reason?: string | null
+          requested_at?: string
+          processed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          wallet_id?: string
+          amount?: number
+          currency?: string
+          payout_method?: Json
+          status?: string
+          external_payout_id?: string | null
+          failure_reason?: string | null
+          requested_at?: string
+          processed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_requests_wallet_id_fkey"
+            columns: ["wallet_id"]
+            referencedRelation: "creator_wallets"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       communities: {
         Row: {
           avatar_url: string | null
