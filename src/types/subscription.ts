@@ -128,12 +128,33 @@ export interface SubscriptionFormData {
 
 export interface PaymentMethodInfo {
   id: string;
-  type: 'card' | 'paypal' | 'bank_transfer';
-  last4?: string;
-  brand?: string;
-  exp_month?: number;
-  exp_year?: number;
+  type: 'card' | 'paypal' | 'bank_transfer' | 'crypto';
+  display_name: string;
   is_default: boolean;
+  is_active: boolean;
+  
+  // Card-specific fields
+  card_last4?: string;
+  card_brand?: string;
+  card_exp_month?: number;
+  card_exp_year?: number;
+  
+  // PayPal-specific fields
+  paypal_email?: string;
+  paypal_account_id?: string;
+  
+  // Bank transfer-specific fields
+  bank_name?: string;
+  bank_account_last4?: string;
+  bank_routing_number?: string;
+  bank_account_type?: 'checking' | 'savings';
+  bank_account_holder_name?: string;
+  
+  // External payment processor IDs
+  stripe_payment_method_id?: string;
+  paypal_payment_method_id?: string;
+  
+  created_at: string;
 }
 
 export interface SubscriptionFeature {
@@ -219,4 +240,81 @@ export interface CouponStats {
   active_coupons: number;
   total_uses: number;
   total_discount_given: number;
+}
+
+export interface PaymentMethodVerification {
+  id: string;
+  payment_method_id: string;
+  verification_type: 'micro_deposits' | 'instant' | 'manual';
+  status: 'pending' | 'verified' | 'failed' | 'expired';
+  verification_code?: string;
+  micro_deposit_amounts?: number[];
+  verified_at?: string;
+  expires_at?: string;
+  attempts: number;
+  max_attempts: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaymentInstructions {
+  id: string;
+  community_id: string;
+  payment_type: 'bank_transfer' | 'crypto' | 'other';
+  title: string;
+  instructions: string;
+  is_active: boolean;
+  
+  // Bank transfer specific
+  bank_name?: string;
+  account_name?: string;
+  account_number?: string;
+  routing_number?: string;
+  swift_code?: string;
+  iban?: string;
+  
+  // Crypto specific
+  wallet_address?: string;
+  crypto_type?: string;
+  network?: string;
+  
+  metadata?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePaymentMethodRequest {
+  type: 'card' | 'paypal' | 'bank_transfer' | 'crypto';
+  display_name: string;
+  is_default?: boolean;
+  
+  // Card-specific fields
+  card_last4?: string;
+  card_brand?: string;
+  card_exp_month?: number;
+  card_exp_year?: number;
+  stripe_payment_method_id?: string;
+  
+  // PayPal-specific fields
+  paypal_email?: string;
+  paypal_account_id?: string;
+  paypal_payment_method_id?: string;
+  
+  // Bank transfer-specific fields
+  bank_name?: string;
+  bank_account_last4?: string;
+  bank_routing_number?: string;
+  bank_account_type?: 'checking' | 'savings';
+  bank_account_holder_name?: string;
+}
+
+export interface PaymentMethodValidationResult {
+  is_valid: boolean;
+  error_message?: string;
+  requires_verification: boolean;
+}
+
+export interface SubscriptionFormDataExtended extends SubscriptionFormData {
+  paymentMethodId?: string;
+  newPaymentMethod?: CreatePaymentMethodRequest;
 }
