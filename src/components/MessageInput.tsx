@@ -121,7 +121,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   return (
-    <div className="border-t bg-background/95 backdrop-blur-sm">
+    <div className="border-t border-gray-200 dark:border-gray-700 bg-[#f0f2f5] dark:bg-[#202c33]">
       {/* File attachments preview */}
       {selectedFiles.length > 0 && (
         <div className="px-4 py-2 border-b bg-muted/20">
@@ -156,98 +156,77 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         </div>
       )}
 
-      <div className="flex items-end gap-2 p-4">
-        {/* Attachment menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 shrink-0 hover:bg-muted/80 transition-colors"
-              disabled={disabled}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuItem
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2"
-            >
-              <Paperclip className="h-4 w-4" />
-              Attach File
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                if (fileInputRef.current) {
-                  fileInputRef.current.accept = 'image/*';
-                  fileInputRef.current.click();
-                }
-              }}
-              className="flex items-center gap-2"
-            >
-              <Image className="h-4 w-4" />
-              Send Image
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className="flex items-end gap-3 p-4">
+        {/* Attachment button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 shrink-0 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+          disabled={disabled}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Paperclip className="h-5 w-5" />
+        </Button>
 
         {/* Message input area */}
         <div className="flex-1 relative">
-          <Textarea
-            ref={textareaRef}
-            value={content}
-            onChange={(e) => handleContentChange(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder={placeholder}
-            disabled={disabled}
-            className={cn(
-              "min-h-[44px] max-h-[120px] resize-none pr-12 rounded-2xl border-2 transition-all duration-200",
-              "focus:border-primary/50 focus:ring-2 focus:ring-primary/20",
-              "placeholder:text-muted-foreground/70"
-            )}
-            rows={1}
-          />
-          
-          {/* Emoji picker */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 hover:bg-muted/80 transition-colors"
-                  disabled={disabled}
-                >
-                  <Smile className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-0" align="end">
-                <div className="p-4">
-                  <h4 className="font-semibold mb-3">Emojis</h4>
-                  <div className="space-y-4 max-h-64 overflow-y-auto">
-                    {Object.entries(EMOJI_CATEGORIES).map(([category, emojis]) => (
-                      <div key={category}>
-                        <h5 className="text-sm font-medium mb-2 capitalize">{category}</h5>
-                        <div className="grid grid-cols-8 gap-1">
-                          {emojis.map((emoji) => (
-                            <Button
-                              key={emoji}
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-lg hover:bg-muted/80 transition-colors"
-                              onClick={() => insertEmoji(emoji)}
-                            >
-                              {emoji}
-                            </Button>
-                          ))}
+          <div className="flex items-end bg-white dark:bg-[#2a3942] rounded-3xl border border-gray-300 dark:border-gray-600 shadow-sm">
+            <Textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(e) => handleContentChange(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder={placeholder}
+              disabled={disabled}
+              className={cn(
+                "min-h-[44px] max-h-[120px] resize-none border-0 rounded-3xl pl-4 pr-12 py-3",
+                "focus:ring-0 focus:outline-none",
+                "placeholder:text-gray-500 dark:placeholder:text-gray-400",
+                "bg-transparent text-gray-900 dark:text-gray-100"
+              )}
+              rows={1}
+            />
+            
+            {/* Emoji picker */}
+            <div className="absolute right-3 bottom-3">
+              <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full"
+                    disabled={disabled}
+                  >
+                    <Smile className="h-5 w-5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align="end">
+                  <div className="p-4">
+                    <h4 className="font-semibold mb-3">Emojis</h4>
+                    <div className="space-y-4 max-h-64 overflow-y-auto">
+                      {Object.entries(EMOJI_CATEGORIES).map(([category, emojis]) => (
+                        <div key={category}>
+                          <h5 className="text-sm font-medium mb-2 capitalize">{category}</h5>
+                          <div className="grid grid-cols-8 gap-1">
+                            {emojis.map((emoji) => (
+                              <Button
+                                key={emoji}
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                                onClick={() => insertEmoji(emoji)}
+                              >
+                                {emoji}
+                              </Button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>
 
@@ -258,20 +237,21 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             disabled={disabled || (!canSend && selectedFiles.length === 0)}
             size="icon"
             className={cn(
-              "h-10 w-10 shrink-0 rounded-full transition-all duration-200",
-              "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700",
-              "shadow-lg hover:shadow-xl hover:scale-105 transform",
-              "disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
+              "h-12 w-12 shrink-0 rounded-full transition-all duration-200",
+              "bg-[#25d366] hover:bg-[#20c55e] text-white",
+              "shadow-lg hover:shadow-xl",
+              "disabled:opacity-50"
             )}
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-5 w-5" />
           </Button>
         ) : (
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              "h-10 w-10 shrink-0 transition-all duration-200",
+              "h-12 w-12 shrink-0 rounded-full transition-all duration-200",
+              "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700",
               isRecording && "bg-red-500 text-white hover:bg-red-600"
             )}
             disabled={disabled}
@@ -279,7 +259,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             onMouseUp={stopRecording}
             onMouseLeave={stopRecording}
           >
-            <Mic className={cn("h-4 w-4", isRecording && "animate-pulse")} />
+            <Mic className={cn("h-5 w-5", isRecording && "animate-pulse")} />
           </Button>
         )}
 
