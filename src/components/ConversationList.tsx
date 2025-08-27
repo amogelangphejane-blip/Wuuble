@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useConversations, useUserSearch, useCreateConversation } from '@/hooks/useMessages';
 import type { ConversationWithParticipant } from '@/services/messageService';
@@ -119,9 +119,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   }
 
   return (
-    <div className="w-80 border-r bg-muted/20 backdrop-blur-sm flex flex-col">
+    <div className="w-full border-r bg-white dark:bg-[#111b21] flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b bg-background/50 backdrop-blur-sm">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#f0f2f5] dark:bg-[#202c33]">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <MessageCircle className="h-5 w-5 text-primary" />
@@ -190,18 +190,18 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
         {/* Search bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
           <Input
-            placeholder="Search conversations..."
+            placeholder="Search or start new chat"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-10 bg-background/50 border-muted-foreground/20 focus:border-primary/50"
+            className="pl-10 pr-10 bg-white dark:bg-[#2a3942] border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#25d366] focus:ring-1 focus:ring-[#25d366] text-gray-900 dark:text-gray-100"
           />
           {searchQuery && (
             <Button
               variant="ghost"
               size="sm"
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-600"
               onClick={clearSearch}
             >
               <X className="h-3 w-3" />
@@ -274,69 +274,52 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
   return (
     <div
       className={cn(
-        "flex gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
-        "hover:bg-background/80 hover:shadow-sm hover:scale-[1.02] transform",
-        isSelected && "bg-primary/10 border border-primary/20 shadow-sm",
-        "group relative"
+        "flex items-center gap-3 p-3 cursor-pointer transition-colors duration-150",
+        "hover:bg-[#f5f6f6] dark:hover:bg-[#2a3942]",
+        isSelected && "bg-[#e9edef] dark:bg-[#2a3942]",
+        "border-b border-gray-200/50 dark:border-gray-700/50 last:border-b-0"
       )}
       onClick={onClick}
     >
-      <div className="relative">
-        <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
+      <div className="relative flex-shrink-0">
+        <Avatar className="h-12 w-12">
           <AvatarImage src={conversation.participant.avatar_url || undefined} />
-          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+          <AvatarFallback className="bg-[#ddd] dark:bg-gray-600 text-gray-700 dark:text-gray-300">
             {getInitials(conversation.participant.display_name)}
           </AvatarFallback>
         </Avatar>
-        
-        {/* Online status indicator */}
-        {isOnline && (
-          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-background shadow-sm" />
-        )}
       </div>
       
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1">
-          <h3 className={cn(
-            "font-medium text-sm truncate",
-            conversation.unread_count > 0 && "font-semibold"
-          )}>
-            {conversation.participant.display_name || 'Unknown User'}
-          </h3>
-          <div className="flex items-center gap-1">
-            {conversation.unread_count > 0 && (
-              <Badge 
-                variant="default" 
-                className="h-5 min-w-[20px] text-xs px-1.5 bg-primary/90 hover:bg-primary"
-              >
-                {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
-              </Badge>
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <h3 className={cn(
+              "text-[17px] text-gray-900 dark:text-gray-100 truncate mb-0.5",
+              conversation.unread_count > 0 && "font-semibold"
+            )}>
+              {conversation.participant.display_name || 'Unknown User'}
+            </h3>
+            
+            {conversation.last_message && (
+              <p className={cn(
+                "text-[14px] truncate",
+                conversation.unread_count > 0 
+                  ? "text-gray-900 dark:text-gray-100 font-medium" 
+                  : "text-gray-500 dark:text-gray-400"
+              )}>
+                {truncateMessage(conversation.last_message.content, 40)}
+              </p>
             )}
           </div>
-        </div>
-        
-        {conversation.last_message && (
-          <p className={cn(
-            "text-xs truncate mb-1",
-            conversation.unread_count > 0 
-              ? "text-foreground/90 font-medium" 
-              : "text-muted-foreground"
-          )}>
-            {truncateMessage(conversation.last_message.content)}
-          </p>
-        )}
-        
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })}
-          </p>
           
-          {/* Status indicators */}
-          <div className="flex items-center gap-1">
-            {isOnline && (
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-xs text-green-600 font-medium">Online</span>
+          <div className="flex flex-col items-end gap-1 ml-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {format(new Date(conversation.last_message_at), 'HH:mm')}
+            </p>
+            
+            {conversation.unread_count > 0 && (
+              <div className="bg-[#25d366] text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
               </div>
             )}
           </div>

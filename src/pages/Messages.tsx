@@ -88,10 +88,10 @@ const Messages: React.FC = () => {
   }
 
   return (
-    <div className="h-screen flex bg-background">
+    <div className="h-screen flex bg-white dark:bg-[#111b21]">
       {/* Conversation List - Hidden on mobile when conversation is open */}
       <div className={cn(
-        "flex-shrink-0 transition-all duration-300 ease-in-out",
+        "w-full md:w-80 flex-shrink-0 transition-all duration-300 ease-in-out",
         "md:block",
         isMobileConversationOpen ? "hidden" : "block"
       )}>
@@ -104,69 +104,62 @@ const Messages: React.FC = () => {
       {/* Main Chat Area */}
       <div className={cn(
         "flex-1 flex flex-col transition-all duration-300 ease-in-out",
-        "md:block",
+        "md:flex",
         !isMobileConversationOpen && selectedConversationId ? "hidden md:flex" : "flex"
       )}>
         {selectedConversation ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b bg-background/95 backdrop-blur-sm shadow-sm">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#f0f2f5] dark:bg-[#202c33] shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="md:hidden hover:bg-muted/80 transition-colors"
+                    className="md:hidden text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full"
                     onClick={handleBackToList}
                   >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeft className="h-5 w-5" />
                   </Button>
                   
                   <div className="relative">
-                    <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage src={selectedConversation.participant.avatar_url || undefined} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                      <AvatarFallback className="bg-[#ddd] dark:bg-gray-600 text-gray-700 dark:text-gray-300">
                         {getInitials(selectedConversation.participant.display_name)}
                       </AvatarFallback>
                     </Avatar>
                     {isParticipantOnline && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background shadow-sm" />
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#25d366] rounded-full border-2 border-[#f0f2f5] dark:border-[#202c33]" />
                     )}
                   </div>
                   
-                  <div>
-                    <h3 className="font-semibold text-foreground">
+                  <div className="cursor-pointer">
+                    <h3 className="font-medium text-[17px] text-gray-900 dark:text-gray-100">
                       {selectedConversation.participant.display_name || 'Unknown User'}
                     </h3>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      {isParticipantOnline ? (
-                        <>
-                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                          Online now
-                        </>
-                      ) : (
-                        'Last seen recently'
-                      )}
+                    <p className="text-[13px] text-gray-500 dark:text-gray-400">
+                      {isParticipantOnline ? 'online' : 'last seen recently'}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="hover:bg-muted/80 transition-colors"
+                    className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full h-10 w-10"
                     disabled
                   >
-                    <Phone className="h-4 w-4" />
+                    <Video className="h-5 w-5" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="hover:bg-muted/80 transition-colors"
+                    className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full h-10 w-10"
                     disabled
                   >
-                    <Video className="h-4 w-4" />
+                    <Phone className="h-5 w-5" />
                   </Button>
                   
                   <DropdownMenu>
@@ -174,20 +167,27 @@ const Messages: React.FC = () => {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="hover:bg-muted/80 transition-colors"
+                        className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full h-10 w-10"
                       >
-                        <MoreVertical className="h-4 w-4" />
+                        <MoreVertical className="h-5 w-5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem className="flex items-center gap-2">
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem className="flex items-center gap-3 py-3">
                         <Info className="h-4 w-4" />
-                        View Profile
+                        Contact info
                       </DropdownMenuItem>
-                      <DropdownMenuItem>Search Messages</DropdownMenuItem>
-                      <DropdownMenuItem>Mute Notifications</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
-                        Delete Conversation
+                      <DropdownMenuItem className="flex items-center gap-3 py-3">
+                        Select messages
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="flex items-center gap-3 py-3">
+                        Mute notifications
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="flex items-center gap-3 py-3">
+                        Clear messages
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="flex items-center gap-3 py-3 text-red-600 dark:text-red-400">
+                        Delete chat
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -207,49 +207,35 @@ const Messages: React.FC = () => {
           </>
         ) : (
           /* Empty State */
-          <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-background via-muted/10 to-background">
+          <div className="flex-1 flex items-center justify-center bg-[#f0f2f5] dark:bg-[#0b141a] border-l border-gray-200 dark:border-gray-700">
             <div className="text-center max-w-md p-8">
               <div className="relative mb-8">
-                {/* Animated background circles */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full animate-pulse" />
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full animate-pulse delay-75" />
-                </div>
-                
-                {/* Main icon */}
-                <div className="relative w-20 h-20 mx-auto bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-lg">
+                {/* WhatsApp-style logo placeholder */}
+                <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-[#25d366]/10 flex items-center justify-center">
                   <svg
-                    className="w-10 h-10 text-muted-foreground/70"
-                    fill="none"
-                    stroke="currentColor"
+                    className="w-16 h-16 text-[#25d366]/60"
+                    fill="currentColor"
                     viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                    />
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
                   </svg>
                 </div>
               </div>
               
-              <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Welcome to Messages
+              <h3 className="text-[32px] font-light mb-4 text-gray-400 dark:text-gray-500">
+                WhatsApp Web
               </h3>
-              <p className="text-muted-foreground leading-relaxed mb-6">
-                Select a conversation from the sidebar to start chatting, or create a new conversation 
-                to connect with other members.
+              <p className="text-gray-500 dark:text-gray-400 leading-relaxed mb-6 text-[14px]">
+                Send and receive messages without keeping your phone online.<br />
+                Use WhatsApp on up to 4 linked devices and 1 phone at the same time.
               </p>
               
-              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground/50">
+              <div className="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500 border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                 </svg>
-                <span>Your messages are private and secure</span>
+                <span>Your personal messages are end-to-end encrypted</span>
               </div>
             </div>
           </div>
