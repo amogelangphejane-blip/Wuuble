@@ -30,6 +30,7 @@ import CommunityLeaderboardPage from "./pages/CommunityLeaderboard";
 import AzarLivestreams from "./pages/AzarLivestreams";
 import LoadingDemo from "./pages/LoadingDemo";
 import SplashDemo from "./pages/SplashDemo";
+import { CreatorWallet } from "./pages/CreatorWallet";
 
 
 
@@ -90,6 +91,7 @@ const App = () => {
                 <Route path="/communities/:id/leaderboard" element={<CommunityLeaderboardPage />} />
 
                 <Route path="/profile" element={<ProfileSettings />} />
+                <Route path="/wallet" element={<CreatorWallet />} />
                 
                 {/* Azar Livestream Routes */}
                 <Route path="/azar-livestreams" element={<AzarLivestreams />} />

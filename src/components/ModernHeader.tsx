@@ -20,7 +20,8 @@ import {
   Radio,
   Video,
   Home,
-  Mail
+  Mail,
+  Wallet
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -177,6 +178,10 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
                     <DropdownMenuItem onClick={() => navigate('/profile')}>
                       <User className="mr-2 h-4 w-4" />
                       Profile Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/wallet')}>
+                      <Wallet className="mr-2 h-4 w-4" />
+                      Creator Wallet
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/communities')}>
                       <Users className="mr-2 h-4 w-4" />
