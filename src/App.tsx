@@ -31,6 +31,7 @@ import AzarLivestreams from "./pages/AzarLivestreams";
 import LoadingDemo from "./pages/LoadingDemo";
 import SplashDemo from "./pages/SplashDemo";
 import { CreatorWallet } from "./pages/CreatorWallet";
+import AdminPlatformSettings from "./pages/AdminPlatformSettings";
 
 
 
@@ -92,6 +93,7 @@ const App = () => {
 
                 <Route path="/profile" element={<ProfileSettings />} />
                 <Route path="/wallet" element={<CreatorWallet />} />
+                <Route path="/admin/platform-settings" element={<AdminPlatformSettings />} />
                 
                 {/* Azar Livestream Routes */}
                 <Route path="/azar-livestreams" element={<AzarLivestreams />} />

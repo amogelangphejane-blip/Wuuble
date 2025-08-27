@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { SubscriptionPayment } from '@/types/subscription';
 import { StripeService } from './stripeService';
+import { PlatformStripeService } from './platformStripeService';
 import { WalletService } from './walletService';
 import { PayPalService } from './paypalService';
 import { BankTransferService } from './bankTransferService';
@@ -40,10 +41,10 @@ export class PaymentService {
       switch (methodType) {
         case 'card':
           if (isStripeEnabled() && paymentMethodId && customerId) {
-            // Process real Stripe payment
-            const stripeResult = await StripeService.createPaymentIntent({
+            // Process payment through platform account (routes through platform first)
+            const platformResult = await PlatformStripeService.createPlatformPaymentIntent({
               subscriptionId,
-              amount: amount * 100, // Convert to cents
+              amount,
               currency,
               customerId,
               metadata: {
@@ -51,12 +52,12 @@ export class PaymentService {
               }
             });
             
-            if (!stripeResult.success) {
-              throw new Error(stripeResult.error);
+            if (!platformResult.success) {
+              throw new Error(platformResult.error);
             }
             
-            externalPaymentId = stripeResult.paymentId!;
-            paymentMethod = 'stripe';
+            externalPaymentId = platformResult.paymentId!;
+            paymentMethod = 'platform_stripe';
           } else {
             // Mock payment for development
             externalPaymentId = `mock_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
