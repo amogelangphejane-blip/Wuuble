@@ -397,65 +397,90 @@ app.get('/socket.io-info', (req, res) => {
   }
 });
 
-// Simple Socket.IO test page
+// Connection test without external dependencies
 app.get('/test', (req, res) => {
   res.send(`
     <html>
       <head>
-        <title>Socket.IO Test</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+        <title>WebSocket Connection Test</title>
       </head>
       <body>
-        <h1>Socket.IO Connection Test</h1>
-        <div id="status">Loading...</div>
-        <button onclick="testConnect()">Test Connection</button>
-        <div id="log"></div>
+        <h1>WebSocket Connection Test</h1>
+        <div id="status">Ready to test</div>
+        <button onclick="testWebSocket()">Test WebSocket</button>
+        <button onclick="testHTTP()">Test HTTP</button>
+        <div id="log" style="background: #f0f0f0; padding: 10px; margin: 10px 0; height: 300px; overflow-y: auto;"></div>
         
         <script>
           const status = document.getElementById('status');
           const log = document.getElementById('log');
           
           function addLog(msg) {
-            log.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + msg + '</div>';
-            console.log(msg);
+            const time = new Date().toLocaleTimeString();
+            log.innerHTML += '<div>' + time + ': ' + msg + '</div>';
+            log.scrollTop = log.scrollHeight;
+            console.log('[TEST]', msg);
           }
           
-          // Wait a moment for library to load, then check
-          setTimeout(() => {
-            if (typeof io !== 'undefined') {
-              status.innerHTML = '✅ Socket.IO loaded';
-              addLog('Socket.IO library loaded successfully');
-            } else {
-              status.innerHTML = '❌ Socket.IO failed to load';
-              addLog('Socket.IO library failed to load - CDN might be blocked');
-            }
-          }, 1000);
+          addLog('✅ Page loaded - no external dependencies needed');
+          status.innerHTML = '✅ Ready to test connections';
           
-          function testConnect() {
-            if (typeof io === 'undefined') {
-              addLog('❌ Socket.IO not available');
-              return;
-            }
+          function testHTTP() {
+            addLog('🌐 Testing HTTP connection to server...');
             
-            addLog('🔌 Connecting to https://wuuble.onrender.com...');
-            const socket = io('https://wuuble.onrender.com', {
-              transports: ['polling', 'websocket']
-            });
-            
-            socket.on('connect', () => {
-              addLog('✅ Connected! ID: ' + socket.id);
-              status.innerHTML = '✅ Connected to server';
-            });
-            
-            socket.on('connect_error', (error) => {
-              addLog('❌ Connection failed: ' + error.message);
-              status.innerHTML = '❌ Connection failed: ' + error.message;
-            });
-            
-            socket.on('disconnect', (reason) => {
-              addLog('💔 Disconnected: ' + reason);
-            });
+            fetch('https://wuuble.onrender.com/ping')
+              .then(response => response.json())
+              .then(data => {
+                addLog('✅ HTTP connection works: ' + data.message);
+                addLog('📊 Socket.IO status: ' + data.socketIO);
+                status.innerHTML = '✅ HTTP connection successful';
+              })
+              .catch(error => {
+                addLog('❌ HTTP connection failed: ' + error.message);
+                status.innerHTML = '❌ HTTP connection failed';
+              });
           }
+          
+          function testWebSocket() {
+            addLog('🔌 Testing WebSocket connection...');
+            status.innerHTML = '🔄 Testing WebSocket...';
+            
+            try {
+              // Test raw WebSocket connection
+              const ws = new WebSocket('wss://wuuble.onrender.com/socket.io/?EIO=4&transport=websocket');
+              
+              ws.onopen = function() {
+                addLog('✅ WebSocket connection opened!');
+                status.innerHTML = '✅ WebSocket connection works';
+                ws.close();
+              };
+              
+              ws.onerror = function(error) {
+                addLog('❌ WebSocket error: ' + error);
+                status.innerHTML = '❌ WebSocket failed';
+              };
+              
+              ws.onclose = function(event) {
+                addLog('💔 WebSocket closed: ' + event.code + ' - ' + event.reason);
+              };
+              
+              // Timeout after 10 seconds
+              setTimeout(() => {
+                if (ws.readyState === WebSocket.CONNECTING) {
+                  addLog('⏱️ WebSocket connection timeout');
+                  status.innerHTML = '❌ WebSocket timeout';
+                  ws.close();
+                }
+              }, 10000);
+              
+            } catch (error) {
+              addLog('❌ WebSocket creation failed: ' + error.message);
+              status.innerHTML = '❌ WebSocket not supported';
+            }
+          }
+          
+          // Auto-test HTTP connection on load
+          setTimeout(testHTTP, 1000);
         </script>
       </body>
     </html>
