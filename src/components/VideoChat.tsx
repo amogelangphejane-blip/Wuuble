@@ -89,7 +89,11 @@ export const VideoChat = () => {
     setFilterPreset,
     toggleIndividualFilter,
     updateFilterIntensity
-  } = useVideoChat({ useMockSignaling: true });
+  } = useVideoChat({ 
+    useSocketIOSignaling: true,
+    useMockSignaling: false,
+    autoConnect: true
+  });
 
   // UI States
   const [messageInput, setMessageInput] = useState('');
