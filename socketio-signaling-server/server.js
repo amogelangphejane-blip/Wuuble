@@ -403,7 +403,7 @@ app.get('/test', (req, res) => {
     <html>
       <head>
         <title>Socket.IO Test</title>
-        <script src="/socket.io/socket.io.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
       </head>
       <body>
         <h1>Socket.IO Connection Test</h1>
@@ -420,14 +420,16 @@ app.get('/test', (req, res) => {
             console.log(msg);
           }
           
-          // Check if Socket.IO loaded
-          if (typeof io !== 'undefined') {
-            status.innerHTML = '✅ Socket.IO loaded';
-            addLog('Socket.IO library loaded successfully');
-          } else {
-            status.innerHTML = '❌ Socket.IO failed to load';
-            addLog('Socket.IO library failed to load');
-          }
+          // Wait a moment for library to load, then check
+          setTimeout(() => {
+            if (typeof io !== 'undefined') {
+              status.innerHTML = '✅ Socket.IO loaded';
+              addLog('Socket.IO library loaded successfully');
+            } else {
+              status.innerHTML = '❌ Socket.IO failed to load';
+              addLog('Socket.IO library failed to load - CDN might be blocked');
+            }
+          }, 1000);
           
           function testConnect() {
             if (typeof io === 'undefined') {
@@ -435,8 +437,10 @@ app.get('/test', (req, res) => {
               return;
             }
             
-            addLog('🔌 Connecting...');
-            const socket = io();
+            addLog('🔌 Connecting to https://wuuble.onrender.com...');
+            const socket = io('https://wuuble.onrender.com', {
+              transports: ['polling', 'websocket']
+            });
             
             socket.on('connect', () => {
               addLog('✅ Connected! ID: ' + socket.id);
@@ -445,7 +449,11 @@ app.get('/test', (req, res) => {
             
             socket.on('connect_error', (error) => {
               addLog('❌ Connection failed: ' + error.message);
-              status.innerHTML = '❌ Connection failed';
+              status.innerHTML = '❌ Connection failed: ' + error.message;
+            });
+            
+            socket.on('disconnect', (reason) => {
+              addLog('💔 Disconnected: ' + reason);
             });
           }
         </script>
