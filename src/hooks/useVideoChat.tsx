@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { WebRTCService, defaultWebRTCConfig, WebRTCConfig } from '@/services/webRTCService';
 import { SignalingService, createSignalingService, SignalingMessage } from '@/services/signalingService';
+import { ProductionSignalingService, createProductionSignalingService } from '@/services/productionSignalingService';
+import { SocketIOSignalingService, createSocketIOSignalingService, SignalingEvents, UserPreferences } from '@/services/socketIOSignalingService';
 import { FilterConfig, VideoFilterService } from '@/services/videoFilterService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,6 +19,9 @@ export interface ChatMessage {
 export interface UseVideoChatOptions {
   webRTCConfig?: WebRTCConfig;
   useMockSignaling?: boolean;
+  useProductionSignaling?: boolean;
+  useSocketIOSignaling?: boolean;
+  userPreferences?: UserPreferences;
   autoConnect?: boolean;
 }
 
@@ -68,7 +73,10 @@ export interface UseVideoChatReturn {
 export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatReturn => {
   const {
     webRTCConfig = defaultWebRTCConfig,
-    useMockSignaling = true,
+    useMockSignaling = false,
+    useProductionSignaling = false,
+    useSocketIOSignaling = true, // Default to Socket.IO for production
+    userPreferences = {},
     autoConnect = false
   } = options;
 
@@ -98,6 +106,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const webRTCServiceRef = useRef<WebRTCService | null>(null);
   const signalingServiceRef = useRef<SignalingService | null>(null);
+  const socketIOSignalingRef = useRef<SocketIOSignalingService | null>(null);
   const partnerIdRef = useRef<string | null>(null);
 
   const { toast } = useToast();
@@ -147,24 +156,92 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
         }
       });
 
-      // Initialize signaling service
-      signalingServiceRef.current = createSignalingService(userId, {
-        onMessage: handleSignalingMessage,
-        onUserJoined: (partnerId) => {
-          partnerIdRef.current = partnerId;
-          initiateWebRTCConnection();
-        },
-        onUserLeft: () => {
-          handlePartnerLeft();
-        },
-        onError: (error) => {
-          toast({
-            title: "Connection Error",
-            description: error,
-            variant: "destructive"
-          });
+      // Initialize signaling service based on configuration
+      if (useSocketIOSignaling) {
+        console.log('🔌 Initializing Socket.IO signaling service...');
+        
+        const signalingEvents: SignalingEvents = {
+          onMessage: handleSignalingMessage,
+          onUserJoined: (partnerId) => {
+            console.log(`👤 Partner joined: ${partnerId}`);
+            partnerIdRef.current = partnerId;
+            setIsSearching(false);
+            setPartnerConnected(false); // Will be set to true when WebRTC connects
+          },
+          onUserLeft: (reason) => {
+            console.log(`👋 Partner left: ${reason}`);
+            handlePartnerLeft();
+          },
+          onError: (error) => {
+            console.error('❌ Signaling error:', error);
+            toast({
+              title: "Connection Error",
+              description: error,
+              variant: "destructive"
+            });
+          },
+          onConnected: () => {
+            console.log('✅ Connected to signaling server');
+          },
+          onDisconnected: () => {
+            console.log('📡 Disconnected from signaling server');
+            setConnectionStatus('disconnected');
+          },
+          onSearching: (data) => {
+            console.log(`🔍 ${data.message}`);
+            setIsSearching(true);
+          },
+          onQueueStatus: (data) => {
+            console.log(`📊 Queue position: ${data.position}, estimated wait: ${data.estimatedWaitTime}s`);
+          }
+        };
+
+        socketIOSignalingRef.current = createSocketIOSignalingService(userId, signalingEvents);
+        
+        try {
+          await socketIOSignalingRef.current.connect();
+          console.log('✅ Socket.IO signaling connected');
+        } catch (error) {
+          console.error('❌ Socket.IO connection failed, falling back to mock signaling');
+          // Fallback to mock signaling if Socket.IO fails
+          signalingServiceRef.current = createSignalingService(userId, {
+            onMessage: handleSignalingMessage,
+            onUserJoined: (partnerId) => {
+              partnerIdRef.current = partnerId;
+              initiateWebRTCConnection();
+            },
+            onUserLeft: () => {
+              handlePartnerLeft();
+            },
+            onError: (error) => {
+              toast({
+                title: "Connection Error",
+                description: error,
+                variant: "destructive"
+              });
+            }
+          }, true); // Force mock signaling as fallback
         }
-      }, useMockSignaling);
+      } else {
+        // Use legacy signaling services
+        signalingServiceRef.current = createSignalingService(userId, {
+          onMessage: handleSignalingMessage,
+          onUserJoined: (partnerId) => {
+            partnerIdRef.current = partnerId;
+            initiateWebRTCConnection();
+          },
+          onUserLeft: () => {
+            handlePartnerLeft();
+          },
+          onError: (error) => {
+            toast({
+              title: "Connection Error",
+              description: error,
+              variant: "destructive"
+            });
+          }
+        }, useMockSignaling);
+      }
 
       // Initialize local media with better error handling
       try {
@@ -214,7 +291,12 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
       }
 
       // Connect to signaling server
-      await signalingServiceRef.current.connect();
+      if (socketIOSignalingRef.current) {
+        // Socket.IO connection already established during initialization
+        console.log('✅ Socket.IO signaling ready');
+      } else if (signalingServiceRef.current) {
+        await signalingServiceRef.current.connect();
+      }
 
       if (autoConnect) {
         await startChat();
@@ -233,14 +315,29 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
 
   // Handle signaling messages
   const handleSignalingMessage = useCallback(async (message: SignalingMessage) => {
-    if (!webRTCServiceRef.current || !message.from) return;
+    if (!webRTCServiceRef.current) return;
 
     try {
       switch (message.type) {
+        case 'initiate-call': {
+          // Socket.IO specific: initiate WebRTC call
+          console.log('🚀 Initiating WebRTC call...');
+          setTimeout(() => {
+            initiateWebRTCConnection();
+          }, 500); // Small delay to ensure both clients are ready
+          break;
+        }
         case 'offer': {
+          if (!message.from) return;
           await webRTCServiceRef.current.setRemoteDescription(message.data);
           const answer = await webRTCServiceRef.current.createAnswer();
-          signalingServiceRef.current?.sendAnswer(answer, message.from);
+          
+          // Send answer via appropriate signaling service
+          if (socketIOSignalingRef.current) {
+            socketIOSignalingRef.current.sendAnswer(answer);
+          } else {
+            signalingServiceRef.current?.sendAnswer(answer, message.from);
+          }
           break;
         }
 
@@ -259,12 +356,35 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
 
   // Initiate WebRTC connection
   const initiateWebRTCConnection = useCallback(async () => {
-    if (!webRTCServiceRef.current || !signalingServiceRef.current || !partnerIdRef.current) return;
+    if (!webRTCServiceRef.current) return;
+    
+    // Check if we have either signaling service available
+    const hasSignaling = socketIOSignalingRef.current || signalingServiceRef.current;
+    if (!hasSignaling) {
+      console.error('No signaling service available');
+      return;
+    }
 
     try {
       webRTCServiceRef.current.createPeerConnection();
+      
+      // Set up ICE candidate handling
+      webRTCServiceRef.current.onIceCandidate = (candidate) => {
+        if (socketIOSignalingRef.current) {
+          socketIOSignalingRef.current.sendIceCandidate(candidate);
+        } else if (signalingServiceRef.current && partnerIdRef.current) {
+          signalingServiceRef.current.sendIceCandidate(candidate, partnerIdRef.current);
+        }
+      };
+
       const offer = await webRTCServiceRef.current.createOffer();
-      signalingServiceRef.current.sendOffer(offer, partnerIdRef.current);
+      
+      // Send offer via appropriate signaling service
+      if (socketIOSignalingRef.current) {
+        socketIOSignalingRef.current.sendOffer(offer);
+      } else if (signalingServiceRef.current && partnerIdRef.current) {
+        signalingServiceRef.current.sendOffer(offer, partnerIdRef.current);
+      }
     } catch (error) {
       console.error('Failed to initiate WebRTC connection:', error);
     }
@@ -321,7 +441,8 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
       }
 
       // Ensure services are initialized
-      if (!signalingServiceRef.current || !webRTCServiceRef.current) {
+      const hasSignaling = socketIOSignalingRef.current || signalingServiceRef.current;
+      if (!hasSignaling || !webRTCServiceRef.current) {
         toast({
           title: "Initializing...",
           description: "Setting up video chat services"
@@ -333,7 +454,8 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
       }
 
       // Verify services are ready
-      if (!signalingServiceRef.current || !webRTCServiceRef.current) {
+      const hasValidSignaling = socketIOSignalingRef.current || signalingServiceRef.current;
+      if (!hasValidSignaling || !webRTCServiceRef.current) {
         throw new Error('Failed to initialize services');
       }
 
@@ -383,9 +505,15 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
       setMessages([]);
       setUnreadMessages(0);
 
-      // Join a random room to find a partner
-      const roomId = 'random-' + Date.now();
-      signalingServiceRef.current.joinRoom(roomId);
+      // Start looking for a partner via appropriate signaling service
+      if (socketIOSignalingRef.current) {
+        console.log('🔍 Starting partner search via Socket.IO...');
+        socketIOSignalingRef.current.findRandomPartner(userPreferences);
+      } else if (signalingServiceRef.current) {
+        // Legacy signaling - join a random room to find a partner
+        const roomId = 'random-' + Date.now();
+        signalingServiceRef.current.joinRoom(roomId);
+      }
 
       // Timeout if no partner found
       setTimeout(() => {
@@ -420,7 +548,13 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
     setMessages([]);
     setUnreadMessages(0);
 
-    signalingServiceRef.current?.leaveRoom();
+    // End chat via appropriate signaling service
+    if (socketIOSignalingRef.current) {
+      socketIOSignalingRef.current.endChat();
+    } else {
+      signalingServiceRef.current?.leaveRoom();
+    }
+    
     webRTCServiceRef.current?.cleanup();
     partnerIdRef.current = null;
 
@@ -436,10 +570,16 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
 
   // Next partner
   const nextPartner = useCallback(() => {
-    endChat();
-    setTimeout(() => {
-      startChat();
-    }, 500);
+    if (socketIOSignalingRef.current) {
+      console.log('⏭️ Skipping to next partner via Socket.IO...');
+      socketIOSignalingRef.current.nextPartner();
+    } else {
+      // Legacy behavior
+      endChat();
+      setTimeout(() => {
+        startChat();
+      }, 500);
+    }
   }, [endChat, startChat]);
 
   // Send message
