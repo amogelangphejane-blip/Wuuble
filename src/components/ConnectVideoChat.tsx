@@ -51,7 +51,10 @@ export const ConnectVideoChat = () => {
     sendMessage,
     toggleVideo,
     toggleAudio
-  } = useVideoChat({ useMockSignaling: true });
+  } = useVideoChat({ 
+    useSocketIOSignaling: true,
+    useMockSignaling: false 
+  });
 
   // UI States
   const [messageInput, setMessageInput] = useState('');

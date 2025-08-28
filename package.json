@@ -9,7 +9,11 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "setup-storage": "tsx src/scripts/setupStorageBuckets.ts"
+    "setup-storage": "tsx src/scripts/setupStorageBuckets.ts",
+    "start-signaling": "cd socketio-signaling-server && npm start",
+    "dev-signaling": "cd socketio-signaling-server && npm run dev",
+    "install-signaling": "cd socketio-signaling-server && npm install",
+    "deploy-signaling": "cd socketio-signaling-server && git init && heroku create && git add . && git commit -m 'Deploy signaling server' && git push heroku main"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

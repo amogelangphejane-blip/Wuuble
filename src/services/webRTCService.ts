@@ -19,6 +19,7 @@ export interface PeerConnectionEvents {
 }
 
 import { VideoFilterService, FilterConfig } from './videoFilterService';
+import { getOptimalWebRTCConfig, ConnectionQualityMonitor } from '@/config/webrtcConfig';
 
 export class WebRTCService {
   private peerConnection: RTCPeerConnection | null = null;
@@ -30,6 +31,7 @@ export class WebRTCService {
   private events: PeerConnectionEvents;
   private videoFilterService: VideoFilterService | null = null;
   private localVideoElement: HTMLVideoElement | null = null;
+  private connectionQualityMonitor: ConnectionQualityMonitor | null = null;
 
   constructor(config: WebRTCConfig, events: PeerConnectionEvents = {}) {
     this.config = config;
@@ -328,23 +330,6 @@ const detectDeviceCapabilities = (): boolean => {
 };
 
 export const defaultWebRTCConfig: WebRTCConfig = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' }
-  ],
-  mediaConstraints: {
-    video: {
-      width: { ideal: 1280, max: 1920 },
-      height: { ideal: 720, max: 1080 },
-      frameRate: { ideal: 30, max: 60 }
-    },
-    audio: {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-      sampleRate: 48000
-    }
-  },
+  ...getOptimalWebRTCConfig(),
   enableVideoFilters: detectDeviceCapabilities() // Conditional based on device capabilities
 };
