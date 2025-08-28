@@ -394,7 +394,7 @@ app.get('/test', (req, res) => {
     <html>
       <head>
         <title>Socket.IO Connection Test</title>
-        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
         <style>
           body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
           .log { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; height: 300px; overflow-y: auto; }
@@ -422,23 +422,51 @@ app.get('/test', (req, res) => {
           const log = document.getElementById('log');
           
           function addLog(message, type = 'info') {
-            const div = document.createElement('div');
-            div.className = type;
-            div.textContent = new Date().toLocaleTimeString() + ': ' + message;
-            log.appendChild(div);
-            log.scrollTop = log.scrollHeight;
+            try {
+              const div = document.createElement('div');
+              div.className = type;
+              div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+              log.appendChild(div);
+              log.scrollTop = log.scrollHeight;
+              console.log('[TEST]', message);
+            } catch (error) {
+              console.error('Error in addLog:', error);
+            }
           }
+          
+          // Test if Socket.IO loaded
+          window.addEventListener('load', function() {
+            if (typeof io === 'undefined') {
+              addLog('❌ Socket.IO library failed to load!', 'error');
+              addLog('🔧 This might be due to network restrictions or CDN blocking', 'error');
+            } else {
+              addLog('✅ Socket.IO library loaded successfully', 'success');
+              addLog('📦 Socket.IO version: ' + (io.version || 'unknown'), 'info');
+            }
+          });
           
           function testConnection() {
             addLog('🔌 Attempting to connect to Socket.IO server...', 'info');
             addLog('🌐 URL: https://wuuble.onrender.com', 'info');
             addLog('🚚 Transports: websocket, polling', 'info');
             
-            socket = io('https://wuuble.onrender.com', {
-              transports: ['websocket', 'polling'],
-              timeout: 10000,
-              forceNew: true
-            });
+            if (typeof io === 'undefined') {
+              addLog('❌ Cannot connect: Socket.IO library not loaded', 'error');
+              return;
+            }
+            
+            try {
+              socket = io('https://wuuble.onrender.com', {
+                transports: ['websocket', 'polling'],
+                timeout: 10000,
+                forceNew: true
+              });
+              
+              addLog('🔄 Connection object created, waiting for response...', 'info');
+            } catch (error) {
+              addLog('❌ Error creating connection: ' + error.message, 'error');
+              console.error('Connection creation error:', error);
+            }
             
             socket.on('connect', () => {
               addLog('✅ Connected successfully! Socket ID: ' + socket.id, 'success');
