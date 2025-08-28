@@ -17,10 +17,11 @@ app.use(express.json());
 // Socket.IO server with CORS
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_ORIGIN || "*",
+    origin: "*",
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: false
   },
+  allowEIO3: true,
   transports: ['websocket', 'polling'],
   pingTimeout: 60000,
   pingInterval: 25000
@@ -344,6 +345,26 @@ app.get('/stats', (req, res) => {
   res.json(matcher.getStats());
 });
 
+// Socket.IO info endpoint
+app.get('/socket.io-info', (req, res) => {
+  res.json({
+    socketIO: {
+      version: require('socket.io/package.json').version,
+      path: '/socket.io/',
+      transports: ['websocket', 'polling'],
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+      }
+    },
+    server: {
+      url: 'https://wuuble.onrender.com',
+      status: 'running',
+      connectedSockets: io.engine.clientsCount
+    }
+  });
+});
+
 // Socket.IO test page
 app.get('/test', (req, res) => {
   res.send(`
@@ -387,9 +408,13 @@ app.get('/test', (req, res) => {
           
           function testConnection() {
             addLog('🔌 Attempting to connect to Socket.IO server...', 'info');
+            addLog('🌐 URL: https://wuuble.onrender.com', 'info');
+            addLog('🚚 Transports: websocket, polling', 'info');
             
             socket = io('https://wuuble.onrender.com', {
-              transports: ['websocket', 'polling']
+              transports: ['websocket', 'polling'],
+              timeout: 10000,
+              forceNew: true
             });
             
             socket.on('connect', () => {
@@ -452,6 +477,14 @@ app.get('/test', (req, res) => {
       </body>
     </html>
   `);
+});
+
+// Add debugging middleware
+io.engine.on("connection_error", (err) => {
+  console.log('❌ Socket.IO connection error:', err.req);
+  console.log('❌ Error code:', err.code);
+  console.log('❌ Error message:', err.message);
+  console.log('❌ Error context:', err.context);
 });
 
 // Socket.IO connection handling
