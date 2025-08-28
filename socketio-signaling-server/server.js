@@ -355,6 +355,15 @@ app.get('/stats', (req, res) => {
   res.json(matcher.getStats());
 });
 
+// Simple ping endpoint
+app.get('/ping', (req, res) => {
+  res.json({ 
+    message: 'pong', 
+    timestamp: new Date().toISOString(),
+    socketIO: io ? 'ready' : 'not ready'
+  });
+});
+
 // Socket.IO info endpoint
 app.get('/socket.io-info', (req, res) => {
   try {
@@ -388,142 +397,57 @@ app.get('/socket.io-info', (req, res) => {
   }
 });
 
-// Socket.IO test page
+// Simple Socket.IO test page
 app.get('/test', (req, res) => {
   res.send(`
     <html>
       <head>
-        <title>Socket.IO Connection Test</title>
+        <title>Socket.IO Test</title>
         <script src="/socket.io/socket.io.js"></script>
-        <style>
-          body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
-          .log { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; height: 300px; overflow-y: auto; }
-          .success { color: #28a745; }
-          .error { color: #dc3545; }
-          .info { color: #007bff; }
-          button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
-          .btn-primary { background: #007bff; color: white; }
-          .btn-success { background: #28a745; color: white; }
-          .btn-danger { background: #dc3545; color: white; }
-        </style>
       </head>
       <body>
-        <h1>🧪 Socket.IO Connection Test</h1>
-        <p>This page tests the Socket.IO connection to your signaling server.</p>
-        
-        <button class="btn-primary" onclick="testConnection()">Test Connection</button>
-        <button class="btn-success" onclick="testRandomChat()">Test Random Chat</button>
-        <button class="btn-danger" onclick="disconnect()">Disconnect</button>
-        
-        <div class="log" id="log"></div>
+        <h1>Socket.IO Connection Test</h1>
+        <div id="status">Loading...</div>
+        <button onclick="testConnect()">Test Connection</button>
+        <div id="log"></div>
         
         <script>
-          let socket;
+          const status = document.getElementById('status');
           const log = document.getElementById('log');
           
-          function addLog(message, type = 'info') {
-            try {
-              const div = document.createElement('div');
-              div.className = type;
-              div.textContent = new Date().toLocaleTimeString() + ': ' + message;
-              log.appendChild(div);
-              log.scrollTop = log.scrollHeight;
-              console.log('[TEST]', message);
-            } catch (error) {
-              console.error('Error in addLog:', error);
-            }
+          function addLog(msg) {
+            log.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + msg + '</div>';
+            console.log(msg);
           }
           
-          // Test if Socket.IO loaded
-          window.addEventListener('load', function() {
-            if (typeof io === 'undefined') {
-              addLog('❌ Socket.IO library failed to load!', 'error');
-              addLog('🔧 This might be due to network restrictions or CDN blocking', 'error');
-            } else {
-              addLog('✅ Socket.IO library loaded successfully', 'success');
-              addLog('📦 Socket.IO version: ' + (io.version || 'unknown'), 'info');
-            }
-          });
+          // Check if Socket.IO loaded
+          if (typeof io !== 'undefined') {
+            status.innerHTML = '✅ Socket.IO loaded';
+            addLog('Socket.IO library loaded successfully');
+          } else {
+            status.innerHTML = '❌ Socket.IO failed to load';
+            addLog('Socket.IO library failed to load');
+          }
           
-          function testConnection() {
-            addLog('🔌 Attempting to connect to Socket.IO server...', 'info');
-            addLog('🌐 URL: https://wuuble.onrender.com', 'info');
-            addLog('🚚 Transports: websocket, polling', 'info');
-            
+          function testConnect() {
             if (typeof io === 'undefined') {
-              addLog('❌ Cannot connect: Socket.IO library not loaded', 'error');
+              addLog('❌ Socket.IO not available');
               return;
             }
             
-            try {
-              socket = io('https://wuuble.onrender.com', {
-                transports: ['websocket', 'polling'],
-                timeout: 10000,
-                forceNew: true
-              });
-              
-              addLog('🔄 Connection object created, waiting for response...', 'info');
-            } catch (error) {
-              addLog('❌ Error creating connection: ' + error.message, 'error');
-              console.error('Connection creation error:', error);
-            }
+            addLog('🔌 Connecting...');
+            const socket = io();
             
             socket.on('connect', () => {
-              addLog('✅ Connected successfully! Socket ID: ' + socket.id, 'success');
+              addLog('✅ Connected! ID: ' + socket.id);
+              status.innerHTML = '✅ Connected to server';
             });
             
             socket.on('connect_error', (error) => {
-              addLog('❌ Connection failed: ' + error.message, 'error');
-              console.error('Connection error:', error);
-            });
-            
-            socket.on('disconnect', (reason) => {
-              addLog('💔 Disconnected: ' + reason, 'error');
-            });
-            
-            socket.on('authenticated', (data) => {
-              addLog('✅ Authenticated: ' + JSON.stringify(data), 'success');
-            });
-            
-            socket.on('searching', (data) => {
-              addLog('🔍 Searching: ' + data.message, 'info');
-            });
-            
-            socket.on('matched', (data) => {
-              addLog('🎯 Matched! Room: ' + data.roomId, 'success');
-            });
-            
-            socket.on('error', (error) => {
-              addLog('❌ Server error: ' + error.message, 'error');
+              addLog('❌ Connection failed: ' + error.message);
+              status.innerHTML = '❌ Connection failed';
             });
           }
-          
-          function testRandomChat() {
-            if (!socket || !socket.connected) {
-              addLog('❌ Not connected. Test connection first.', 'error');
-              return;
-            }
-            
-            const userId = 'test-user-' + Math.random().toString(36).substr(2, 9);
-            addLog('🔐 Authenticating as: ' + userId, 'info');
-            
-            socket.emit('authenticate', { userId });
-            
-            setTimeout(() => {
-              addLog('🔍 Looking for random partner...', 'info');
-              socket.emit('find-random-partner');
-            }, 1000);
-          }
-          
-          function disconnect() {
-            if (socket) {
-              socket.disconnect();
-              addLog('👋 Disconnected manually', 'info');
-            }
-          }
-          
-          // Auto-test on page load
-          setTimeout(testConnection, 1000);
         </script>
       </body>
     </html>
