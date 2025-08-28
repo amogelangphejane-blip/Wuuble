@@ -79,28 +79,41 @@ export const DEVELOPMENT_TURN_SERVERS: TurnServerConfig[] = [
   {
     urls: [
       'stun:stun.l.google.com:19302',
-      'stun:stun1.l.google.com:19302'
+      'stun:stun1.l.google.com:19302',
+      'stun:stun2.l.google.com:19302',
+      'stun:stun3.l.google.com:19302'
     ]
   },
   
-  // OpenRelay TURN (free, limited)
+  // OpenRelay TURN (free, limited but reliable)
   {
     urls: [
       'turn:openrelay.metered.ca:80',
-      'turn:openrelay.metered.ca:443'
+      'turn:openrelay.metered.ca:443',
+      'turns:openrelay.metered.ca:443'
     ],
-    username: 'openrelayproject',
-    credential: 'openrelayproject'
+    username: import.meta.env.VITE_OPENRELAY_TURN_USERNAME || 'openrelayproject',
+    credential: import.meta.env.VITE_OPENRELAY_TURN_CREDENTIAL || 'openrelayproject'
   },
 
-  // Numb STUN/TURN (free, limited)
+  // Numb STUN/TURN (free with registration)
   {
     urls: [
       'stun:stun.numb.viagenie.ca',
-      'turn:numb.viagenie.ca'
+      'turn:numb.viagenie.ca',
+      'turns:numb.viagenie.ca:443'
     ],
-    username: import.meta.env.VITE_NUMB_USERNAME || 'your-numb-username',
-    credential: import.meta.env.VITE_NUMB_PASSWORD || 'your-numb-password'
+    username: import.meta.env.VITE_NUMB_USERNAME || 'webrtc@live.com',
+    credential: import.meta.env.VITE_NUMB_PASSWORD || 'muazkh'
+  },
+
+  // Additional free STUN servers for redundancy
+  {
+    urls: [
+      'stun:stun.ekiga.net',
+      'stun:stun.ideasip.com',
+      'stun:stun.rixtelecom.se'
+    ]
   }
 ];
 
