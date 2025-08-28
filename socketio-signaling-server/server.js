@@ -344,6 +344,116 @@ app.get('/stats', (req, res) => {
   res.json(matcher.getStats());
 });
 
+// Socket.IO test page
+app.get('/test', (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>Socket.IO Connection Test</title>
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+        <style>
+          body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+          .log { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; height: 300px; overflow-y: auto; }
+          .success { color: #28a745; }
+          .error { color: #dc3545; }
+          .info { color: #007bff; }
+          button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+          .btn-primary { background: #007bff; color: white; }
+          .btn-success { background: #28a745; color: white; }
+          .btn-danger { background: #dc3545; color: white; }
+        </style>
+      </head>
+      <body>
+        <h1>🧪 Socket.IO Connection Test</h1>
+        <p>This page tests the Socket.IO connection to your signaling server.</p>
+        
+        <button class="btn-primary" onclick="testConnection()">Test Connection</button>
+        <button class="btn-success" onclick="testRandomChat()">Test Random Chat</button>
+        <button class="btn-danger" onclick="disconnect()">Disconnect</button>
+        
+        <div class="log" id="log"></div>
+        
+        <script>
+          let socket;
+          const log = document.getElementById('log');
+          
+          function addLog(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+          }
+          
+          function testConnection() {
+            addLog('🔌 Attempting to connect to Socket.IO server...', 'info');
+            
+            socket = io('https://wuuble.onrender.com', {
+              transports: ['websocket', 'polling']
+            });
+            
+            socket.on('connect', () => {
+              addLog('✅ Connected successfully! Socket ID: ' + socket.id, 'success');
+            });
+            
+            socket.on('connect_error', (error) => {
+              addLog('❌ Connection failed: ' + error.message, 'error');
+              console.error('Connection error:', error);
+            });
+            
+            socket.on('disconnect', (reason) => {
+              addLog('💔 Disconnected: ' + reason, 'error');
+            });
+            
+            socket.on('authenticated', (data) => {
+              addLog('✅ Authenticated: ' + JSON.stringify(data), 'success');
+            });
+            
+            socket.on('searching', (data) => {
+              addLog('🔍 Searching: ' + data.message, 'info');
+            });
+            
+            socket.on('matched', (data) => {
+              addLog('🎯 Matched! Room: ' + data.roomId, 'success');
+            });
+            
+            socket.on('error', (error) => {
+              addLog('❌ Server error: ' + error.message, 'error');
+            });
+          }
+          
+          function testRandomChat() {
+            if (!socket || !socket.connected) {
+              addLog('❌ Not connected. Test connection first.', 'error');
+              return;
+            }
+            
+            const userId = 'test-user-' + Math.random().toString(36).substr(2, 9);
+            addLog('🔐 Authenticating as: ' + userId, 'info');
+            
+            socket.emit('authenticate', { userId });
+            
+            setTimeout(() => {
+              addLog('🔍 Looking for random partner...', 'info');
+              socket.emit('find-random-partner');
+            }, 1000);
+          }
+          
+          function disconnect() {
+            if (socket) {
+              socket.disconnect();
+              addLog('👋 Disconnected manually', 'info');
+            }
+          }
+          
+          // Auto-test on page load
+          setTimeout(testConnection, 1000);
+        </script>
+      </body>
+    </html>
+  `);
+});
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log(`🔌 Socket connected: ${socket.id}`);
