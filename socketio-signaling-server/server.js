@@ -17,7 +17,7 @@ app.use(express.json());
 // Socket.IO server with CORS
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+    origin: process.env.CLIENT_ORIGIN || "*",
     methods: ["GET", "POST"],
     credentials: true
   },
@@ -287,6 +287,47 @@ class RandomChatMatcher {
 
 // Initialize matcher
 const matcher = new RandomChatMatcher();
+
+// Root endpoint - shows server status
+app.get('/', (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>WebRTC Signaling Server</title>
+        <style>
+          body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+          .status { color: #28a745; font-weight: bold; }
+          .stats { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+          .endpoint { background: #e9ecef; padding: 10px; border-radius: 3px; margin: 5px 0; }
+        </style>
+      </head>
+      <body>
+        <h1>🚀 WebRTC Signaling Server</h1>
+        <p class="status">✅ Socket.IO server is running</p>
+        <div class="stats">
+          <h3>📊 Current Stats:</h3>
+          <p>Uptime: ${Math.floor(process.uptime())} seconds</p>
+          <p>Active Users: ${matcher.getStats().activeUsers}</p>
+          <p>Waiting Users: ${matcher.getStats().waitingUsers}</p>
+          <p>Active Rooms: ${matcher.getStats().activeRooms}</p>
+          <p>Total Matches: ${matcher.getStats().totalMatches}</p>
+        </div>
+        <div>
+          <h3>📡 Available Endpoints:</h3>
+          <div class="endpoint"><strong>GET /</strong> - This status page</div>
+          <div class="endpoint"><strong>GET /health</strong> - Health check JSON</div>
+          <div class="endpoint"><strong>GET /stats</strong> - Statistics JSON</div>
+          <div class="endpoint"><strong>WebSocket</strong> - Socket.IO connection for signaling</div>
+        </div>
+        <div>
+          <h3>🔌 Socket.IO Connection:</h3>
+          <p>Connect to: <code>https://wuuble.onrender.com</code></p>
+          <p>Transports: WebSocket, Polling</p>
+        </div>
+      </body>
+    </html>
+  `);
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
