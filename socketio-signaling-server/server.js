@@ -332,12 +332,22 @@ app.get('/', (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    uptime: process.uptime(),
-    stats: matcher.getStats(),
-    timestamp: new Date().toISOString()
-  });
+  try {
+    res.json({
+      status: 'healthy',
+      uptime: process.uptime(),
+      stats: matcher.getStats(),
+      timestamp: new Date().toISOString(),
+      socketIO: io ? 'initialized' : 'not initialized'
+    });
+  } catch (error) {
+    console.error('❌ Health check error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Stats endpoint
@@ -347,22 +357,35 @@ app.get('/stats', (req, res) => {
 
 // Socket.IO info endpoint
 app.get('/socket.io-info', (req, res) => {
-  res.json({
-    socketIO: {
-      version: require('socket.io/package.json').version,
-      path: '/socket.io/',
-      transports: ['websocket', 'polling'],
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+  try {
+    res.json({
+      socketIO: {
+        version: '4.7.5', // Hardcoded since require might fail in production
+        path: '/socket.io/',
+        transports: ['websocket', 'polling'],
+        cors: {
+          origin: "*",
+          methods: ["GET", "POST"]
+        }
+      },
+      server: {
+        url: 'https://wuuble.onrender.com',
+        status: 'running',
+        connectedSockets: io.engine ? io.engine.clientsCount : 0,
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString()
       }
-    },
-    server: {
-      url: 'https://wuuble.onrender.com',
-      status: 'running',
-      connectedSockets: io.engine.clientsCount
-    }
-  });
+    });
+  } catch (error) {
+    console.error('❌ Error in socket.io-info endpoint:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message,
+      socketIO: {
+        status: 'error'
+      }
+    });
+  }
 });
 
 // Socket.IO test page
@@ -480,12 +503,16 @@ app.get('/test', (req, res) => {
 });
 
 // Add debugging middleware
-io.engine.on("connection_error", (err) => {
-  console.log('❌ Socket.IO connection error:', err.req);
-  console.log('❌ Error code:', err.code);
-  console.log('❌ Error message:', err.message);
-  console.log('❌ Error context:', err.context);
-});
+try {
+  io.engine.on("connection_error", (err) => {
+    console.log('❌ Socket.IO connection error:', err.req ? 'Request object present' : 'No request object');
+    console.log('❌ Error code:', err.code);
+    console.log('❌ Error message:', err.message);
+    console.log('❌ Error context:', err.context);
+  });
+} catch (error) {
+  console.log('⚠️ Could not set up connection error handler:', error.message);
+}
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
