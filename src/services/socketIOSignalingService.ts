@@ -53,7 +53,7 @@ export class SocketIOSignalingService {
   constructor(userId: string, events: SignalingEvents = {}) {
     this.userId = userId;
     this.events = events;
-    this.serverUrl = import.meta.env.VITE_SIGNALING_SERVER_URL || 'https://wuuble.onrender.com';
+    this.serverUrl = 'https://wuuble.onrender.com'; // Force the correct URL
     
     console.log(`🎯 SocketIOSignalingService initialized for user ${userId}`);
   }
