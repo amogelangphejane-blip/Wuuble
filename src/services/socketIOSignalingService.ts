@@ -62,17 +62,20 @@ export class SocketIOSignalingService {
    * Connect to Socket.IO signaling server
    */
   async connect(): Promise<void> {
-    try {
-      console.log(`🔌 Connecting to signaling server: ${this.serverUrl}`);
-      
-      this.socket = io(this.serverUrl, {
-        transports: ['websocket', 'polling'],
-        timeout: 10000,
-        forceNew: true,
-        reconnection: true,
-        reconnectionAttempts: this.maxReconnectAttempts,
-        reconnectionDelay: this.reconnectDelay
-      });
+  try {
+    console.log(`🔌 Connecting to signaling server: ${this.serverUrl}`);
+    console.log(`🔌 Attempting connection to: ${this.serverUrl}`); // ADD THIS LINE
+    
+    this.socket = io(this.serverUrl, {
+      transports: ['polling', 'websocket'], // Updated from Step 3
+      timeout: 30000, // Updated from Step 3
+      forceNew: true,
+      reconnection: true,
+      reconnectionAttempts: this.maxReconnectAttempts,
+      reconnectionDelay: this.reconnectDelay,
+      upgrade: true, // Added from Step 3
+      rememberUpgrade: false // Added from Step 3
+    });
 
       return new Promise((resolve, reject) => {
         if (!this.socket) return reject(new Error('Failed to create socket'));
