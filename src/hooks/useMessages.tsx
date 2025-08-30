@@ -146,9 +146,28 @@ export const useCreateConversation = () => {
     },
     onError: (error) => {
       console.error('Failed to create conversation:', error);
+      
+      // Enhanced error messaging based on error type
+      let title = "Failed to start conversation";
+      let description = "Please try again.";
+      
+      if (error.message.includes('Permission denied')) {
+        title = "Permission Error";
+        description = "You don't have permission to create this conversation. Please contact support if this continues.";
+      } else if (error.message.includes('User not found')) {
+        title = "User Not Found";
+        description = "The user you're trying to message could not be found.";
+      } else if (error.message.includes('not authenticated')) {
+        title = "Authentication Required";
+        description = "Please sign in to start conversations.";
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        title = "Connection Error";
+        description = "Please check your internet connection and try again.";
+      }
+      
       toast({
-        title: "Failed to start conversation",
-        description: "Please try again.",
+        title,
+        description,
         variant: "destructive",
       });
     },

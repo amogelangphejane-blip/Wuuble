@@ -194,14 +194,32 @@ class MessageService {
       throw new Error('Cannot create conversation with yourself');
     }
 
-    // Use the database function to get or create conversation
-    const { data, error } = await supabase.rpc('get_or_create_conversation', {
-      user1_id: user.id,
-      user2_id: otherUserId,
-    });
+    try {
+      // Use the database function to get or create conversation
+      const { data, error } = await supabase.rpc('get_or_create_conversation', {
+        user1_id: user.id,
+        user2_id: otherUserId,
+      });
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        // Enhanced error handling for specific cases
+        if (error.message.includes('row-level security')) {
+          throw new Error('Permission denied: Unable to create conversation. Please ensure you have the necessary permissions.');
+        } else if (error.message.includes('foreign key constraint')) {
+          throw new Error('Invalid user: The user you are trying to message may not exist.');
+        } else if (error.message.includes('User 1 does not exist') || error.message.includes('User 2 does not exist')) {
+          throw new Error('User not found: The user you are trying to message does not exist.');
+        } else if (error.message.includes('Cannot create conversation with yourself')) {
+          throw new Error('Invalid operation: You cannot create a conversation with yourself.');
+        }
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getOrCreateConversation:', error);
+      throw error;
+    }
   }
 
   /**
