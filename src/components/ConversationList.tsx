@@ -314,7 +314,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
           
           <div className="flex flex-col items-end gap-1 ml-2">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {format(new Date(conversation.last_message_at), 'HH:mm')}
+              {conversation.last_message_at ? format(new Date(conversation.last_message_at), 'HH:mm') : '--:--'}
             </p>
             
             {conversation.unread_count > 0 && (

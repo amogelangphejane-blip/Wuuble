@@ -74,8 +74,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   };
 
-  const messageTime = format(new Date(message.created_at), 'HH:mm');
-  const senderName = message.sender.display_name || 'Unknown User';
+  const messageTime = message.created_at ? format(new Date(message.created_at), 'HH:mm') : '--:--';
+  const senderName = message.sender?.display_name || 'Unknown User';
 
   return (
     <div 
@@ -97,11 +97,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           aria-label={`${senderName}'s profile picture`}
         >
           <AvatarImage 
-            src={message.sender.avatar_url || undefined} 
+            src={message.sender?.avatar_url || undefined} 
             alt={`${senderName}'s avatar`}
           />
           <AvatarFallback className="text-[10px] bg-gradient-to-br from-gray-400 to-gray-500 text-white">
-            {getInitials(message.sender.display_name)}
+            {getInitials(message.sender?.display_name)}
           </AvatarFallback>
         </Avatar>
       )}
@@ -144,7 +144,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             
             {/* Message text */}
             <div className="pr-16 leading-[1.3]">
-              {message.content}
+              {message.content || '[Message content unavailable]'}
             </div>
             
             {/* Time and status in bottom right */}
@@ -154,7 +154,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 ? "text-gray-600 dark:text-gray-300" 
                 : "text-gray-500 dark:text-gray-400"
             )}>
-              <time dateTime={message.created_at} aria-label={`Sent ${messageTime}`}>
+              <time dateTime={message.created_at || ''} aria-label={`Sent ${messageTime}`}>
                 {messageTime}
               </time>
               {getMessageStatus()}

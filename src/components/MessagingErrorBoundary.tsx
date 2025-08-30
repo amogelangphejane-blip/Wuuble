@@ -34,6 +34,20 @@ export class MessagingErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Messaging Error Boundary caught an error:', error, errorInfo);
     
+    // Check if this is a non-critical error that shouldn't break the UI
+    const isNonCriticalError = this.isNonCriticalError(error);
+    
+    if (isNonCriticalError) {
+      console.warn('Non-critical messaging error caught, not showing error boundary:', error.message);
+      // Reset the error boundary to allow continued operation
+      this.setState({
+        hasError: false,
+        error: null,
+        errorInfo: null,
+      });
+      return;
+    }
+    
     this.setState({
       error,
       errorInfo: errorInfo.componentStack,
@@ -43,6 +57,23 @@ export class MessagingErrorBoundary extends Component<Props, State> {
     if (process.env.NODE_ENV === 'production') {
       // Example: logErrorToService(error, errorInfo);
     }
+  }
+
+  private isNonCriticalError(error: Error): boolean {
+    const nonCriticalPatterns = [
+      'Failed to mark messages as read',
+      'Network request failed',
+      'Failed to fetch',
+      'Load failed',
+      'AbortError',
+      'The user aborted a request',
+      'Connection was aborted',
+      'signal is aborted without reason'
+    ];
+    
+    return nonCriticalPatterns.some(pattern => 
+      error.message.toLowerCase().includes(pattern.toLowerCase())
+    );
   }
 
   handleRetry = () => {

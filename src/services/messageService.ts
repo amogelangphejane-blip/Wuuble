@@ -208,17 +208,28 @@ class MessageService {
    * Mark messages as read
    */
   async markMessagesAsRead(conversationId: string): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.warn('Cannot mark messages as read: User not authenticated');
+        return; // Don't throw error for non-critical operation
+      }
 
-    const { error } = await supabase
-      .from('messages')
-      .update({ is_read: true })
-      .eq('conversation_id', conversationId)
-      .neq('sender_id', user.id) // Don't mark own messages as read
-      .eq('is_read', false);
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', user.id) // Don't mark own messages as read
+        .eq('is_read', false);
 
-    if (error) throw error;
+      if (error) {
+        console.warn('Failed to mark messages as read:', error);
+        // Don't throw error for non-critical read status update
+      }
+    } catch (error) {
+      console.warn('Error in markMessagesAsRead:', error);
+      // Don't propagate errors from non-critical read status operation
+    }
   }
 
   /**
@@ -236,13 +247,23 @@ class MessageService {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          callback(payload.new as Message);
+          try {
+            if (payload.new && typeof payload.new === 'object') {
+              callback(payload.new as Message);
+            }
+          } catch (error) {
+            console.warn('Error processing new message in subscription:', error);
+          }
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(subscription);
+      try {
+        supabase.removeChannel(subscription);
+      } catch (error) {
+        console.warn('Error removing message subscription:', error);
+      }
     };
   }
 
@@ -250,6 +271,14 @@ class MessageService {
    * Subscribe to conversation updates (for real-time conversation list updates)
    */
   subscribeToConversations(callback: () => void) {
+    const wrappedCallback = () => {
+      try {
+        callback();
+      } catch (error) {
+        console.warn('Error in conversation subscription callback:', error);
+      }
+    };
+
     const subscription = supabase
       .channel('conversations-updates')
       .on(
@@ -259,7 +288,7 @@ class MessageService {
           schema: 'public',
           table: 'conversations',
         },
-        callback
+        wrappedCallback
       )
       .on(
         'postgres_changes',
@@ -268,12 +297,16 @@ class MessageService {
           schema: 'public',
           table: 'messages',
         },
-        callback
+        wrappedCallback
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(subscription);
+      try {
+        supabase.removeChannel(subscription);
+      } catch (error) {
+        console.warn('Error removing conversation subscription:', error);
+      }
     };
   }
 
