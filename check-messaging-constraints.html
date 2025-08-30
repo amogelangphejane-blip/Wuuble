@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Messaging Constraints Check</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .status { padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔍 Messaging Database Constraints Check</h1>
+        <p>This tool checks if the messaging system has proper database relationships.</p>
+        
+        <button onclick="checkConstraints()">🧪 Check Database Constraints</button>
+        <button onclick="testBasicQueries()">📊 Test Basic Queries</button>
+        <button onclick="checkRealTimeSetup()">⚡ Check Real-time Setup</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8";
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function showResult(message, type = 'success') {
+            const div = document.getElementById('results');
+            div.innerHTML += `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function checkConstraints() {
+            showResult('🔍 Checking database constraints...', 'warning');
+            
+            try {
+                // Check if conversations table exists
+                const { data: convData, error: convError } = await supabase
+                    .from('conversations')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (convError) {
+                    showResult(`❌ Conversations table issue: ${convError.message}`, 'error');
+                    return;
+                }
+                
+                showResult('✅ Conversations table exists and accessible', 'success');
+
+                // Check if messages table exists  
+                const { data: msgData, error: msgError } = await supabase
+                    .from('messages')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (msgError) {
+                    showResult(`❌ Messages table issue: ${msgError.message}`, 'error');
+                    return;
+                }
+                
+                showResult('✅ Messages table exists and accessible', 'success');
+
+                // Check if get_or_create_conversation function exists
+                try {
+                    const { data: funcData, error: funcError } = await supabase
+                        .rpc('get_or_create_conversation', {
+                            user1_id: '00000000-0000-0000-0000-000000000001',
+                            user2_id: '00000000-0000-0000-0000-000000000002'
+                        });
+                    
+                    if (funcError && !funcError.message.includes('violates foreign key constraint')) {
+                        showResult(`⚠️ Function issue: ${funcError.message}`, 'warning');
+                    } else {
+                        showResult('✅ get_or_create_conversation function exists', 'success');
+                    }
+                } catch (err) {
+                    showResult(`❌ Function test failed: ${err.message}`, 'error');
+                }
+
+                showResult('🎉 Database constraints check completed!', 'success');
+                
+            } catch (error) {
+                showResult(`❌ Constraint check failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testBasicQueries() {
+            showResult('📊 Testing basic messaging queries...', 'warning');
+            
+            try {
+                // Test profiles query
+                const startTime = Date.now();
+                const { data: profiles, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('id, user_id, display_name, avatar_url')
+                    .limit(5);
+                
+                const profileTime = Date.now() - startTime;
+                
+                if (profileError) {
+                    showResult(`❌ Profiles query failed: ${profileError.message}`, 'error');
+                    return;
+                }
+                
+                showResult(`✅ Profiles query successful (${profileTime}ms) - Found ${profiles?.length || 0} profiles`, 'success');
+
+                // Test empty conversations query (should work even with no data)
+                const convStart = Date.now();
+                const { data: conversations, error: convError } = await supabase
+                    .from('conversations')
+                    .select('*')
+                    .limit(5);
+                
+                const convTime = Date.now() - convStart;
+                
+                if (convError) {
+                    showResult(`❌ Conversations query failed: ${convError.message}`, 'error');
+                    return;
+                }
+                
+                showResult(`✅ Conversations query successful (${convTime}ms) - Found ${conversations?.length || 0} conversations`, 'success');
+
+                // Test empty messages query
+                const msgStart = Date.now();
+                const { data: messages, error: msgError } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .limit(5);
+                
+                const msgTime = Date.now() - msgStart;
+                
+                if (msgError) {
+                    showResult(`❌ Messages query failed: ${msgError.message}`, 'error');
+                    return;
+                }
+                
+                showResult(`✅ Messages query successful (${msgTime}ms) - Found ${messages?.length || 0} messages`, 'success');
+                showResult('🎉 All basic queries working!', 'success');
+                
+            } catch (error) {
+                showResult(`❌ Basic query test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkRealTimeSetup() {
+            showResult('⚡ Testing real-time setup...', 'warning');
+            
+            try {
+                const channel = supabase
+                    .channel('diagnostic-realtime-test')
+                    .on('postgres_changes', {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'messages'
+                    }, (payload) => {
+                        showResult(`📨 Real-time message received: ${JSON.stringify(payload.new)}`, 'success');
+                    })
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            showResult('✅ Real-time subscription successful!', 'success');
+                            setTimeout(() => {
+                                supabase.removeChannel(channel);
+                                showResult('🔌 Real-time subscription closed', 'warning');
+                            }, 3000);
+                        } else if (status === 'CHANNEL_ERROR') {
+                            showResult('❌ Real-time subscription failed', 'error');
+                        } else {
+                            showResult(`🔄 Real-time status: ${status}`, 'warning');
+                        }
+                    });
+
+                // Also test conversations real-time
+                const convChannel = supabase
+                    .channel('diagnostic-conversations-test')
+                    .on('postgres_changes', {
+                        event: '*',
+                        schema: 'public',
+                        table: 'conversations'
+                    }, () => {
+                        showResult('📋 Real-time conversation update received', 'success');
+                    })
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            showResult('✅ Conversations real-time working!', 'success');
+                            setTimeout(() => {
+                                supabase.removeChannel(convChannel);
+                            }, 3000);
+                        }
+                    });
+                
+            } catch (error) {
+                showResult(`❌ Real-time test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run basic checks on load
+        window.onload = () => {
+            showResult('🚀 Messaging diagnostic tool loaded', 'success');
+            setTimeout(checkConstraints, 1000);
+        };
+    </script>
+</body>
+</html>

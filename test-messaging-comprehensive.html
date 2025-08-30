@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Messaging Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .test-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .test-section h2 {
+            color: #343a40;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-section h2::before {
+            content: attr(data-icon);
+            font-size: 1.2em;
+        }
+
+        .test-result {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            margin: 8px 5px;
+            transition: all 0.2s;
+            min-width: 140px;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-size: 0.95em;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .log {
+            background: #212529;
+            color: #28a745;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.4;
+            margin-top: 15px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+        .status-pending { background: #ffc107; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .message-preview {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .message-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message-own {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message-other {
+            background: #f1f3f4;
+            color: #333;
+            margin-right: auto;
+        }
+
+        .timestamp {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Messaging System Diagnostics</h1>
+            <p>Comprehensive testing and troubleshooting tool for the messaging feature</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="overall-progress"></div>
+            </div>
+        </div>
+
+        <div class="test-grid">
+            <!-- Connection & Auth Section -->
+            <div class="test-section">
+                <h2 data-icon="🔌">Connection & Authentication</h2>
+                <div class="flex-row">
+                    <span class="status-indicator status-offline" id="connection-status"></span>
+                    <span id="connection-text">Disconnected</span>
+                </div>
+                
+                <input type="email" id="email" placeholder="Email" value="test@example.com">
+                <input type="password" id="password" placeholder="Password" value="password123">
+                <input type="text" id="display-name" placeholder="Display Name" value="Test User">
+                
+                <div class="flex-row">
+                    <button onclick="testConnection()">Test Connection</button>
+                    <button onclick="testSignUp()">Sign Up</button>
+                    <button onclick="testSignIn()">Sign In</button>
+                    <button onclick="testSignOut()">Sign Out</button>
+                </div>
+                
+                <div id="auth-result"></div>
+            </div>
+
+            <!-- Database Schema Section -->
+            <div class="test-section">
+                <h2 data-icon="🗄️">Database Schema</h2>
+                <button onclick="verifySchema()">Verify Schema</button>
+                <button onclick="applySchema()">Apply Schema</button>
+                <div id="schema-result"></div>
+            </div>
+
+            <!-- User Management Section -->
+            <div class="test-section">
+                <h2 data-icon="👥">User Management</h2>
+                <input type="text" id="search-query" placeholder="Search users..." value="test">
+                <button onclick="testUserSearch()">Search Users</button>
+                <button onclick="createTestUsers()">Create Test Users</button>
+                <div id="user-result"></div>
+            </div>
+
+            <!-- Conversation Management Section -->
+            <div class="test-section">
+                <h2 data-icon="💬">Conversations</h2>
+                <input type="text" id="other-user-id" placeholder="Other User ID">
+                <button onclick="testCreateConversation()">Create Conversation</button>
+                <button onclick="listConversations()">List Conversations</button>
+                <div id="conversation-result"></div>
+            </div>
+
+            <!-- Message Testing Section -->
+            <div class="test-section">
+                <h2 data-icon="📨">Message Testing</h2>
+                <input type="text" id="conversation-id" placeholder="Conversation ID">
+                <textarea id="message-content" placeholder="Message content" rows="3">Hello! This is a test message from the diagnostic tool. 🚀</textarea>
+                <div class="flex-row">
+                    <button onclick="testSendMessage()">Send Message</button>
+                    <button onclick="loadMessages()">Load Messages</button>
+                </div>
+                <div class="message-preview" id="message-preview"></div>
+                <div id="messaging-result"></div>
+            </div>
+
+            <!-- Real-time Testing Section -->
+            <div class="test-section">
+                <h2 data-icon="🔄">Real-time Updates</h2>
+                <div class="flex-row">
+                    <span class="status-indicator status-offline" id="realtime-status"></span>
+                    <span id="realtime-text">Not connected</span>
+                </div>
+                <div class="flex-row">
+                    <button onclick="testRealtime()">Start Real-time</button>
+                    <button onclick="stopRealtime()">Stop Real-time</button>
+                    <button onclick="testRealtimeMessage()">Send Test Message</button>
+                </div>
+                <div id="realtime-result"></div>
+            </div>
+
+            <!-- Performance Testing Section -->
+            <div class="test-section">
+                <h2 data-icon="⚡">Performance Tests</h2>
+                <input type="number" id="bulk-count" placeholder="Number of messages" value="10" min="1" max="100">
+                <div class="flex-row">
+                    <button onclick="bulkMessageTest()">Bulk Message Test</button>
+                    <button onclick="loadTestConversations()">Load Test</button>
+                </div>
+                <div id="performance-result"></div>
+            </div>
+
+            <!-- System Status Section -->
+            <div class="test-section">
+                <h2 data-icon="📊">System Status</h2>
+                <button onclick="generateReport()">Generate Report</button>
+                <button onclick="runAllTests()">Run All Tests</button>
+                <div id="status-result"></div>
+            </div>
+
+            <!-- Debug Log Section -->
+            <div class="test-section full-width">
+                <h2 data-icon="📝">Debug Log</h2>
+                <button onclick="clearLog()">Clear Log</button>
+                <button onclick="exportLog()">Export Log</button>
+                <div id="debug-log" class="log"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8";
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let realtimeSubscription = null;
+        let currentUser = null;
+        let testProgress = 0;
+        let totalTests = 8;
+
+        function updateProgress() {
+            testProgress++;
+            const percentage = (testProgress / totalTests) * 100;
+            document.getElementById('overall-progress').style.width = percentage + '%';
+        }
+
+        function log(message, level = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('debug-log');
+            const levelIcon = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️'
+            };
+            logDiv.innerHTML += `[${timestamp}] ${levelIcon[level] || 'ℹ️'} ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${level.toUpperCase()}] ${message}`);
+        }
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="test-result ${type}">${message}</div>`;
+            log(message, type);
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connection-status');
+            const textEl = document.getElementById('connection-text');
+            
+            if (connected) {
+                statusEl.className = 'status-indicator status-online';
+                textEl.textContent = 'Connected';
+            } else {
+                statusEl.className = 'status-indicator status-offline';
+                textEl.textContent = 'Disconnected';
+            }
+        }
+
+        function updateRealtimeStatus(status) {
+            const statusEl = document.getElementById('realtime-status');
+            const textEl = document.getElementById('realtime-text');
+            
+            switch(status) {
+                case 'SUBSCRIBED':
+                    statusEl.className = 'status-indicator status-online';
+                    textEl.textContent = 'Connected';
+                    break;
+                case 'CHANNEL_ERROR':
+                    statusEl.className = 'status-indicator status-offline';
+                    textEl.textContent = 'Error';
+                    break;
+                default:
+                    statusEl.className = 'status-indicator status-pending';
+                    textEl.textContent = 'Connecting...';
+            }
+        }
+
+        async function testConnection() {
+            try {
+                log('Testing Supabase connection...');
+                const { data, error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+                
+                if (error) throw error;
+                
+                updateConnectionStatus(true);
+                showResult('auth-result', '✅ Successfully connected to Supabase!', 'success');
+                updateProgress();
+            } catch (error) {
+                updateConnectionStatus(false);
+                showResult('auth-result', `❌ Connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSignUp() {
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const displayName = document.getElementById('display-name').value;
+                
+                log(`Testing sign up for ${email}...`);
+                
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            display_name: displayName
+                        }
+                    }
+                });
+                
+                if (error) throw error;
+                
+                currentUser = data.user;
+                showResult('auth-result', '✅ Sign up successful! Check email for confirmation.', 'success');
+                updateProgress();
+            } catch (error) {
+                showResult('auth-result', `❌ Sign up failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSignIn() {
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                log(`Testing sign in for ${email}...`);
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+                
+                if (error) throw error;
+                
+                currentUser = data.user;
+                showResult('auth-result', `✅ Sign in successful! User: ${data.user.email}`, 'success');
+                updateProgress();
+            } catch (error) {
+                showResult('auth-result', `❌ Sign in failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSignOut() {
+            try {
+                log('Testing sign out...');
+                const { error } = await supabase.auth.signOut();
+                
+                if (error) throw error;
+                
+                currentUser = null;
+                showResult('auth-result', '✅ Sign out successful!', 'success');
+            } catch (error) {
+                showResult('auth-result', `❌ Sign out failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function verifySchema() {
+            try {
+                log('Verifying messaging schema...');
+                
+                // Test conversations table
+                const { data: conversations, error: convError } = await supabase
+                    .from('conversations')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (convError) {
+                    throw new Error(`Conversations table error: ${convError.message}`);
+                }
+                
+                // Test messages table
+                const { data: messages, error: msgError } = await supabase
+                    .from('messages')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (msgError) {
+                    throw new Error(`Messages table error: ${msgError.message}`);
+                }
+                
+                // Test get_or_create_conversation function
+                const { data: funcData, error: funcError } = await supabase
+                    .rpc('get_or_create_conversation', {
+                        user1_id: '00000000-0000-0000-0000-000000000001',
+                        user2_id: '00000000-0000-0000-0000-000000000002'
+                    });
+                
+                let funcStatus = 'Function exists';
+                if (funcError && !funcError.message.includes('violates foreign key constraint')) {
+                    funcStatus = `Function error: ${funcError.message}`;
+                }
+                
+                showResult('schema-result', 
+                    `✅ Schema verified successfully!\n` +
+                    `📊 Conversations table: OK\n` +
+                    `📊 Messages table: OK\n` +
+                    `🔧 get_or_create_conversation: ${funcStatus}`, 
+                    'success'
+                );
+                updateProgress();
+                
+            } catch (error) {
+                showResult('schema-result', `❌ Schema verification failed: ${error.message}\n\nThe messaging schema may not be applied. Use the "Apply Schema" button to set it up.`, 'error');
+            }
+        }
+
+        async function applySchema() {
+            showResult('schema-result', `⚠️ Schema application requires database admin access.\n\nTo apply the messaging schema:\n1. Run the migration file: supabase/migrations/20250815000000_add_messaging_system.sql\n2. Or use the setup-messaging-system.js script with service role key`, 'warning');
+        }
+
+        async function testUserSearch() {
+            try {
+                const query = document.getElementById('search-query').value;
+                log(`Testing user search for: ${query}`);
+                
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('id, user_id, display_name, avatar_url')
+                    .or(`display_name.ilike.%${query}%`)
+                    .limit(10);
+                
+                if (error) throw error;
+                
+                showResult('user-result', 
+                    `✅ User search successful!\n` +
+                    `Found ${profiles.length} users matching "${query}"\n` +
+                    `${profiles.map(p => `- ${p.display_name || 'No name'} (${p.user_id})`).join('\n')}`, 
+                    'success'
+                );
+                updateProgress();
+                
+            } catch (error) {
+                showResult('user-result', `❌ User search failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function createTestUsers() {
+            showResult('user-result', `ℹ️ Test users can be created through the sign up process.\n\nSuggested test accounts:\n- test1@example.com / password123\n- test2@example.com / password123\n\nUse different email addresses for each test user.`, 'info');
+        }
+
+        async function testCreateConversation() {
+            try {
+                const otherUserId = document.getElementById('other-user-id').value;
+                
+                if (!otherUserId) {
+                    throw new Error('Please enter another user ID');
+                }
+                
+                if (!currentUser) {
+                    throw new Error('Please sign in first');
+                }
+                
+                log(`Testing conversation creation with user: ${otherUserId}`);
+                
+                const { data: conversationId, error } = await supabase.rpc('get_or_create_conversation', {
+                    user1_id: currentUser.id,
+                    user2_id: otherUserId,
+                });
+                
+                if (error) throw error;
+                
+                document.getElementById('conversation-id').value = conversationId;
+                
+                showResult('conversation-result', 
+                    `✅ Conversation created/retrieved successfully!\n` +
+                    `Conversation ID: ${conversationId}`, 
+                    'success'
+                );
+                updateProgress();
+                
+            } catch (error) {
+                showResult('conversation-result', `❌ Create conversation failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function listConversations() {
+            try {
+                if (!currentUser) {
+                    throw new Error('Please sign in first');
+                }
+                
+                log('Loading conversations...');
+                
+                const { data: conversations, error } = await supabase
+                    .from('conversations')
+                    .select('*')
+                    .or(`participant_1_id.eq.${currentUser.id},participant_2_id.eq.${currentUser.id}`)
+                    .order('updated_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                showResult('conversation-result', 
+                    `✅ Found ${conversations.length} conversations\n` +
+                    conversations.map(c => `- ${c.id} (${new Date(c.updated_at).toLocaleString()})`).join('\n'),
+                    'success'
+                );
+                
+            } catch (error) {
+                showResult('conversation-result', `❌ List conversations failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSendMessage() {
+            try {
+                const conversationId = document.getElementById('conversation-id').value;
+                const content = document.getElementById('message-content').value;
+                
+                if (!conversationId || !content) {
+                    throw new Error('Please enter conversation ID and message content');
+                }
+                
+                if (!currentUser) {
+                    throw new Error('Please sign in first');
+                }
+                
+                log(`Testing message sending to conversation: ${conversationId}`);
+                
+                const { data: message, error } = await supabase
+                    .from('messages')
+                    .insert({
+                        conversation_id: conversationId,
+                        sender_id: currentUser.id,
+                        content: content.trim(),
+                    })
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                showResult('messaging-result', 
+                    `✅ Message sent successfully!\n` +
+                    `Message ID: ${message.id}\n` +
+                    `Content: "${message.content}"`, 
+                    'success'
+                );
+                
+                // Add to message preview
+                addMessageToPreview(message, true);
+                updateProgress();
+                
+            } catch (error) {
+                showResult('messaging-result', `❌ Send message failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadMessages() {
+            try {
+                const conversationId = document.getElementById('conversation-id').value;
+                
+                if (!conversationId) {
+                    throw new Error('Please enter conversation ID');
+                }
+                
+                log(`Loading messages for conversation: ${conversationId}`);
+                
+                const { data: messages, error } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+                
+                showResult('messaging-result', 
+                    `✅ Loaded ${messages.length} messages`,
+                    'success'
+                );
+                
+                // Display messages in preview
+                const previewEl = document.getElementById('message-preview');
+                previewEl.innerHTML = '';
+                messages.forEach(msg => addMessageToPreview(msg, msg.sender_id === currentUser?.id));
+                
+            } catch (error) {
+                showResult('messaging-result', `❌ Load messages failed: ${error.message}`, 'error');
+            }
+        }
+
+        function addMessageToPreview(message, isOwn) {
+            const previewEl = document.getElementById('message-preview');
+            const messageEl = document.createElement('div');
+            messageEl.className = `message-item ${isOwn ? 'message-own' : 'message-other'}`;
+            messageEl.innerHTML = `
+                <div>${message.content}</div>
+                <div class="timestamp">${new Date(message.created_at).toLocaleString()}</div>
+            `;
+            previewEl.appendChild(messageEl);
+            previewEl.scrollTop = previewEl.scrollHeight;
+        }
+
+        async function testRealtime() {
+            try {
+                log('Testing real-time messaging...');
+                updateRealtimeStatus('CONNECTING');
+                
+                realtimeSubscription = supabase
+                    .channel('test-messages')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: 'INSERT',
+                            schema: 'public',
+                            table: 'messages',
+                        },
+                        (payload) => {
+                            log(`📨 Real-time message received: ${JSON.stringify(payload.new)}`);
+                            showResult('realtime-result', 
+                                `✅ Real-time working!\n` +
+                                `New message: "${payload.new.content}"\n` +
+                                `From: ${payload.new.sender_id}`, 
+                                'success'
+                            );
+                            addMessageToPreview(payload.new, payload.new.sender_id === currentUser?.id);
+                        }
+                    )
+                    .subscribe((status) => {
+                        log(`Real-time subscription status: ${status}`);
+                        updateRealtimeStatus(status);
+                        if (status === 'SUBSCRIBED') {
+                            showResult('realtime-result', '🔄 Real-time subscription active. Send a message to test!', 'info');
+                            updateProgress();
+                        }
+                    });
+                
+            } catch (error) {
+                updateRealtimeStatus('CHANNEL_ERROR');
+                showResult('realtime-result', `❌ Real-time test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function stopRealtime() {
+            if (realtimeSubscription) {
+                supabase.removeChannel(realtimeSubscription);
+                realtimeSubscription = null;
+                updateRealtimeStatus('DISCONNECTED');
+                showResult('realtime-result', '⏹️ Real-time subscription stopped', 'info');
+                log('Real-time subscription stopped');
+            }
+        }
+
+        async function testRealtimeMessage() {
+            if (!realtimeSubscription) {
+                showResult('realtime-result', '⚠️ Start real-time subscription first', 'warning');
+                return;
+            }
+            
+            // Send a test message to trigger real-time
+            const conversationId = document.getElementById('conversation-id').value;
+            if (conversationId) {
+                document.getElementById('message-content').value = `Real-time test message at ${new Date().toLocaleTimeString()}`;
+                await testSendMessage();
+            } else {
+                showResult('realtime-result', '⚠️ Please set a conversation ID first', 'warning');
+            }
+        }
+
+        async function bulkMessageTest() {
+            try {
+                const count = parseInt(document.getElementById('bulk-count').value);
+                const conversationId = document.getElementById('conversation-id').value;
+                
+                if (!conversationId) {
+                    throw new Error('Please enter conversation ID');
+                }
+                
+                if (!currentUser) {
+                    throw new Error('Please sign in first');
+                }
+                
+                log(`Starting bulk message test: ${count} messages`);
+                const startTime = Date.now();
+                
+                const promises = [];
+                for (let i = 1; i <= count; i++) {
+                    const promise = supabase
+                        .from('messages')
+                        .insert({
+                            conversation_id: conversationId,
+                            sender_id: currentUser.id,
+                            content: `Bulk test message #${i} - ${new Date().toISOString()}`,
+                        });
+                    promises.push(promise);
+                }
+                
+                await Promise.all(promises);
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                showResult('performance-result', 
+                    `✅ Bulk message test completed!\n` +
+                    `Sent ${count} messages in ${duration}ms\n` +
+                    `Average: ${(duration / count).toFixed(2)}ms per message`, 
+                    'success'
+                );
+                updateProgress();
+                
+            } catch (error) {
+                showResult('performance-result', `❌ Bulk message test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadTestConversations() {
+            try {
+                if (!currentUser) {
+                    throw new Error('Please sign in first');
+                }
+                
+                log('Running conversation load test...');
+                const startTime = Date.now();
+                
+                const { data: conversations, error } = await supabase
+                    .from('conversations')
+                    .select(`
+                        *,
+                        messages (
+                            content,
+                            created_at,
+                            sender_id,
+                            is_read
+                        )
+                    `)
+                    .or(`participant_1_id.eq.${currentUser.id},participant_2_id.eq.${currentUser.id}`)
+                    .order('last_message_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                showResult('performance-result', 
+                    `✅ Load test completed!\n` +
+                    `Loaded ${conversations.length} conversations in ${duration}ms\n` +
+                    `Total messages: ${conversations.reduce((sum, c) => sum + (c.messages?.length || 0), 0)}`, 
+                    'success'
+                );
+                
+            } catch (error) {
+                showResult('performance-result', `❌ Load test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function generateReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                connection: document.getElementById('connection-status').className.includes('online'),
+                user: currentUser ? currentUser.email : null,
+                realtime: realtimeSubscription ? 'Active' : 'Inactive',
+                tests: {
+                    progress: `${testProgress}/${totalTests}`,
+                    completed: testProgress === totalTests
+                }
+            };
+            
+            showResult('status-result', 
+                `📊 System Report\n` +
+                `Generated: ${report.timestamp}\n` +
+                `Connection: ${report.connection ? '✅ Online' : '❌ Offline'}\n` +
+                `User: ${report.user || 'Not signed in'}\n` +
+                `Real-time: ${report.realtime}\n` +
+                `Tests: ${report.tests.progress} ${report.tests.completed ? '✅' : '⏳'}`,
+                report.connection ? 'success' : 'warning'
+            );
+        }
+
+        async function runAllTests() {
+            log('🚀 Running all tests...');
+            testProgress = 0;
+            
+            const tests = [
+                testConnection,
+                verifySchema,
+                testUserSearch,
+                // Skip auth tests in auto mode
+                () => currentUser ? Promise.resolve() : Promise.reject(new Error('Please sign in first')),
+                () => document.getElementById('other-user-id').value ? testCreateConversation() : Promise.resolve(),
+                () => document.getElementById('conversation-id').value ? testSendMessage() : Promise.resolve(),
+                testRealtime,
+                () => document.getElementById('conversation-id').value ? bulkMessageTest() : Promise.resolve()
+            ];
+            
+            for (let i = 0; i < tests.length; i++) {
+                try {
+                    await tests[i]();
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Small delay between tests
+                } catch (error) {
+                    log(`Test ${i + 1} failed: ${error.message}`, 'error');
+                }
+            }
+            
+            generateReport();
+            log('✅ All tests completed!');
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '';
+            testProgress = 0;
+            document.getElementById('overall-progress').style.width = '0%';
+        }
+
+        function exportLog() {
+            const logContent = document.getElementById('debug-log').textContent;
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `messaging-test-log-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Auto-test connection on load
+        window.onload = () => {
+            log('🚀 Messaging troubleshooting tool loaded');
+            testConnection();
+        };
+    </script>
+</body>
+</html>

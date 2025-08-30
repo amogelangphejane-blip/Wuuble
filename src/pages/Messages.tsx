@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Phone, Video, MoreVertical, Info } from 'lucide-react';
+import { ArrowLeft, Phone, Video, MoreVertical, Info, AlertCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,29 +11,58 @@ import {
 import { ConversationList } from '@/components/ConversationList';
 import { MessageThread } from '@/components/MessageThread';
 import { MessageInput } from '@/components/MessageInput';
+import { MessagingErrorBoundary, useMessagingErrorHandler } from '@/components/MessagingErrorBoundary';
 import { useSendMessage, useConversations } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 const Messages: React.FC = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const { handleError } = useMessagingErrorHandler();
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [isMobileConversationOpen, setIsMobileConversationOpen] = useState(false);
-  const { sendMessage, isLoading: isSending } = useSendMessage();
-  const { conversations } = useConversations();
+  const { sendMessage, isLoading: isSending, error: sendError } = useSendMessage();
+  const { conversations, error: conversationsError } = useConversations();
 
   // Find the selected conversation to show participant info in header
   const selectedConversation = selectedConversationId 
     ? conversations.find(c => c.id === selectedConversationId)
     : null;
 
-  const handleSendMessage = (content: string) => {
-    if (!selectedConversationId) return;
+  const handleSendMessage = async (content: string) => {
+    if (!selectedConversationId) {
+      toast({
+        title: "No conversation selected",
+        description: "Please select a conversation to send a message.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    sendMessage({
-      conversationId: selectedConversationId,
-      content,
-    });
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to send messages.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      sendMessage({
+        conversationId: selectedConversationId,
+        content,
+      });
+    } catch (error) {
+      const errorInfo = handleError(error as Error, 'sendMessage');
+      toast({
+        title: "Failed to send message",
+        description: errorInfo.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSelectConversation = (conversationId: string) => {
@@ -87,8 +116,30 @@ const Messages: React.FC = () => {
     );
   }
 
+  // Show error state if conversations failed to load
+  if (conversationsError) {
+    const errorInfo = handleError(conversationsError as Error, 'conversations');
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20">
+        <div className="text-center max-w-md p-8 rounded-2xl bg-card/50 backdrop-blur-sm border shadow-lg">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-destructive" />
+          </div>
+          <h2 className="text-xl font-semibold mb-2">Unable to load conversations</h2>
+          <p className="text-muted-foreground mb-4">{errorInfo.message}</p>
+          {errorInfo.canRetry && (
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-screen flex bg-white dark:bg-[#111b21]">
+    <MessagingErrorBoundary>
+      <div className="h-screen flex bg-white dark:bg-[#111b21]">
       {/* Conversation List - Hidden on mobile when conversation is open */}
       <div className={cn(
         "w-full md:w-80 flex-shrink-0 transition-all duration-300 ease-in-out",
@@ -247,7 +298,8 @@ const Messages: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </MessagingErrorBoundary>
   );
 };
 
