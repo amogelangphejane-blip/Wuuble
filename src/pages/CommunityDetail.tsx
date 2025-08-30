@@ -27,7 +27,8 @@ import {
   Radio,
   Info,
   Trash2,
-  Trophy
+  Trophy,
+  Camera
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
@@ -35,6 +36,7 @@ import { CommunitySearch } from '@/components/CommunitySearch';
 import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
 import { ModernHeader } from '@/components/ModernHeader';
 import { QuickAccess } from '@/components/QuickAccess';
+import { CommunityStories } from '@/components/CommunityStories';
 
 import { CommunityAbout } from '@/components/CommunityAbout';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
@@ -328,7 +330,7 @@ const CommunityDetail = () => {
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
     { id: 'quick-access', label: 'Quick Access', icon: Zap },
-
+    { id: 'stories', label: 'Stories', icon: Camera },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'about', label: 'About', icon: Info }
   ];
@@ -744,7 +746,14 @@ const CommunityDetail = () => {
                 />
               )}
 
-
+              {activeTab === 'stories' && (
+                <CommunityStories 
+                  communityId={community.id}
+                  communityName={community.name}
+                  isMember={isMember}
+                  isCreator={isCreator}
+                />
+              )}
 
               {activeTab === 'about' && (
                 <CommunityAbout 
