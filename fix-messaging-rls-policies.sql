@@ -118,9 +118,29 @@ CREATE POLICY "Users can update their own messages" ON public.messages
     )
   );
 
--- Ensure real-time is enabled for both tables
-ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+-- Ensure real-time is enabled for both tables (only add if not already present)
+DO $$
+BEGIN
+    -- Add conversations table to real-time publication if not already present
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' 
+        AND schemaname = 'public' 
+        AND tablename = 'conversations'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
+    END IF;
+    
+    -- Add messages table to real-time publication if not already present
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' 
+        AND schemaname = 'public' 
+        AND tablename = 'messages'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+    END IF;
+END $$;
 
 -- Add some helpful comments
 COMMENT ON FUNCTION get_or_create_conversation(UUID, UUID) IS 'Creates or retrieves a conversation between two users. Uses SECURITY DEFINER to bypass RLS during creation.';
