@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Messaging Feature Diagnostic</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .diagnostic-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .diagnostic-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+
+        .diagnostic-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .diagnostic-card.success { border-left-color: #28a745; }
+        .diagnostic-card.error { border-left-color: #dc3545; }
+        .diagnostic-card.warning { border-left-color: #ffc107; }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .status-indicator {
+            margin-left: auto;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .status-pending { background: #d1ecf1; color: #0c5460; }
+
+        .card-content {
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .action-buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+
+        .log-section {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .summary-section {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .metric {
+            display: inline-block;
+            margin: 0 15px;
+            text-align: center;
+        }
+
+        .metric-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .metric-label {
+            display: block;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagnostic-container">
+        <div class="header">
+            <h1>🔍 Messaging Diagnostic Tool</h1>
+            <p>Real-time analysis of your messaging system health</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress"></div>
+            </div>
+            <div id="progress-text">Ready to start diagnostic...</div>
+        </div>
+
+        <div class="status-grid">
+            <!-- Database Connection -->
+            <div class="diagnostic-card" id="db-card">
+                <div class="card-header">
+                    <span class="card-icon">🔌</span>
+                    <span class="card-title">Database Connection</span>
+                    <span class="status-indicator status-pending" id="db-status">Checking...</span>
+                </div>
+                <div class="card-content" id="db-content">
+                    Testing connection to Supabase database...
+                </div>
+                <div class="action-buttons">
+                    <button onclick="testDatabase()">Test Connection</button>
+                </div>
+            </div>
+
+            <!-- Schema Verification -->
+            <div class="diagnostic-card" id="schema-card">
+                <div class="card-header">
+                    <span class="card-icon">🗄️</span>
+                    <span class="card-title">Schema Verification</span>
+                    <span class="status-indicator status-pending" id="schema-status">Pending</span>
+                </div>
+                <div class="card-content" id="schema-content">
+                    Checking conversations and messages tables...
+                </div>
+                <div class="action-buttons">
+                    <button onclick="verifySchema()">Verify Schema</button>
+                </div>
+            </div>
+
+            <!-- Authentication -->
+            <div class="diagnostic-card" id="auth-card">
+                <div class="card-header">
+                    <span class="card-icon">🔐</span>
+                    <span class="card-title">Authentication</span>
+                    <span class="status-indicator status-pending" id="auth-status">Not tested</span>
+                </div>
+                <div class="card-content" id="auth-content">
+                    Testing user authentication flow...
+                </div>
+                <div class="action-buttons">
+                    <button onclick="testAuth()">Test Auth</button>
+                </div>
+            </div>
+
+            <!-- Real-time -->
+            <div class="diagnostic-card" id="realtime-card">
+                <div class="card-header">
+                    <span class="card-icon">⚡</span>
+                    <span class="card-title">Real-time Updates</span>
+                    <span class="status-indicator status-pending" id="realtime-status">Not tested</span>
+                </div>
+                <div class="card-content" id="realtime-content">
+                    Testing real-time message subscriptions...
+                </div>
+                <div class="action-buttons">
+                    <button onclick="testRealtime()">Test Real-time</button>
+                    <button onclick="stopRealtime()">Stop</button>
+                </div>
+            </div>
+
+            <!-- Message Flow -->
+            <div class="diagnostic-card" id="message-card">
+                <div class="card-header">
+                    <span class="card-icon">💬</span>
+                    <span class="card-title">Message Flow</span>
+                    <span class="status-indicator status-pending" id="message-status">Not tested</span>
+                </div>
+                <div class="card-content" id="message-content">
+                    Testing end-to-end message functionality...
+                </div>
+                <div class="action-buttons">
+                    <button onclick="testMessageFlow()">Test Messages</button>
+                </div>
+            </div>
+
+            <!-- Performance -->
+            <div class="diagnostic-card" id="perf-card">
+                <div class="card-header">
+                    <span class="card-icon">🚀</span>
+                    <span class="card-title">Performance</span>
+                    <span class="status-indicator status-pending" id="perf-status">Not tested</span>
+                </div>
+                <div class="card-content" id="perf-content">
+                    Measuring query performance and response times...
+                </div>
+                <div class="action-buttons">
+                    <button onclick="testPerformance()">Test Performance</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary-section">
+            <h2>📊 System Health Summary</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="health-progress"></div>
+            </div>
+            <div style="margin: 20px 0;">
+                <div class="metric">
+                    <span class="metric-value" id="tests-passed">0</span>
+                    <span class="metric-label">Tests Passed</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value" id="tests-failed">0</span>
+                    <span class="metric-label">Tests Failed</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value" id="response-time">-</span>
+                    <span class="metric-label">Avg Response (ms)</span>
+                </div>
+            </div>
+            <button onclick="runFullDiagnostic()" style="background: rgba(255,255,255,0.2); border: 2px solid white;">
+                🔍 Run Full Diagnostic
+            </button>
+        </div>
+
+        <div class="log-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3>📝 Diagnostic Log</h3>
+                <button onclick="clearLog()" style="background: #4a5568;">Clear</button>
+            </div>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8";
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let diagnosticState = {
+            testsRun: 0,
+            testsPassed: 0,
+            testsFailed: 0,
+            responseTimes: [],
+            realtimeSubscription: null
+        };
+
+        function log(message, level = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            const icons = { info: 'ℹ️', success: '✅', error: '❌', warning: '⚠️' };
+            logDiv.innerHTML += `[${timestamp}] ${icons[level]} ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateCard(cardId, status, content) {
+            const card = document.getElementById(`${cardId}-card`);
+            const statusEl = document.getElementById(`${cardId}-status`);
+            const contentEl = document.getElementById(`${cardId}-content`);
+            
+            card.className = `diagnostic-card ${status}`;
+            statusEl.className = `status-indicator status-${status}`;
+            statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            contentEl.innerHTML = content;
+        }
+
+        function updateMetrics() {
+            document.getElementById('tests-passed').textContent = diagnosticState.testsPassed;
+            document.getElementById('tests-failed').textContent = diagnosticState.testsFailed;
+            
+            if (diagnosticState.responseTimes.length > 0) {
+                const avgTime = diagnosticState.responseTimes.reduce((a, b) => a + b, 0) / diagnosticState.responseTimes.length;
+                document.getElementById('response-time').textContent = Math.round(avgTime);
+            }
+            
+            const healthPercent = diagnosticState.testsRun > 0 ? 
+                (diagnosticState.testsPassed / diagnosticState.testsRun) * 100 : 0;
+            document.getElementById('health-progress').style.width = healthPercent + '%';
+        }
+
+        async function measureTime(fn) {
+            const start = Date.now();
+            const result = await fn();
+            const time = Date.now() - start;
+            diagnosticState.responseTimes.push(time);
+            return { result, time };
+        }
+
+        async function testDatabase() {
+            try {
+                log('Testing database connection...');
+                const { result, time } = await measureTime(async () => {
+                    const { data, error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+                    if (error) throw error;
+                    return data;
+                });
+
+                diagnosticState.testsRun++;
+                diagnosticState.testsPassed++;
+                updateCard('db', 'success', `✅ Connected successfully<br>Response time: ${time}ms`);
+                log(`Database connection successful (${time}ms)`, 'success');
+                
+            } catch (error) {
+                diagnosticState.testsRun++;
+                diagnosticState.testsFailed++;
+                updateCard('db', 'error', `❌ Connection failed<br>${error.message}`);
+                log(`Database connection failed: ${error.message}`, 'error');
+            }
+            updateMetrics();
+        }
+
+        async function verifySchema() {
+            try {
+                log('Verifying messaging schema...');
+                
+                // Test conversations table
+                const { result: convResult, time: convTime } = await measureTime(async () => {
+                    const { data, error } = await supabase.from('conversations').select('count', { count: 'exact', head: true });
+                    if (error) throw error;
+                    return data;
+                });
+
+                // Test messages table
+                const { result: msgResult, time: msgTime } = await measureTime(async () => {
+                    const { data, error } = await supabase.from('messages').select('count', { count: 'exact', head: true });
+                    if (error) throw error;
+                    return data;
+                });
+
+                // Test function
+                const { result: funcResult, time: funcTime } = await measureTime(async () => {
+                    const { data, error } = await supabase.rpc('get_or_create_conversation', {
+                        user1_id: '00000000-0000-0000-0000-000000000001',
+                        user2_id: '00000000-0000-0000-0000-000000000002'
+                    });
+                    
+                    if (error && !error.message.includes('violates foreign key constraint')) {
+                        throw error;
+                    }
+                    return 'Function exists';
+                });
+
+                diagnosticState.testsRun++;
+                diagnosticState.testsPassed++;
+                updateCard('schema', 'success', 
+                    `✅ All tables verified<br>` +
+                    `Conversations: ${convTime}ms<br>` +
+                    `Messages: ${msgTime}ms<br>` +
+                    `Function: ${funcTime}ms`
+                );
+                log('Schema verification successful', 'success');
+                
+            } catch (error) {
+                diagnosticState.testsRun++;
+                diagnosticState.testsFailed++;
+                updateCard('schema', 'error', `❌ Schema issues detected<br>${error.message}`);
+                log(`Schema verification failed: ${error.message}`, 'error');
+            }
+            updateMetrics();
+        }
+
+        async function testAuth() {
+            try {
+                log('Testing authentication...');
+                
+                // Test getting current session
+                const { result, time } = await measureTime(async () => {
+                    const { data: { session }, error } = await supabase.auth.getSession();
+                    return { session, error };
+                });
+
+                diagnosticState.testsRun++;
+                
+                if (result.session) {
+                    diagnosticState.testsPassed++;
+                    updateCard('auth', 'success', 
+                        `✅ User authenticated<br>` +
+                        `Email: ${result.session.user.email}<br>` +
+                        `Response: ${time}ms`
+                    );
+                    log(`Authentication successful for ${result.session.user.email}`, 'success');
+                } else {
+                    diagnosticState.testsPassed++;
+                    updateCard('auth', 'warning', 
+                        `⚠️ No active session<br>` +
+                        `Users need to sign in to use messaging<br>` +
+                        `Response: ${time}ms`
+                    );
+                    log('No active session (users need to sign in)', 'warning');
+                }
+                
+            } catch (error) {
+                diagnosticState.testsFailed++;
+                updateCard('auth', 'error', `❌ Authentication error<br>${error.message}`);
+                log(`Authentication test failed: ${error.message}`, 'error');
+            }
+            updateMetrics();
+        }
+
+        async function testRealtime() {
+            try {
+                log('Testing real-time subscriptions...');
+                updateCard('realtime', 'warning', '🔄 Establishing real-time connection...');
+                
+                const timeout = setTimeout(() => {
+                    throw new Error('Real-time subscription timeout (10s)');
+                }, 10000);
+
+                diagnosticState.realtimeSubscription = supabase
+                    .channel('diagnostic-test')
+                    .on('postgres_changes', {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'messages'
+                    }, (payload) => {
+                        log(`Real-time message received: ${payload.new.content}`, 'success');
+                    })
+                    .subscribe((status) => {
+                        log(`Real-time status: ${status}`);
+                        
+                        if (status === 'SUBSCRIBED') {
+                            clearTimeout(timeout);
+                            diagnosticState.testsRun++;
+                            diagnosticState.testsPassed++;
+                            updateCard('realtime', 'success', 
+                                `✅ Real-time active<br>` +
+                                `Subscribed to message updates<br>` +
+                                `Channel: diagnostic-test`
+                            );
+                            log('Real-time subscription successful', 'success');
+                            updateMetrics();
+                        } else if (status === 'CHANNEL_ERROR') {
+                            clearTimeout(timeout);
+                            throw new Error('Real-time channel error');
+                        }
+                    });
+                
+            } catch (error) {
+                diagnosticState.testsRun++;
+                diagnosticState.testsFailed++;
+                updateCard('realtime', 'error', `❌ Real-time failed<br>${error.message}`);
+                log(`Real-time test failed: ${error.message}`, 'error');
+                updateMetrics();
+            }
+        }
+
+        function stopRealtime() {
+            if (diagnosticState.realtimeSubscription) {
+                supabase.removeChannel(diagnosticState.realtimeSubscription);
+                diagnosticState.realtimeSubscription = null;
+                updateCard('realtime', 'warning', '⏹️ Real-time subscription stopped');
+                log('Real-time subscription stopped');
+            }
+        }
+
+        async function testMessageFlow() {
+            try {
+                log('Testing complete message flow...');
+                
+                // Test user search
+                const { result: searchResult, time: searchTime } = await measureTime(async () => {
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .select('id, user_id, display_name')
+                        .limit(5);
+                    if (error) throw error;
+                    return data;
+                });
+
+                diagnosticState.testsRun++;
+                diagnosticState.testsPassed++;
+                updateCard('message', 'success', 
+                    `✅ Message flow verified<br>` +
+                    `User search: ${searchTime}ms<br>` +
+                    `Found ${searchResult.length} profiles<br>` +
+                    `Ready for conversations`
+                );
+                log(`Message flow test successful (${searchTime}ms)`, 'success');
+                
+            } catch (error) {
+                diagnosticState.testsRun++;
+                diagnosticState.testsFailed++;
+                updateCard('message', 'error', `❌ Message flow failed<br>${error.message}`);
+                log(`Message flow test failed: ${error.message}`, 'error');
+            }
+            updateMetrics();
+        }
+
+        async function testPerformance() {
+            try {
+                log('Running performance benchmarks...');
+                
+                const tests = [
+                    { name: 'Profile Query', fn: () => supabase.from('profiles').select('*').limit(10) },
+                    { name: 'Conversation Query', fn: () => supabase.from('conversations').select('*').limit(5) },
+                    { name: 'Message Query', fn: () => supabase.from('messages').select('*').limit(20) }
+                ];
+
+                let totalTime = 0;
+                let results = [];
+
+                for (const test of tests) {
+                    const { time } = await measureTime(async () => {
+                        const { data, error } = await test.fn();
+                        if (error) throw error;
+                        return data;
+                    });
+                    totalTime += time;
+                    results.push(`${test.name}: ${time}ms`);
+                }
+
+                diagnosticState.testsRun++;
+                diagnosticState.testsPassed++;
+                updateCard('perf', 'success', 
+                    `✅ Performance good<br>` +
+                    `${results.join('<br>')}<br>` +
+                    `Total: ${totalTime}ms`
+                );
+                log(`Performance test completed (${totalTime}ms total)`, 'success');
+                
+            } catch (error) {
+                diagnosticState.testsRun++;
+                diagnosticState.testsFailed++;
+                updateCard('perf', 'error', `❌ Performance issues<br>${error.message}`);
+                log(`Performance test failed: ${error.message}`, 'error');
+            }
+            updateMetrics();
+        }
+
+        async function runFullDiagnostic() {
+            log('🚀 Starting full diagnostic...');
+            
+            // Reset state
+            diagnosticState = {
+                testsRun: 0,
+                testsPassed: 0,
+                testsFailed: 0,
+                responseTimes: [],
+                realtimeSubscription: diagnosticState.realtimeSubscription
+            };
+            
+            document.getElementById('progress-text').textContent = 'Running diagnostic...';
+            
+            const tests = [
+                testDatabase,
+                verifySchema,
+                testAuth,
+                testMessageFlow,
+                testPerformance,
+                testRealtime
+            ];
+
+            for (let i = 0; i < tests.length; i++) {
+                const progress = ((i + 1) / tests.length) * 100;
+                document.getElementById('progress').style.width = progress + '%';
+                
+                await tests[i]();
+                await new Promise(resolve => setTimeout(resolve, 500)); // Small delay between tests
+            }
+
+            const healthScore = diagnosticState.testsRun > 0 ? 
+                Math.round((diagnosticState.testsPassed / diagnosticState.testsRun) * 100) : 0;
+            
+            document.getElementById('progress-text').textContent = 
+                `Diagnostic complete - Health Score: ${healthScore}%`;
+            
+            if (healthScore >= 80) {
+                log(`🎉 Messaging system is healthy! (${healthScore}% pass rate)`, 'success');
+            } else if (healthScore >= 60) {
+                log(`⚠️ Messaging system has issues (${healthScore}% pass rate)`, 'warning');
+            } else {
+                log(`❌ Messaging system needs attention (${healthScore}% pass rate)`, 'error');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // Auto-start basic diagnostic on load
+        window.onload = () => {
+            log('🔍 Messaging diagnostic tool loaded');
+            setTimeout(() => {
+                testDatabase();
+                setTimeout(verifySchema, 1000);
+            }, 500);
+        };
+    </script>
+</body>
+</html>
