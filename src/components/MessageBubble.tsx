@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Check, CheckCheck, Clock, MoreHorizontal, Reply, Heart, ThumbsUp, Smile } from 'lucide-react';
+import { Check, CheckCheck, Clock, MoreHorizontal, Reply, Heart, ThumbsUp, Smile, Star } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,11 +48,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     const isDelivered = messageAge > 2000; // Simulate delivered status after 2 seconds
     
     if (isRead) {
-      return <CheckCheck className="h-3 w-3 text-blue-500" />; // Blue checkmarks for read
+      return <CheckCheck className="h-3 w-3 text-emerald-400 drop-shadow-sm" />; // Emerald checkmarks for read
     } else if (isDelivered) {
-      return <CheckCheck className="h-3 w-3 text-gray-400" />; // Gray checkmarks for delivered
+      return <CheckCheck className="h-3 w-3 text-white/50 drop-shadow-sm" />; // White checkmarks for delivered
     } else {
-      return <Check className="h-3 w-3 text-gray-400" />; // Single checkmark for sent
+      return <Check className="h-3 w-3 text-white/40 drop-shadow-sm" />; // Single checkmark for sent
     }
   };
 
@@ -80,9 +80,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   return (
     <div 
       className={cn(
-        "group flex gap-1 mb-1 transition-all duration-200 animate-messageSlideIn",
+        "group flex gap-3 mb-4 transition-all duration-300 animate-messageSlideIn",
         isOwn ? "flex-row-reverse" : "flex-row",
-        isLast ? "mb-3" : ""
+        isLast ? "mb-6" : ""
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -92,7 +92,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       {/* Avatar - only show for other users and when showAvatar is true */}
       {showAvatar && !isOwn && (
         <Avatar 
-          className="h-6 w-6 mt-1 flex-shrink-0"
+          className="h-8 w-8 mt-1 flex-shrink-0 ring-2 ring-white/20 shadow-lg"
           role="img"
           aria-label={`${senderName}'s profile picture`}
         >
@@ -100,7 +100,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             src={message.sender?.avatar_url || undefined} 
             alt={`${senderName}'s avatar`}
           />
-          <AvatarFallback className="text-[10px] bg-gradient-to-br from-gray-400 to-gray-500 text-white">
+          <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-semibold">
             {getInitials(message.sender?.display_name)}
           </AvatarFallback>
         </Avatar>
@@ -108,50 +108,78 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       
       {/* Spacer for non-avatar messages */}
       {!showAvatar && !isOwn && (
-        <div className="h-6 w-6 flex-shrink-0" />
+        <div className="h-8 w-8 flex-shrink-0" />
       )}
       
       <div className={cn(
-        "max-w-[75%] relative",
+        "max-w-[70%] relative",
         isOwn ? "items-end" : "items-start"
       )}>
+        {/* Sender name for received messages */}
+        {!isOwn && showAvatar && (
+          <div className="mb-1 ml-1">
+            <span className="text-xs font-medium text-white/80 drop-shadow-sm">
+              {senderName}
+            </span>
+          </div>
+        )}
+        
         {/* Message content */}
         <div className="relative group/message">
+          {/* Message reactions overlay */}
+          {isHovered && (
+            <div className={cn(
+              "absolute -top-8 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10",
+              isOwn ? "right-0" : "left-0"
+            )}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 bg-black/20 backdrop-blur-sm text-white/80 hover:bg-black/30 rounded-full"
+                onClick={() => setShowReactions(!showReactions)}
+              >
+                <Smile className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 bg-black/20 backdrop-blur-sm text-white/80 hover:bg-black/30 rounded-full"
+                onClick={handleReply}
+              >
+                <Reply className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+          
           <div 
             className={cn(
-              "relative px-3 py-2 text-[14px] break-words shadow-sm max-w-full min-w-[80px]",
-              "transition-shadow duration-200 hover:shadow-md",
+              "relative px-4 py-3 text-sm break-words max-w-full min-w-[100px]",
+              "backdrop-blur-md border border-white/10 shadow-xl message-glow",
+              "transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] animate-floatingBubble",
               isOwn 
-                ? "bg-[#dcf8c6] dark:bg-[#005c4b] text-gray-800 dark:text-white rounded-lg rounded-br-sm ml-auto" 
-                : "bg-white dark:bg-[#202c33] text-gray-800 dark:text-gray-100 rounded-lg rounded-bl-sm shadow-sm"
+                ? "bg-gradient-to-br from-indigo-500/90 to-purple-600/90 text-white rounded-3xl rounded-br-lg ml-auto animate-glowPulse" 
+                : "bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-gray-100 rounded-3xl rounded-bl-lg shadow-lg"
             )}
             tabIndex={0}
             onKeyDown={handleKeyDown}
             role="article"
             aria-label={`Message content: ${message.content}`}
           >
-            {/* Message tail */}
-            {showAvatar && (
-              <div 
-                className={cn(
-                  "absolute top-0 w-0 h-0",
-                  isOwn 
-                    ? "right-[-6px] border-l-[6px] border-l-[#dcf8c6] dark:border-l-[#005c4b] border-t-[6px] border-t-transparent" 
-                    : "left-[-6px] border-r-[6px] border-r-white dark:border-r-[#202c33] border-t-[6px] border-t-transparent"
-                )}
-              />
+            {/* Subtle glow effect for own messages */}
+            {isOwn && (
+              <div className="absolute inset-0 rounded-3xl rounded-br-lg bg-gradient-to-br from-indigo-400/20 to-purple-500/20 blur-sm -z-10" />
             )}
             
             {/* Message text */}
-            <div className="pr-16 leading-[1.3]">
+            <div className="pr-16 leading-[1.4] font-medium">
               {message.content || '[Message content unavailable]'}
             </div>
             
             {/* Time and status in bottom right */}
             <div className={cn(
-              "absolute bottom-1 right-2 flex items-center gap-1 text-[11px] leading-none",
+              "absolute bottom-2 right-3 flex items-center gap-1.5 text-[10px] leading-none font-medium",
               isOwn 
-                ? "text-gray-600 dark:text-gray-300" 
+                ? "text-white/70" 
                 : "text-gray-500 dark:text-gray-400"
             )}>
               <time dateTime={message.created_at || ''} aria-label={`Sent ${messageTime}`}>
@@ -161,6 +189,25 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             </div>
           </div>
           
+          {/* Quick reactions */}
+          {showReactions && (
+            <div className={cn(
+              "absolute -bottom-8 flex gap-1 bg-black/80 backdrop-blur-md rounded-full px-2 py-1 shadow-lg z-20",
+              isOwn ? "right-0" : "left-0"
+            )}>
+              {['❤️', '👍', '😂', '😮', '😢', '🔥'].map((emoji) => (
+                <Button
+                  key={emoji}
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-white hover:bg-white/20 rounded-full text-xs"
+                  onClick={() => handleReaction(emoji)}
+                >
+                  {emoji}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

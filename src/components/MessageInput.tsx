@@ -121,31 +121,31 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-700 bg-[#f0f2f5] dark:bg-[#202c33]">
+    <div className="border-t border-white/10 bg-black/10 backdrop-blur-md">
       {/* File attachments preview */}
       {selectedFiles.length > 0 && (
-        <div className="px-4 py-2 border-b bg-muted/20">
+        <div className="px-6 py-3 border-b border-white/10">
           <div className="flex flex-wrap gap-2">
             {selectedFiles.map((file, index) => (
               <div
                 key={index}
-                className="flex items-center gap-2 bg-background rounded-lg px-3 py-2 text-sm border shadow-sm"
+                className="flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-2xl px-4 py-2 text-sm border border-white/20 shadow-lg"
               >
                 <div className="flex items-center gap-2">
                   {file.type.startsWith('image/') ? (
-                    <Image className="h-4 w-4 text-blue-500" />
+                    <Image className="h-4 w-4 text-indigo-400" />
                   ) : (
-                    <Paperclip className="h-4 w-4 text-gray-500" />
+                    <Paperclip className="h-4 w-4 text-white/70" />
                   )}
                   <div>
-                    <p className="font-medium truncate max-w-32">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                    <p className="font-medium truncate max-w-32 text-white">{file.name}</p>
+                    <p className="text-xs text-white/60">{formatFileSize(file.size)}</p>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                  className="h-6 w-6 p-0 hover:bg-red-500/20 hover:text-red-400 text-white/60"
                   onClick={() => removeFile(index)}
                 >
                   <X className="h-3 w-3" />
@@ -156,21 +156,34 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         </div>
       )}
 
-      <div className="flex items-end gap-3 p-4">
-        {/* Attachment button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 shrink-0 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-          disabled={disabled}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Paperclip className="h-5 w-5" />
-        </Button>
+      <div className="flex items-end gap-4 p-6">
+        {/* Attachment menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-12 w-12 shrink-0 text-white/70 hover:bg-white/10 rounded-full backdrop-blur-sm border border-white/20 shadow-lg transition-all duration-200 hover:scale-105"
+              disabled={disabled}
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" className="mb-2 bg-black/80 backdrop-blur-md border-white/20">
+            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+              <Paperclip className="h-4 w-4 mr-2" />
+              <span className="text-white">Attach File</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+              <Image className="h-4 w-4 mr-2" />
+              <span className="text-white">Send Photo</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Message input area */}
         <div className="flex-1 relative">
-          <div className="flex items-end bg-white dark:bg-[#2a3942] rounded-3xl border border-gray-300 dark:border-gray-600 shadow-sm">
+          <div className="flex items-end bg-white/20 backdrop-blur-md rounded-3xl border border-white/20 shadow-xl">
             <Textarea
               ref={textareaRef}
               value={content}
@@ -179,41 +192,41 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               placeholder={placeholder}
               disabled={disabled}
               className={cn(
-                "min-h-[44px] max-h-[120px] resize-none border-0 rounded-3xl pl-4 pr-12 py-3",
+                "min-h-[48px] max-h-[120px] resize-none border-0 rounded-3xl pl-6 pr-14 py-4",
                 "focus:ring-0 focus:outline-none",
-                "placeholder:text-gray-500 dark:placeholder:text-gray-400",
-                "bg-transparent text-gray-900 dark:text-gray-100"
+                "placeholder:text-white/50 dark:placeholder:text-white/40",
+                "bg-transparent text-white font-medium"
               )}
               rows={1}
             />
             
             {/* Emoji picker */}
-            <div className="absolute right-3 bottom-3">
+            <div className="absolute right-4 bottom-4">
               <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full"
+                    className="h-8 w-8 p-0 text-white/60 hover:bg-white/10 rounded-full transition-all duration-200"
                     disabled={disabled}
                   >
                     <Smile className="h-5 w-5" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80 p-0" align="end">
+                <PopoverContent className="w-80 p-0 bg-black/90 backdrop-blur-md border-white/20" align="end">
                   <div className="p-4">
-                    <h4 className="font-semibold mb-3">Emojis</h4>
+                    <h4 className="font-semibold mb-3 text-white">Emojis</h4>
                     <div className="space-y-4 max-h-64 overflow-y-auto">
                       {Object.entries(EMOJI_CATEGORIES).map(([category, emojis]) => (
                         <div key={category}>
-                          <h5 className="text-sm font-medium mb-2 capitalize">{category}</h5>
+                          <h5 className="text-sm font-medium mb-2 capitalize text-white/80">{category}</h5>
                           <div className="grid grid-cols-8 gap-1">
                             {emojis.map((emoji) => (
                               <Button
                                 key={emoji}
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="h-8 w-8 p-0 text-lg hover:bg-white/10 rounded-lg"
                                 onClick={() => insertEmoji(emoji)}
                               >
                                 {emoji}
@@ -237,29 +250,30 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             disabled={disabled || (!canSend && selectedFiles.length === 0)}
             size="icon"
             className={cn(
-              "h-12 w-12 shrink-0 rounded-full transition-all duration-200",
-              "bg-[#25d366] hover:bg-[#20c55e] text-white",
-              "shadow-lg hover:shadow-xl",
-              "disabled:opacity-50"
+              "h-14 w-14 shrink-0 rounded-full transition-all duration-300",
+              "bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white",
+              "shadow-xl hover:shadow-2xl hover:scale-110",
+              "disabled:opacity-50 disabled:hover:scale-100"
             )}
           >
-            <Send className="h-5 w-5" />
+            <Send className="h-6 w-6" />
           </Button>
         ) : (
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              "h-12 w-12 shrink-0 rounded-full transition-all duration-200",
-              "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700",
-              isRecording && "bg-red-500 text-white hover:bg-red-600"
+              "h-14 w-14 shrink-0 rounded-full transition-all duration-300",
+              "text-white/70 hover:bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg",
+              "hover:scale-105",
+              isRecording && "bg-red-500/80 text-white hover:bg-red-600/80 animate-pulse"
             )}
             disabled={disabled}
             onMouseDown={startRecording}
             onMouseUp={stopRecording}
             onMouseLeave={stopRecording}
           >
-            <Mic className={cn("h-5 w-5", isRecording && "animate-pulse")} />
+            <Mic className={cn("h-6 w-6", isRecording && "animate-pulse")} />
           </Button>
         )}
 
