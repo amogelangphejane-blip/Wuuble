@@ -17,17 +17,36 @@ export const useConversations = () => {
     refetch
   } = useQuery({
     queryKey: ['conversations'],
-    queryFn: messageService.getConversations,
+    queryFn: async () => {
+      try {
+        return await messageService.getConversations();
+      } catch (error) {
+        console.warn('Error fetching conversations:', error);
+        // Return empty array instead of throwing to prevent error boundary
+        return [];
+      }
+    },
     staleTime: 30000, // 30 seconds
+    retry: false, // Disable automatic retries to prevent error boundary triggers
   });
 
   // Subscribe to real-time updates
   useEffect(() => {
     const unsubscribe = messageService.subscribeToConversations(() => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      try {
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      } catch (error) {
+        console.warn('Error invalidating conversations query:', error);
+      }
     });
 
-    return unsubscribe;
+    return () => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('Error unsubscribing from conversations:', error);
+      }
+    };
   }, [queryClient]);
 
   return {
@@ -52,9 +71,19 @@ export const useMessages = (conversationId: string | null) => {
     refetch
   } = useQuery({
     queryKey: ['messages', conversationId],
-    queryFn: () => conversationId ? messageService.getMessages(conversationId) : Promise.resolve([]),
+    queryFn: async () => {
+      if (!conversationId) return [];
+      try {
+        return await messageService.getMessages(conversationId);
+      } catch (error) {
+        console.warn('Error fetching messages:', error);
+        // Return empty array instead of throwing to prevent error boundary
+        return [];
+      }
+    },
     enabled: !!conversationId,
     staleTime: 10000, // 10 seconds
+    retry: false, // Disable automatic retries to prevent error boundary triggers
   });
 
   // Subscribe to real-time message updates
@@ -62,25 +91,38 @@ export const useMessages = (conversationId: string | null) => {
     if (!conversationId) return;
 
     const unsubscribe = messageService.subscribeToMessages(conversationId, (newMessage) => {
-      queryClient.setQueryData(['messages', conversationId], (oldMessages: MessageWithSender[] = []) => {
-        // Avoid duplicates
-        const exists = oldMessages.some(msg => msg.id === newMessage.id);
-        if (exists) return oldMessages;
-        
-        return [...oldMessages, newMessage as MessageWithSender];
-      });
+      try {
+        queryClient.setQueryData(['messages', conversationId], (oldMessages: MessageWithSender[] = []) => {
+          // Avoid duplicates
+          const exists = oldMessages.some(msg => msg.id === newMessage.id);
+          if (exists) return oldMessages;
+          
+          return [...oldMessages, newMessage as MessageWithSender];
+        });
 
-      // Also invalidate conversations to update last message
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        // Also invalidate conversations to update last message
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      } catch (error) {
+        console.warn('Error updating messages from subscription:', error);
+      }
     });
 
-    return unsubscribe;
+    return () => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('Error unsubscribing from messages:', error);
+      }
+    };
   }, [conversationId, queryClient]);
 
   // Mark messages as read when conversation is opened
   useEffect(() => {
     if (conversationId && messages.length > 0) {
-      messageService.markMessagesAsRead(conversationId).catch(console.error);
+      messageService.markMessagesAsRead(conversationId).catch((error) => {
+        // Silently handle read status errors - they shouldn't break the UI
+        console.warn('Failed to mark messages as read:', error);
+      });
     }
   }, [conversationId, messages.length]);
 
@@ -103,16 +145,20 @@ export const useSendMessage = () => {
     mutationFn: ({ conversationId, content }: { conversationId: string; content: string }) =>
       messageService.sendMessage(conversationId, content),
     onSuccess: (newMessage, variables) => {
-      // Optimistically update the messages list
-      queryClient.setQueryData(['messages', variables.conversationId], (oldMessages: MessageWithSender[] = []) => {
-        const exists = oldMessages.some(msg => msg.id === newMessage.id);
-        if (exists) return oldMessages;
-        
-        return [...oldMessages, newMessage as MessageWithSender];
-      });
+      try {
+        // Optimistically update the messages list
+        queryClient.setQueryData(['messages', variables.conversationId], (oldMessages: MessageWithSender[] = []) => {
+          const exists = oldMessages.some(msg => msg.id === newMessage.id);
+          if (exists) return oldMessages;
+          
+          return [...oldMessages, newMessage as MessageWithSender];
+        });
 
-      // Invalidate conversations to update last message timestamp
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        // Invalidate conversations to update last message timestamp
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      } catch (error) {
+        console.warn('Error updating UI after message send:', error);
+      }
     },
     onError: (error) => {
       console.error('Failed to send message:', error);
@@ -141,8 +187,12 @@ export const useCreateConversation = () => {
   const mutation = useMutation({
     mutationFn: (otherUserId: string) => messageService.getOrCreateConversation(otherUserId),
     onSuccess: () => {
-      // Refresh conversations list
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      try {
+        // Refresh conversations list
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      } catch (error) {
+        console.warn('Error invalidating conversations after creation:', error);
+      }
     },
     onError: (error) => {
       console.error('Failed to create conversation:', error);

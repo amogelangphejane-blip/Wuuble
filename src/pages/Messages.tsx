@@ -56,6 +56,7 @@ const Messages: React.FC = () => {
         content,
       });
     } catch (error) {
+      console.warn('Error in handleSendMessage:', error);
       const errorInfo = handleError(error as Error, 'sendMessage');
       toast({
         title: "Failed to send message",
