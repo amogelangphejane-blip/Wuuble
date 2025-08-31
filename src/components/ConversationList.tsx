@@ -119,15 +119,17 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   }
 
   return (
-    <div className="w-full border-r bg-white dark:bg-[#111b21] flex flex-col h-full">
+    <div className="w-full border-r border-white/10 bg-black/20 backdrop-blur-xl flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#f0f2f5] dark:bg-[#202c33]">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-primary" />
+      <div className="p-6 border-b border-white/10 bg-black/10 backdrop-blur-md">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold flex items-center gap-3 text-white">
+            <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">
+              <MessageCircle className="h-5 w-5 text-white" />
+            </div>
             Messages
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {/* Filter menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -135,33 +137,33 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   size="icon" 
                   variant="ghost"
                   className={cn(
-                    "h-8 w-8",
-                    filter !== 'all' && "bg-primary/10 text-primary"
+                    "h-10 w-10 rounded-xl backdrop-blur-sm border border-white/20 shadow-lg transition-all duration-200 hover:scale-105",
+                    filter !== 'all' ? "bg-indigo-500/20 text-indigo-300 border-indigo-400/30" : "text-white/70 hover:bg-white/10"
                   )}
                 >
                   <Filter className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-black/90 backdrop-blur-md border-white/20">
                 <DropdownMenuItem
                   onClick={() => setFilter('all')}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 text-white hover:bg-white/10"
                 >
-                  {filter === 'all' && <Check className="h-4 w-4" />}
+                  {filter === 'all' && <Check className="h-4 w-4 text-indigo-400" />}
                   <span className={filter !== 'all' ? 'ml-6' : ''}>All Conversations</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setFilter('unread')}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 text-white hover:bg-white/10"
                 >
-                  {filter === 'unread' && <Check className="h-4 w-4" />}
+                  {filter === 'unread' && <Check className="h-4 w-4 text-indigo-400" />}
                   <span className={filter !== 'unread' ? 'ml-6' : ''}>Unread</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setFilter('pinned')}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 text-white hover:bg-white/10"
                 >
-                  {filter === 'pinned' && <Check className="h-4 w-4" />}
+                  {filter === 'pinned' && <Check className="h-4 w-4 text-indigo-400" />}
                   <span className={filter !== 'pinned' ? 'ml-6' : ''}>Pinned</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -172,15 +174,14 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               <DialogTrigger asChild>
                 <Button 
                   size="icon" 
-                  variant="outline"
-                  className="h-8 w-8 border-primary/20 hover:bg-primary/10 hover:border-primary/40"
+                  className="h-10 w-10 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl shadow-lg transition-all duration-200 hover:scale-105"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-black/90 backdrop-blur-md border-white/20">
                 <DialogHeader>
-                  <DialogTitle>Start New Conversation</DialogTitle>
+                  <DialogTitle className="text-white">Start New Conversation</DialogTitle>
                 </DialogHeader>
                 <NewChatDialog onClose={() => setIsNewChatOpen(false)} />
               </DialogContent>
@@ -190,18 +191,18 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
         {/* Search bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
           <Input
-            placeholder="Search or start new chat"
+            placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-10 bg-white dark:bg-[#2a3942] border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#25d366] focus:ring-1 focus:ring-[#25d366] text-gray-900 dark:text-gray-100"
+            className="pl-12 pr-12 bg-white/10 backdrop-blur-md border-white/20 rounded-2xl focus:border-indigo-400/50 focus:ring-1 focus:ring-indigo-400/30 text-white placeholder:text-white/50 shadow-lg h-12"
           />
           {searchQuery && (
             <Button
               variant="ghost"
               size="sm"
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-600"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-white/10 text-white/60 rounded-full"
               onClick={clearSearch}
             >
               <X className="h-3 w-3" />
@@ -211,7 +212,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       </div>
 
       {/* Conversations List */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 custom-scrollbar">
         <div className="p-2">
           {filteredConversations.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
@@ -274,51 +275,54 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 cursor-pointer transition-colors duration-150",
-        "hover:bg-[#f5f6f6] dark:hover:bg-[#2a3942]",
-        isSelected && "bg-[#e9edef] dark:bg-[#2a3942]",
-        "border-b border-gray-200/50 dark:border-gray-700/50 last:border-b-0"
+        "flex items-center gap-4 p-4 cursor-pointer transition-all duration-300 mx-2 rounded-2xl animate-conversationSlideIn",
+        "hover:bg-white/10 hover:backdrop-blur-md hover:shadow-lg hover:scale-[1.02]",
+        isSelected && "bg-gradient-to-r from-indigo-500/20 to-purple-600/20 backdrop-blur-md border border-white/20 shadow-xl scale-[1.02] animate-glowPulse",
+        "border border-transparent hover:border-white/10"
       )}
       onClick={onClick}
     >
       <div className="relative flex-shrink-0">
-        <Avatar className="h-12 w-12">
+        <Avatar className="h-14 w-14 ring-2 ring-white/20 shadow-lg">
           <AvatarImage src={conversation.participant.avatar_url || undefined} />
-          <AvatarFallback className="bg-[#ddd] dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+          <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-semibold">
             {getInitials(conversation.participant.display_name)}
           </AvatarFallback>
         </Avatar>
+        {isOnline && (
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black/20 shadow-lg animate-pulse" />
+        )}
       </div>
       
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <h3 className={cn(
-              "text-[17px] text-gray-900 dark:text-gray-100 truncate mb-0.5",
-              conversation.unread_count > 0 && "font-semibold"
+              "text-base text-white truncate mb-1",
+              conversation.unread_count > 0 ? "font-bold" : "font-semibold"
             )}>
               {conversation.participant.display_name || 'Unknown User'}
             </h3>
             
             {conversation.last_message && (
               <p className={cn(
-                "text-[14px] truncate",
+                "text-sm truncate",
                 conversation.unread_count > 0 
-                  ? "text-gray-900 dark:text-gray-100 font-medium" 
-                  : "text-gray-500 dark:text-gray-400"
+                  ? "text-white/90 font-medium" 
+                  : "text-white/60"
               )}>
-                {truncateMessage(conversation.last_message.content, 40)}
+                {truncateMessage(conversation.last_message.content, 35)}
               </p>
             )}
           </div>
           
-          <div className="flex flex-col items-end gap-1 ml-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col items-end gap-2 ml-3">
+            <p className="text-xs text-white/50 font-medium">
               {conversation.last_message_at ? format(new Date(conversation.last_message_at), 'HH:mm') : '--:--'}
             </p>
             
             {conversation.unread_count > 0 && (
-              <div className="bg-[#25d366] text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+              <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs rounded-full min-w-[20px] h-[20px] flex items-center justify-center px-2 shadow-lg animate-pulse">
                 {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
               </div>
             )}
