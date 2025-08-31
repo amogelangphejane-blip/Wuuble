@@ -4,7 +4,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MessageBubble } from './MessageBubble';
 import { useMessages } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
-import { useWallpaper } from '@/contexts/WallpaperContext';
 
 interface MessageThreadProps {
   conversationId: string | null;
@@ -15,7 +14,6 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
 }) => {
   const { user } = useAuth();
   const { messages, isLoading } = useMessages(conversationId);
-  const { currentWallpaper } = useWallpaper();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -31,21 +29,17 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   if (!conversationId) {
     return (
       <div 
-        className="flex-1 flex items-center justify-center relative overflow-hidden"
-        style={currentWallpaper.style}
+        className="flex-1 flex items-center justify-center text-muted-foreground bg-gradient-to-br from-background to-muted/20"
         role="main"
         aria-label="No conversation selected"
       >
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
-        
-        <div className="text-center max-w-md relative z-10">
+        <div className="text-center max-w-md">
           <div 
-            className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-xl"
+            className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center"
             aria-hidden="true"
           >
             <svg
-              className="w-12 h-12 text-white/80"
+              className="w-12 h-12 text-muted-foreground/50"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -59,8 +53,8 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
               />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold mb-2 text-white drop-shadow-lg">No conversation selected</h3>
-          <p className="text-sm text-white/80 drop-shadow-md">
+          <h3 className="text-lg font-medium mb-2">No conversation selected</h3>
+          <p className="text-sm text-muted-foreground/70">
             Choose a conversation from the list to start messaging
           </p>
         </div>
@@ -71,30 +65,24 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   if (isLoading) {
     return (
       <div 
-        className="flex-1 p-6 space-y-6 relative overflow-hidden"
-        style={currentWallpaper.style}
+        className="flex-1 p-6 space-y-6"
         role="main"
         aria-label="Loading messages"
         aria-busy="true"
       >
-        {/* Overlay for better skeleton visibility */}
-        <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]" />
-        
-        <div className="relative z-10">
-          <div className="sr-only" aria-live="polite">
-            Loading conversation messages...
-          </div>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className={`flex gap-3 ${i % 2 === 0 ? '' : 'flex-row-reverse'}`}>
-              <Skeleton className="h-8 w-8 rounded-full shrink-0 bg-white/20" />
-              <div className="space-y-2 flex-1 max-w-[70%]">
-                <Skeleton className="h-4 w-20 bg-white/20" />
-                <Skeleton className={`h-12 rounded-3xl ${i % 2 === 0 ? 'w-48' : 'w-32'} bg-white/30`} />
-                <Skeleton className="h-3 w-16 bg-white/20" />
-              </div>
-            </div>
-          ))}
+        <div className="sr-only" aria-live="polite">
+          Loading conversation messages...
         </div>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className={`flex gap-3 ${i % 2 === 0 ? '' : 'flex-row-reverse'}`}>
+            <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+            <div className="space-y-2 flex-1 max-w-[70%]">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className={`h-12 rounded-2xl ${i % 2 === 0 ? 'w-48' : 'w-32'}`} />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -102,21 +90,17 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   if (messages.length === 0) {
     return (
       <div 
-        className="flex-1 flex items-center justify-center relative overflow-hidden"
-        style={currentWallpaper.style}
+        className="flex-1 flex items-center justify-center text-muted-foreground bg-gradient-to-br from-background to-muted/20"
         role="main"
         aria-label="Empty conversation"
       >
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
-        
-        <div className="text-center max-w-md relative z-10">
+        <div className="text-center max-w-md">
           <div 
-            className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-xl"
+            className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-500/10 to-blue-500/10 flex items-center justify-center"
             aria-hidden="true"
           >
             <svg
-              className="w-10 h-10 text-white/80"
+              className="w-10 h-10 text-muted-foreground/50"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -130,8 +114,8 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
               />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold mb-2 text-white drop-shadow-lg">Start the conversation</h3>
-          <p className="text-sm text-white/80 drop-shadow-md">
+          <h3 className="text-lg font-medium mb-2">Start the conversation</h3>
+          <p className="text-sm text-muted-foreground/70">
             Send a message to begin your conversation
           </p>
         </div>
@@ -141,17 +125,16 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
 
   return (
     <ScrollArea 
-      className="flex-1 relative overflow-hidden custom-scrollbar" 
+      className="flex-1 bg-[#efeae2] dark:bg-[#0b141a]" 
       ref={scrollAreaRef}
       role="main"
       aria-label={`Conversation with ${messages.length} messages`}
-      style={currentWallpaper.style}
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      }}
     >
-      {/* Subtle overlay for better message readability */}
-      <div className="absolute inset-0 bg-black/5 backdrop-blur-[0.5px] pointer-events-none" />
-      
       <div 
-        className="p-6 space-y-2 relative z-10"
+        className="p-4 space-y-1"
         role="list"
         aria-label="Messages"
       >
@@ -180,7 +163,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
         })}
         
         {/* Extra padding at the bottom for better UX */}
-        <div className="h-6" aria-hidden="true" />
+        <div className="h-4" aria-hidden="true" />
       </div>
     </ScrollArea>
   );
