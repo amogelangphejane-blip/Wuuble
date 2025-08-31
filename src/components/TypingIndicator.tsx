@@ -13,33 +13,30 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
   return (
     <div 
       className={cn(
-        "flex items-center gap-3 mb-4 animate-fadeIn",
+        "flex items-center gap-1 mb-2 animate-fadeIn",
         className
       )}
     >
-      {/* Animated avatar placeholder */}
-      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-600/30 backdrop-blur-md border border-white/20 flex items-center justify-center animate-pulse shadow-lg">
-        <div className="w-3 h-3 rounded-full bg-white/60" />
-      </div>
+      {/* Avatar placeholder */}
+      <div className="h-6 w-6 flex-shrink-0" />
       
-      {/* Typing bubble with modern design */}
-      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-3xl rounded-bl-lg px-4 py-3 border border-white/10 shadow-xl animate-floatingBubble">
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-            {userName} is typing...
+      <div className="bg-white dark:bg-[#202c33] rounded-lg rounded-bl-sm px-3 py-2 shadow-sm border dark:border-gray-700 relative before:absolute before:content-[''] before:w-0 before:h-0 before:left-0 before:top-0 before:border-r-[6px] before:border-r-white dark:before:border-r-[#202c33] before:border-t-[6px] before:border-t-transparent before:-translate-x-full">
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">
+            {userName} is typing
           </span>
           <div className="flex gap-1">
             <div 
-              className="w-2.5 h-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full animate-bounce" 
-              style={{ animationDelay: '0ms', animationDuration: '1.2s' }} 
+              className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-typingDots"
+              style={{ animationDelay: '0ms' }}
             />
             <div 
-              className="w-2.5 h-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full animate-bounce" 
-              style={{ animationDelay: '200ms', animationDuration: '1.2s' }} 
+              className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-typingDots"
+              style={{ animationDelay: '150ms' }}
             />
             <div 
-              className="w-2.5 h-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full animate-bounce" 
-              style={{ animationDelay: '400ms', animationDuration: '1.2s' }} 
+              className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-typingDots"
+              style={{ animationDelay: '300ms' }}
             />
           </div>
         </div>
