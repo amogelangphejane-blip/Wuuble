@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useGroupVideoChat, UseGroupVideoChatOptions } from '@/hooks/useGroupVideoChat';
 import { GroupParticipant } from '@/services/groupWebRTCService';
-import { VideoDebugInfo } from './VideoDebugInfo';
+
 import { 
   Video, 
   VideoOff, 
@@ -975,14 +975,7 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Debug Info (temporary for testing) */}
-      <VideoDebugInfo
-        localStream={localStream}
-        participants={participants}
-        participantStreams={participantStreams}
-        isConnected={isConnected}
-        callStatus={callStatus}
-      />
+
     </div>
   );
 };
