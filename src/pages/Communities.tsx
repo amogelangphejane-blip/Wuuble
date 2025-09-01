@@ -507,7 +507,7 @@ const Communities = () => {
               <Button 
                 size="lg"
                 variant="outline"
-                className="border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg font-semibold rounded-xl backdrop-blur-sm"
+                className="bg-white/10 border-white/30 text-white hover:bg-white/20 dark:bg-white/10 dark:border-white/30 dark:text-white dark:hover:bg-white/20 px-8 py-4 text-lg font-semibold rounded-xl backdrop-blur-sm"
                 onClick={() => document.getElementById('communities-section')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 <Target className="mr-2 w-5 h-5" />
