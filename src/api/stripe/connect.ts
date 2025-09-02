@@ -256,7 +256,7 @@ export async function handleConnectWebhook(req, res) {
 `;
 
 // Supabase Edge Function Implementation Template
-export const supabaseEdgeFunctionTemplate = \`
+export const supabaseEdgeFunctionTemplate = `
 // Supabase Edge Function Implementation
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@13.11.0?target=deno';
@@ -318,7 +318,7 @@ serve(async (req) => {
     });
   }
 });
-\`;
+`;
 
 /**
  * Required Environment Variables:
