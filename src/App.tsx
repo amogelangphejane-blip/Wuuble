@@ -9,6 +9,8 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { LoadingProvider } from "@/contexts/LoadingContext";
 import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import { performanceMonitor } from "@/utils/performanceMonitor";
+import { registerServiceWorker } from "@/utils/pwaUtils";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
 import Messages from "./pages/Messages";
@@ -44,10 +46,13 @@ console.log('🚀 App.tsx loaded - all imports successful');
 const App = () => {
   console.log('🎯 App component rendering');
   
-  // Initialize performance monitoring
+  // Initialize performance monitoring and PWA
   React.useEffect(() => {
     performanceMonitor.recordPageView(window.location.pathname);
     performanceMonitor.recordFeatureUsage('app_initialization');
+    
+    // Register service worker for PWA functionality
+    registerServiceWorker();
   }, []);
   
   return (
@@ -65,6 +70,7 @@ const App = () => {
               <Toaster />
               <Sonner />
               <GlobalLoadingOverlay />
+              <PWAInstallPrompt />
               <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Home />} />

@@ -364,4 +364,33 @@ if (typeof window !== 'undefined') {
   setInterval(() => {
     performanceMonitor.flush();
   }, 30000);
+
+  // Monitor memory usage
+  setInterval(() => {
+    if ('memory' in performance) {
+      const memory = (performance as any).memory;
+      performanceMonitor.recordMetric('memory_used', memory.usedJSHeapSize);
+      performanceMonitor.recordMetric('memory_total', memory.totalJSHeapSize);
+      performanceMonitor.recordMetric('memory_limit', memory.jsHeapSizeLimit);
+    }
+  }, 60000); // Every minute
+
+  // Monitor FPS
+  let frameCount = 0;
+  let lastTime = performance.now();
+  
+  const measureFPS = () => {
+    frameCount++;
+    const currentTime = performance.now();
+    
+    if (currentTime - lastTime >= 1000) {
+      performanceMonitor.recordMetric('fps', frameCount);
+      frameCount = 0;
+      lastTime = currentTime;
+    }
+    
+    requestAnimationFrame(measureFPS);
+  };
+  
+  requestAnimationFrame(measureFPS);
 }
