@@ -1,29 +1,25 @@
-<svg width="160" height="80" viewBox="0 0 160 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Main hand-like shape representing the P -->
-  <g fill="#4DD4D9">
-    <!-- Main vertical section -->
-    <rect x="20" y="10" width="10" height="60" rx="5" />
-    
-    <!-- Top curved section forming P -->
-    <path d="M 20 10 L 50 10 Q 65 10 65 25 Q 65 40 50 40 L 20 40" stroke="#4DD4D9" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-    
-    <!-- Finger-like elements at top -->
-    <circle cx="35" cy="15" r="3" />
-    <circle cx="45" cy="15" r="3" />
-    <circle cx="55" cy="15" r="3" />
-    
-    <!-- Bottom curved section -->
-    <path d="M 15 50 Q 15 70 35 70 Q 55 70 55 50" fill="#4DD4D9" />
-    
-    <!-- Internal lines -->
-    <rect x="25" y="25" width="20" height="2" rx="1" />
-    <rect x="25" y="32" width="20" height="2" rx="1" />
-    <rect x="25" y="52" width="15" height="2" rx="1" />
-    <rect x="25" y="59" width="15" height="2" rx="1" />
-  </g>
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wuubleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
   
-  <!-- Wuuble text -->
-  <g fill="#4DD4D9" font-family="Arial, sans-serif" font-weight="600" font-size="14">
-    <text x="80" y="30">Wuuble</text>
-  </g>
+  <!-- Main wuuble shape - flowing S-curve representing movement -->
+  <path d="M6 10 Q16 4 26 10 Q16 16 6 22 Q16 28 26 22 Q16 16 6 10 Z" 
+        fill="url(#wuubleGradient)" opacity="0.9"/>
+  
+  <!-- Secondary accent shape for depth and community -->
+  <path d="M10 8 Q16 6 22 8 Q16 12 10 16 Q16 20 22 16 Q16 12 10 8 Z" 
+        fill="url(#wuubleGradient)" opacity="0.6"/>
+  
+  <!-- Central connecting element -->
+  <circle cx="16" cy="16" r="2" fill="url(#wuubleGradient)" opacity="0.8"/>
+  
+  <!-- Small community dots -->
+  <circle cx="8" cy="12" r="1" fill="url(#wuubleGradient)"/>
+  <circle cx="24" cy="12" r="1" fill="url(#wuubleGradient)"/>
+  <circle cx="8" cy="20" r="1" fill="url(#wuubleGradient)"/>
+  <circle cx="24" cy="20" r="1" fill="url(#wuubleGradient)"/>
 </svg>
