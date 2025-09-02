@@ -22,7 +22,6 @@ import {
   Star,
   MoreVertical,
   Zap,
-  Crown,
   CreditCard,
   Radio,
   Info,
