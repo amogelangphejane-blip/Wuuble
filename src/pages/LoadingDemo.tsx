@@ -3,6 +3,9 @@ import { Button } from '@/components/ui/button';
 import { useLoadingContext } from '@/contexts/LoadingContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import LoadingSystemExample from '@/components/LoadingSystemExample';
+import WuubleLogo from '@/components/WuubleLogo';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import LogoPreloader from '@/components/LogoPreloader';
 
 const LoadingDemo: React.FC = () => {
   const { loadingState, showLoading, hideLoading, updateProgress } = useLoadingContext();
@@ -176,6 +179,67 @@ const LoadingDemo: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* New Logo and Spinner Showcase */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <Card className="bg-gray-800/50 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">Wuuble Logo Variants</CardTitle>
+              <CardDescription className="text-gray-300">
+                Different sizes and animation styles of the Wuuble logo
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="flex flex-col items-center space-y-2 p-4 bg-gray-900/50 rounded-lg">
+                  <WuubleLogo size="sm" animated={true} variant="pulse" />
+                  <span className="text-xs text-gray-400">Small + Pulse</span>
+                </div>
+                <div className="flex flex-col items-center space-y-2 p-4 bg-gray-900/50 rounded-lg">
+                  <WuubleLogo size="md" animated={true} variant="loading" />
+                  <span className="text-xs text-gray-400">Medium + Spin</span>
+                </div>
+                <div className="flex flex-col items-center space-y-2 p-4 bg-gray-900/50 rounded-lg">
+                  <WuubleLogo size="lg" animated={true} variant="glow" />
+                  <span className="text-xs text-gray-400">Large + Glow</span>
+                </div>
+                <div className="flex flex-col items-center space-y-2 p-4 bg-gray-900/50 rounded-lg">
+                  <WuubleLogo size="xl" animated={false} variant="default" />
+                  <span className="text-xs text-gray-400">XL + Static</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800/50 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">Loading Spinner Variants</CardTitle>
+              <CardDescription className="text-gray-300">
+                Enhanced spinners with logo integration and various styles
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="flex flex-col items-center space-y-2 p-4 bg-gray-900/50 rounded-lg">
+                  <LoadingSpinner size="md" variant="logo" />
+                  <span className="text-xs text-gray-400">Logo Spinner</span>
+                </div>
+                <div className="flex flex-col items-center space-y-2 p-4 bg-gray-900/50 rounded-lg">
+                  <LoadingSpinner size="md" variant="gradient" />
+                  <span className="text-xs text-gray-400">Gradient</span>
+                </div>
+                <div className="flex flex-col items-center space-y-2 p-4 bg-gray-900/50 rounded-lg">
+                  <LoadingSpinner size="md" variant="pulse" />
+                  <span className="text-xs text-gray-400">Pulse Dots</span>
+                </div>
+                <div className="flex flex-col items-center space-y-2 p-4 bg-gray-900/50 rounded-lg">
+                  <LoadingSpinner size="md" variant="bounce" />
+                  <span className="text-xs text-gray-400">Bounce Dots</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
         
         <Card className="bg-gray-800/50 border-gray-700">
           <CardHeader>
@@ -202,12 +266,13 @@ const LoadingDemo: React.FC = () => {
                 </ul>
               </div>
               <div className="space-y-2">
-                <h3 className="text-green-400 font-medium">Animations</h3>
+                <h3 className="text-green-400 font-medium">Enhanced Animations</h3>
                 <ul className="text-gray-300 text-sm space-y-1">
-                  <li>• Pulsing background orbs</li>
-                  <li>• Dual spinning loaders</li>
-                  <li>• Bouncing dots animation</li>
-                  <li>• Smooth progress transitions</li>
+                  <li>• Animated Wuuble logo integration</li>
+                  <li>• Multi-layered spinning loaders</li>
+                  <li>• Custom glow and pulse effects</li>
+                  <li>• Floating particle animations</li>
+                  <li>• Smooth progress bar shine</li>
                 </ul>
               </div>
             </div>
