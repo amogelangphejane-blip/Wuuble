@@ -29,6 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { validateAvatarUrl } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import NotificationCenter from '@/components/NotificationCenter';
 
 
 interface ModernHeaderProps {
@@ -144,6 +145,9 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
 
             {/* Theme Toggle */}
             <ThemeToggle />
+            
+            {/* Notification Center */}
+            {user && <NotificationCenter />}
             
             {user && showAuthButtons ? (
               <>

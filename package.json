@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:pwa": "vite build && npm run generate-sw",
+    "generate-sw": "echo 'Service worker already in public/sw.js'",
     "lint": "eslint .",
     "preview": "vite preview",
     "setup-storage": "tsx src/scripts/setupStorageBuckets.ts",
