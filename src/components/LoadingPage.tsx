@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import WuubleLogo from './WuubleLogo';
 
 interface LoadingPageProps {
   className?: string;
@@ -21,14 +22,34 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
   const renderSpinner = () => {
     if (variant === 'minimal') {
       return (
-        <div className="w-12 h-12 border-3 border-white/20 border-t-white rounded-full animate-spin" />
+        <div className="relative">
+          <WuubleLogo 
+            size="md" 
+            animated={true} 
+            variant="loading"
+            className="opacity-80"
+          />
+        </div>
       );
     }
     
     return (
-      <div className="relative">
-        <div className="w-16 h-16 border-4 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
-        <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-blue-400 rounded-full animate-spin animation-delay-300" style={{ animationDirection: 'reverse' }} />
+      <div className="relative flex items-center justify-center">
+        {/* Outer ring */}
+        <div className="w-20 h-20 border-4 border-purple-400/20 border-t-purple-400 rounded-full animate-spin" />
+        {/* Middle ring */}
+        <div className="absolute inset-2 w-16 h-16 border-4 border-transparent border-t-pink-400 rounded-full animate-spin animation-delay-300" style={{ animationDirection: 'reverse' }} />
+        {/* Inner ring */}
+        <div className="absolute inset-4 w-12 h-12 border-4 border-transparent border-t-blue-400 rounded-full animate-spin animation-delay-600" />
+        {/* Center logo */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <WuubleLogo 
+            size="sm" 
+            animated={true} 
+            variant="pulse"
+            className="opacity-90"
+          />
+        </div>
       </div>
     );
   };
@@ -37,9 +58,22 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
     if (!showProgress && variant !== 'progress') return null;
     
     return (
-      <div className="w-64 bg-white/10 rounded-full h-2 overflow-hidden">
+      <div className="relative w-80 max-w-sm">
+        {/* Background bar */}
+        <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden backdrop-blur-sm border border-white/20">
+          <div 
+            className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-full transition-all duration-500 ease-out relative overflow-hidden"
+            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+          >
+            {/* Animated shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+            {/* Moving highlight */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-bounce" />
+          </div>
+        </div>
+        {/* Glow effect */}
         <div 
-          className="h-full bg-gradient-to-r from-purple-400 to-blue-400 rounded-full transition-all duration-300 ease-out"
+          className="absolute inset-0 bg-gradient-to-r from-purple-500/50 via-pink-500/50 to-blue-500/50 rounded-full blur-sm transition-all duration-500 ease-out"
           style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
         />
       </div>
@@ -74,8 +108,14 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
       return (
         <div className="flex flex-col items-center justify-center space-y-8">
           {/* Wuuble Logo */}
-          <div className="relative">
-            <h1 className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400">
+          <div className="relative flex flex-col items-center space-y-4">
+            <WuubleLogo 
+              size="xxl" 
+              animated={true} 
+              variant="glow"
+              className="mb-2"
+            />
+            <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400">
               Wuuble
             </h1>
           </div>
@@ -99,14 +139,22 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
     return (
       <div className="flex flex-col items-center justify-center space-y-8">
         {/* Wuuble Logo/Text */}
-        <div className="relative">
-          <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 animate-pulse">
-            Wuuble
-          </h1>
-          
-          {/* Glowing effect behind text */}
-          <div className="absolute inset-0 text-6xl md:text-8xl font-bold text-purple-400/30 blur-sm animate-pulse animation-delay-500">
-            Wuuble
+        <div className="relative flex flex-col items-center space-y-6">
+          <WuubleLogo 
+            size="xxl" 
+            animated={true} 
+            variant="pulse"
+            className="mb-4"
+          />
+          <div className="relative">
+            <h1 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 animate-pulse">
+              Wuuble
+            </h1>
+            
+            {/* Glowing effect behind text */}
+            <div className="absolute inset-0 text-5xl md:text-7xl font-bold text-purple-400/30 blur-sm animate-pulse animation-delay-500">
+              Wuuble
+            </div>
           </div>
         </div>
 
@@ -147,9 +195,19 @@ const LoadingPage: React.FC<LoadingPageProps> = ({
       {/* Animated background elements - only for non-minimal variants */}
       {variant !== 'minimal' && (
         <div className="absolute inset-0 overflow-hidden">
+          {/* Primary floating orbs */}
           <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-purple-500/20 animate-pulse blur-xl" />
           <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-blue-500/20 animate-pulse blur-xl animation-delay-1000" />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-indigo-500/10 animate-ping animation-delay-2000" />
+          <div className="absolute top-1/4 -left-20 w-60 h-60 rounded-full bg-pink-500/15 animate-pulse blur-2xl animation-delay-2000" />
+          
+          {/* Secondary floating elements */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-indigo-500/10 animate-ping animation-delay-3000" />
+          <div className="absolute top-3/4 right-1/4 w-40 h-40 rounded-full bg-cyan-500/15 animate-bounce animation-delay-1500" />
+          
+          {/* Floating particles */}
+          <div className="absolute top-1/4 left-1/4 w-4 h-4 rounded-full bg-white/20 animate-bounce animation-delay-500" />
+          <div className="absolute top-3/4 left-3/4 w-3 h-3 rounded-full bg-white/15 animate-bounce animation-delay-2500" />
+          <div className="absolute top-1/2 right-1/4 w-2 h-2 rounded-full bg-white/25 animate-bounce animation-delay-4000" />
         </div>
       )}
 

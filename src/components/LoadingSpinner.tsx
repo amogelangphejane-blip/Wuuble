@@ -1,9 +1,10 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import WuubleLogo from './WuubleLogo';
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  variant?: 'default' | 'gradient' | 'pulse' | 'bounce';
+  variant?: 'default' | 'gradient' | 'pulse' | 'bounce' | 'logo';
   className?: string;
 }
 
@@ -20,6 +21,18 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   };
 
   const baseClasses = 'inline-block rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]';
+
+  if (variant === 'logo') {
+    return (
+      <div className={cn('relative flex items-center justify-center', className)}>
+        <WuubleLogo 
+          size={size === 'sm' ? 'sm' : size === 'md' ? 'md' : size === 'lg' ? 'lg' : 'xl'} 
+          animated={true} 
+          variant="loading"
+        />
+      </div>
+    );
+  }
 
   if (variant === 'gradient') {
     return (
