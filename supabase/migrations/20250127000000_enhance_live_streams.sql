@@ -255,7 +255,7 @@ CREATE POLICY "Users can view questions in accessible streams" ON stream_questio
     stream_id IN (
       SELECT ls.id FROM live_streams ls
       JOIN community_members cm ON ls.community_id = cm.community_id
-      WHERE cm.user_id = auth.uid() AND cm.status = 'approved'
+      WHERE cm.user_id = auth.uid()
     )
   );
 
@@ -265,7 +265,7 @@ CREATE POLICY "Users can submit questions in accessible streams" ON stream_quest
     stream_id IN (
       SELECT ls.id FROM live_streams ls
       JOIN community_members cm ON ls.community_id = cm.community_id
-      WHERE cm.user_id = auth.uid() AND cm.status = 'approved'
+      WHERE cm.user_id = auth.uid()
     )
   );
 
@@ -283,7 +283,7 @@ CREATE POLICY "Users can view polls in accessible streams" ON stream_polls
     stream_id IN (
       SELECT ls.id FROM live_streams ls
       JOIN community_members cm ON ls.community_id = cm.community_id
-      WHERE cm.user_id = auth.uid() AND cm.status = 'approved'
+      WHERE cm.user_id = auth.uid()
     )
   );
 
@@ -299,7 +299,7 @@ CREATE POLICY "Users can view poll votes in accessible streams" ON stream_poll_v
       SELECT sp.id FROM stream_polls sp
       JOIN live_streams ls ON sp.stream_id = ls.id
       JOIN community_members cm ON ls.community_id = cm.community_id
-      WHERE cm.user_id = auth.uid() AND cm.status = 'approved'
+      WHERE cm.user_id = auth.uid()
     )
   );
 
@@ -310,7 +310,7 @@ CREATE POLICY "Users can vote in accessible polls" ON stream_poll_votes
       SELECT sp.id FROM stream_polls sp
       JOIN live_streams ls ON sp.stream_id = ls.id
       JOIN community_members cm ON ls.community_id = cm.community_id
-      WHERE cm.user_id = auth.uid() AND cm.status = 'approved'
+      WHERE cm.user_id = auth.uid()
     )
   );
 
@@ -323,7 +323,7 @@ CREATE POLICY "Users can view highlights in accessible streams" ON stream_highli
     stream_id IN (
       SELECT ls.id FROM live_streams ls
       JOIN community_members cm ON ls.community_id = cm.community_id
-      WHERE cm.user_id = auth.uid() AND cm.status = 'approved'
+      WHERE cm.user_id = auth.uid()
     )
   );
 
@@ -338,7 +338,7 @@ CREATE POLICY "Users can view moderators in accessible streams" ON stream_modera
     stream_id IN (
       SELECT ls.id FROM live_streams ls
       JOIN community_members cm ON ls.community_id = cm.community_id
-      WHERE cm.user_id = auth.uid() AND cm.status = 'approved'
+      WHERE cm.user_id = auth.uid()
     )
   );
 
