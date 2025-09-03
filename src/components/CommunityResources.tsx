@@ -287,11 +287,7 @@ export const CommunityResources = ({
 
     } catch (error) {
       console.error('Error fetching resources:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load resources. Please try again.",
-        variant: "destructive"
-      });
+      // Error toast removed - silent error handling
     } finally {
       setLoading(false);
       setLoadingMore(false);
