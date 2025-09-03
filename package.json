@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --force",
     "build:dev": "vite build --mode development",
     "build:pwa": "vite build && npm run generate-sw",
     "generate-sw": "echo 'Service worker already in public/sw.js'",
