@@ -1,7 +1,9 @@
--- Safe Resources Migration Script (Handles Existing Tables/Policies)
--- This script checks for existing objects before creating them
+-- Safe Resources Migration Script
+-- This script safely applies the resources migration, handling existing objects
 
--- 1. Create tables if they don't exist
+-- First, let's check what already exists and only create what's missing
+
+-- 1. Create resource categories table (safe)
 CREATE TABLE IF NOT EXISTS resource_categories (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -12,6 +14,7 @@ CREATE TABLE IF NOT EXISTS resource_categories (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 2. Create community resources table (safe)
 CREATE TABLE IF NOT EXISTS community_resources (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     community_id UUID NOT NULL,
@@ -37,12 +40,14 @@ CREATE TABLE IF NOT EXISTS community_resources (
     expires_at TIMESTAMP WITH TIME ZONE
 );
 
+-- 3. Create resource tags table (safe)
 CREATE TABLE IF NOT EXISTS resource_tags (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 4. Create resource tag assignments table (safe)
 CREATE TABLE IF NOT EXISTS resource_tag_assignments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     resource_id UUID NOT NULL,
@@ -51,6 +56,7 @@ CREATE TABLE IF NOT EXISTS resource_tag_assignments (
     UNIQUE(resource_id, tag_id)
 );
 
+-- 5. Create resource ratings table (safe)
 CREATE TABLE IF NOT EXISTS resource_ratings (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     resource_id UUID NOT NULL,
@@ -63,6 +69,7 @@ CREATE TABLE IF NOT EXISTS resource_ratings (
     UNIQUE(resource_id, user_id)
 );
 
+-- 6. Create resource bookmarks table (safe)
 CREATE TABLE IF NOT EXISTS resource_bookmarks (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     resource_id UUID NOT NULL,
@@ -71,6 +78,7 @@ CREATE TABLE IF NOT EXISTS resource_bookmarks (
     UNIQUE(resource_id, user_id)
 );
 
+-- 7. Create resource reports table (safe)
 CREATE TABLE IF NOT EXISTS resource_reports (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     resource_id UUID NOT NULL,
@@ -84,7 +92,7 @@ CREATE TABLE IF NOT EXISTS resource_reports (
     resolved_at TIMESTAMP WITH TIME ZONE
 );
 
--- 2. Create indexes (IF NOT EXISTS prevents errors)
+-- 8. Create indexes (safe - IF NOT EXISTS)
 CREATE INDEX IF NOT EXISTS idx_community_resources_community_id ON community_resources(community_id);
 CREATE INDEX IF NOT EXISTS idx_community_resources_category_id ON community_resources(category_id);
 CREATE INDEX IF NOT EXISTS idx_community_resources_user_id ON community_resources(user_id);
@@ -98,7 +106,7 @@ CREATE INDEX IF NOT EXISTS idx_resource_bookmarks_user ON resource_bookmarks(use
 CREATE INDEX IF NOT EXISTS idx_resource_reports_resource ON resource_reports(resource_id);
 CREATE INDEX IF NOT EXISTS idx_resource_reports_status ON resource_reports(status);
 
--- 3. Insert default categories (ON CONFLICT prevents duplicates)
+-- 9. Insert default categories (safe - ON CONFLICT DO NOTHING)
 INSERT INTO resource_categories (name, description, icon, color) VALUES
 ('Jobs & Careers', 'Employment opportunities and career development resources', 'Briefcase', '#3B82F6'),
 ('Housing & Accommodation', 'Housing, rentals, and accommodation options', 'Home', '#10B981'),
@@ -112,7 +120,7 @@ INSERT INTO resource_categories (name, description, icon, color) VALUES
 ('General Resources', 'Miscellaneous community resources', 'Package', '#6B7280')
 ON CONFLICT (name) DO NOTHING;
 
--- 4. Enable RLS (safe to run multiple times)
+-- 10. Enable Row Level Security (safe)
 ALTER TABLE resource_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE community_resources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE resource_tags ENABLE ROW LEVEL SECURITY;
@@ -121,7 +129,8 @@ ALTER TABLE resource_ratings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE resource_bookmarks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE resource_reports ENABLE ROW LEVEL SECURITY;
 
--- 5. Drop existing policies if they exist (to recreate them)
+-- 11. Create RLS policies (with safe handling)
+-- Drop existing policies first to avoid conflicts
 DROP POLICY IF EXISTS "Anyone can view categories" ON resource_categories;
 DROP POLICY IF EXISTS "Anyone can view approved resources" ON community_resources;
 DROP POLICY IF EXISTS "Authenticated users can create resources" ON community_resources;
@@ -141,7 +150,7 @@ DROP POLICY IF EXISTS "Users can delete their own bookmarks" ON resource_bookmar
 DROP POLICY IF EXISTS "Users can create reports" ON resource_reports;
 DROP POLICY IF EXISTS "Users can view their own reports" ON resource_reports;
 
--- 6. Create all policies fresh
+-- Now create all policies fresh
 CREATE POLICY "Anyone can view categories" 
 ON resource_categories FOR SELECT 
 USING (true);
@@ -220,4 +229,5 @@ CREATE POLICY "Users can view their own reports"
 ON resource_reports FOR SELECT 
 USING (auth.uid() = reporter_id);
 
--- Migration complete! The Resources feature should now work.
+-- Migration complete!
+-- This script safely handles existing objects and should complete without errors

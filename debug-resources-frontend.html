@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Resources Frontend Issue</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .warning { background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        button { background: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .loading { color: #666; font-style: italic; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; }
+        .test-step { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug Resources Frontend Issue</h1>
+    
+    <div class="warning">
+        <h3>🚨 Issue: Resources still failing after migration</h3>
+        <p>The migration was successful, but the frontend is still showing "Error failed to load resources".</p>
+        <p>This diagnostic will test the exact same queries the frontend uses.</p>
+    </div>
+
+    <div class="test-step">
+        <h3>🧪 Frontend Query Tests</h3>
+        <button onclick="testBasicConnection()">1️⃣ Test Basic Connection</button>
+        <button onclick="testResourceTables()">2️⃣ Test All Tables</button>
+        <button onclick="testFrontendQuery()">3️⃣ Test Frontend Query</button>
+        <button onclick="testWithAuth()">4️⃣ Test With Authentication</button>
+        <button onclick="runFullDiagnosis()">🔍 Run Full Diagnosis</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script type="module">
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsamhtbnJsaXJlZGxibiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzMzNzE1NTU5LCJleHAiOjIwNDkyOTE1NTl9.YMJPKCJCJjF7lCKpPHHBvMlTX-LPwXZQYKN6m2LI0VE";
+
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function addResult(content) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML += content;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        window.testBasicConnection = async function() {
+            clearResults();
+            addResult('<div class="loading">🔌 Testing basic connection...</div>');
+
+            try {
+                const { data, error } = await supabase.from('communities').select('id, name').limit(1);
+                if (error) {
+                    addResult(`<div class="error">❌ Basic Connection Failed: ${error.message}</div>`);
+                } else {
+                    addResult(`<div class="success">✅ Basic Connection Working</div>`);
+                }
+            } catch (err) {
+                addResult(`<div class="error">❌ Connection Error: ${err.message}</div>`);
+            }
+        };
+
+        window.testResourceTables = async function() {
+            addResult('<div class="loading">📊 Testing all resource tables...</div>');
+
+            const tables = [
+                'resource_categories',
+                'community_resources', 
+                'resource_tags',
+                'resource_tag_assignments',
+                'resource_ratings',
+                'resource_bookmarks',
+                'resource_reports'
+            ];
+
+            let allWorking = true;
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase.from(table).select('*').limit(1);
+                    if (error) {
+                        addResult(`<div class="error">❌ ${table}: ${error.message}</div>`);
+                        allWorking = false;
+                    } else {
+                        addResult(`<div class="success">✅ ${table}: Accessible</div>`);
+                    }
+                } catch (err) {
+                    addResult(`<div class="error">❌ ${table}: ${err.message}</div>`);
+                    allWorking = false;
+                }
+            }
+
+            if (allWorking) {
+                addResult('<div class="success"><h4>✅ All Resource Tables Working!</h4></div>');
+            }
+        };
+
+        window.testFrontendQuery = async function() {
+            addResult('<div class="loading">🔍 Testing exact frontend query...</div>');
+
+            try {
+                // This is the EXACT query the frontend uses
+                const { data, error } = await supabase
+                    .from('community_resources')
+                    .select(`
+                        *,
+                        category:resource_categories(id, name, color, icon),
+                        tags:resource_tag_assignments(
+                            tag:resource_tags(id, name)
+                        ),
+                        profiles!community_resources_user_id_fkey(display_name, avatar_url)
+                    `)
+                    .eq('is_approved', true)
+                    .limit(5);
+
+                if (error) {
+                    addResult(`
+                        <div class="error">
+                            <h4>❌ Frontend Query Failed</h4>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p><strong>Code:</strong> ${error.code || 'Unknown'}</p>
+                            <p><strong>Details:</strong> ${error.details || 'None'}</p>
+                            <p><strong>Hint:</strong> ${error.hint || 'None'}</p>
+                        </div>`);
+                } else {
+                    addResult(`
+                        <div class="success">
+                            <h4>✅ Frontend Query Working!</h4>
+                            <p>Successfully fetched ${data.length} resources with full metadata.</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>`);
+                }
+            } catch (err) {
+                addResult(`
+                    <div class="error">
+                        <h4>❌ Query Exception</h4>
+                        <p>${err.message}</p>
+                        <pre>${err.stack || ''}</pre>
+                    </div>`);
+            }
+        };
+
+        window.testWithAuth = async function() {
+            addResult('<div class="loading">🔐 Testing authentication status...</div>');
+
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error) {
+                    addResult(`<div class="error">❌ Auth Error: ${error.message}</div>`);
+                } else if (!user) {
+                    addResult(`
+                        <div class="warning">
+                            <h4>⚠️ Not Authenticated</h4>
+                            <p>User is not logged in. This might be causing the resources error.</p>
+                            <p><strong>Solution:</strong> Make sure you're logged in when accessing resources.</p>
+                        </div>`);
+                } else {
+                    addResult(`
+                        <div class="success">
+                            <h4>✅ User Authenticated</h4>
+                            <p>User ID: ${user.id}</p>
+                            <p>Email: ${user.email || 'Not available'}</p>
+                        </div>`);
+
+                    // Test community membership
+                    addResult('<div class="loading">🏠 Testing community access...</div>');
+                    const { data: communities, error: commError } = await supabase
+                        .from('community_members')
+                        .select('community_id, communities(id, name)')
+                        .eq('user_id', user.id);
+
+                    if (commError) {
+                        addResult(`<div class="error">❌ Community Access Error: ${commError.message}</div>`);
+                    } else {
+                        addResult(`
+                            <div class="success">
+                                <h4>✅ Community Access Working</h4>
+                                <p>User is member of ${communities.length} communities:</p>
+                                <ul>${communities.map(m => `<li>${m.communities?.name || 'Unknown'}</li>`).join('')}</ul>
+                            </div>`);
+                    }
+                }
+            } catch (err) {
+                addResult(`<div class="error">❌ Auth Test Error: ${err.message}</div>`);
+            }
+        };
+
+        window.runFullDiagnosis = async function() {
+            clearResults();
+            addResult('<h3>🔍 Running Full Frontend Diagnosis</h3>');
+
+            // Test 1: Basic connection
+            await testBasicConnection();
+            
+            // Test 2: All tables
+            await testResourceTables();
+            
+            // Test 3: Frontend query
+            await testFrontendQuery();
+            
+            // Test 4: Authentication
+            await testWithAuth();
+
+            // Test 5: Specific community query
+            addResult('<div class="loading">🏠 Testing community-specific resource query...</div>');
+            
+            try {
+                // Get a community ID to test with
+                const { data: communities, error: commError } = await supabase
+                    .from('communities')
+                    .select('id, name')
+                    .limit(1);
+
+                if (commError || !communities || communities.length === 0) {
+                    addResult(`<div class="warning">⚠️ No communities found to test with</div>`);
+                } else {
+                    const testCommunityId = communities[0].id;
+                    addResult(`<div class="info">Testing with community: ${communities[0].name} (${testCommunityId})</div>`);
+
+                    // This is the exact query with community filter
+                    const { data: resources, error: resError } = await supabase
+                        .from('community_resources')
+                        .select(`
+                            *,
+                            category:resource_categories(id, name, color, icon),
+                            tags:resource_tag_assignments(
+                                tag:resource_tags(id, name)
+                            ),
+                            profiles!community_resources_user_id_fkey(display_name, avatar_url)
+                        `)
+                        .eq('community_id', testCommunityId)
+                        .eq('is_approved', true)
+                        .limit(10);
+
+                    if (resError) {
+                        addResult(`
+                            <div class="error">
+                                <h4>❌ Community Resources Query Failed</h4>
+                                <p><strong>This is likely the exact error your frontend is hitting!</strong></p>
+                                <p><strong>Error:</strong> ${resError.message}</p>
+                                <p><strong>Code:</strong> ${resError.code || 'Unknown'}</p>
+                                <p><strong>Details:</strong> ${resError.details || 'None'}</p>
+                                <p><strong>Hint:</strong> ${resError.hint || 'None'}</p>
+                            </div>`);
+                    } else {
+                        addResult(`
+                            <div class="success">
+                                <h4>✅ Community Resources Query Working!</h4>
+                                <p>Successfully fetched ${resources.length} resources for community ${communities[0].name}</p>
+                                ${resources.length > 0 ? `<pre>${JSON.stringify(resources[0], null, 2)}</pre>` : '<p>No resources found (this is normal for a new setup)</p>'}
+                            </div>`);
+                    }
+                }
+            } catch (err) {
+                addResult(`
+                    <div class="error">
+                        <h4>❌ Community Query Exception</h4>
+                        <p>${err.message}</p>
+                    </div>`);
+            }
+
+            addResult(`
+                <div class="info">
+                    <h3>🎯 Diagnosis Complete</h3>
+                    <p>If all tests above show ✅, then the issue might be:</p>
+                    <ul>
+                        <li>🔐 <strong>Authentication:</strong> User not logged in when accessing resources</li>
+                        <li>🏠 <strong>Community membership:</strong> User not a member of the community</li>
+                        <li>🌐 <strong>Frontend routing:</strong> Wrong community ID being passed</li>
+                        <li>📱 <strong>Browser cache:</strong> Old cached code still running</li>
+                        <li>🔄 <strong>App not redeployed:</strong> Changes not deployed to production</li>
+                    </ul>
+                </div>`);
+        };
+
+        // Auto-run basic test
+        window.addEventListener('load', () => {
+            setTimeout(testBasicConnection, 1000);
+        });
+    </script>
+
+    <div class="info">
+        <h3>📋 What This Tests</h3>
+        <ul>
+            <li>🔌 Basic Supabase connectivity</li>
+            <li>📊 All resource database tables</li>
+            <li>🔍 Exact frontend query that's failing</li>
+            <li>🔐 User authentication status</li>
+            <li>🏠 Community membership and access</li>
+        </ul>
+    </div>
+
+    <div class="warning">
+        <h3>💡 Common Causes After Successful Migration</h3>
+        <ul>
+            <li><strong>User not authenticated:</strong> Make sure you're logged in</li>
+            <li><strong>Not a community member:</strong> User must be a member to view resources</li>
+            <li><strong>Browser cache:</strong> Hard refresh (Ctrl+Shift+R) or clear cache</li>
+            <li><strong>App not redeployed:</strong> Frontend changes need to be deployed</li>
+            <li><strong>RLS policy issue:</strong> Policies might need adjustment</li>
+        </ul>
+    </div>
+</body>
+</html>

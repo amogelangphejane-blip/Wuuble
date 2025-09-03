@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Exact Frontend Error</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .warning { background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        button { background: #dc3545; color: white; padding: 15px 25px; border: none; border-radius: 5px; cursor: pointer; margin: 10px; font-weight: bold; }
+        button:hover { background: #c82333; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        .step { border: 2px solid #007bff; padding: 15px; margin: 15px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h1>🎯 Test Exact Frontend Error</h1>
+    
+    <div class="warning">
+        <h3>🔍 Reproducing Frontend Issue</h3>
+        <p>This will test the exact same process your frontend goes through when loading resources.</p>
+    </div>
+
+    <button onclick="reproduceError()">🚨 Reproduce "Failed to Load Resources" Error</button>
+
+    <div id="results"></div>
+
+    <script type="module">
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsamhtbnJsaXJlZGxibiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzMzNzE1NTU5LCJleHAiOjIwNDkyOTE1NTl9.YMJPKCJCJjF7lCKpPHHBvMlTX-LPwXZQYKN6m2LI0VE";
+
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        window.reproduceError = async function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            function addStep(content) {
+                resultsDiv.innerHTML += content;
+            }
+
+            addStep('<h3>🔍 Step-by-Step Frontend Reproduction</h3>');
+
+            // Step 1: Check authentication
+            addStep('<div class="step"><h4>Step 1: Check Authentication</h4>');
+            try {
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                if (authError) {
+                    addStep(`<div class="error">❌ Auth Error: ${authError.message}</div>`);
+                    addStep('</div>');
+                    return;
+                } else if (!user) {
+                    addStep(`
+                        <div class="warning">
+                            ⚠️ <strong>ISSUE FOUND: User not authenticated</strong>
+                            <p>The resources feature requires authentication. Please log in first.</p>
+                        </div>`);
+                    addStep('</div>');
+                    return;
+                } else {
+                    addStep(`<div class="success">✅ User authenticated: ${user.email}</div>`);
+                }
+            } catch (err) {
+                addStep(`<div class="error">❌ Auth Exception: ${err.message}</div>`);
+                addStep('</div>');
+                return;
+            }
+            addStep('</div>');
+
+            // Step 2: Get a community to test with
+            addStep('<div class="step"><h4>Step 2: Get Test Community</h4>');
+            let testCommunityId = null;
+            try {
+                const { data: communities, error: commError } = await supabase
+                    .from('communities')
+                    .select('id, name')
+                    .limit(1);
+
+                if (commError) {
+                    addStep(`<div class="error">❌ Communities Error: ${commError.message}</div>`);
+                    addStep('</div>');
+                    return;
+                } else if (!communities || communities.length === 0) {
+                    addStep(`<div class="warning">⚠️ No communities found</div>`);
+                    addStep('</div>');
+                    return;
+                } else {
+                    testCommunityId = communities[0].id;
+                    addStep(`<div class="success">✅ Using test community: ${communities[0].name}</div>`);
+                }
+            } catch (err) {
+                addStep(`<div class="error">❌ Community Exception: ${err.message}</div>`);
+                addStep('</div>');
+                return;
+            }
+            addStep('</div>');
+
+            // Step 3: Test the exact frontend query
+            addStep('<div class="step"><h4>Step 3: Test Exact Frontend Query</h4>');
+            try {
+                const { data, error } = await supabase
+                    .from('community_resources')
+                    .select(`
+                        *,
+                        category:resource_categories(id, name, color, icon),
+                        tags:resource_tag_assignments(
+                            tag:resource_tags(id, name)
+                        ),
+                        profiles!community_resources_user_id_fkey(display_name, avatar_url)
+                    `)
+                    .eq('community_id', testCommunityId)
+                    .eq('is_approved', true)
+                    .order('created_at', { ascending: false })
+                    .range(0, 11);
+
+                if (error) {
+                    addStep(`
+                        <div class="error">
+                            <h4>🎯 <strong>FRONTEND ERROR REPRODUCED!</strong></h4>
+                            <p><strong>This is exactly what's causing your "failed to load resources" error:</strong></p>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p><strong>Code:</strong> ${error.code}</p>
+                            <p><strong>Details:</strong> ${error.details || 'None'}</p>
+                            <p><strong>Hint:</strong> ${error.hint || 'None'}</p>
+                            <pre>${JSON.stringify(error, null, 2)}</pre>
+                        </div>`);
+                        
+                    // Suggest solution based on error
+                    if (error.message.includes('foreign key') || error.message.includes('relation') || error.code === '42P01') {
+                        addStep(`
+                            <div class="warning">
+                                <h4>💡 Likely Solution</h4>
+                                <p>The error suggests missing foreign key constraints or table relations.</p>
+                                <p><strong>Try running:</strong> <code>fix-foreign-keys.sql</code></p>
+                            </div>`);
+                    }
+                } else {
+                    addStep(`
+                        <div class="success">
+                            <h4>✅ Frontend Query Working!</h4>
+                            <p>The exact frontend query succeeded with ${data.length} resources.</p>
+                            <p><strong>This means the issue might be:</strong></p>
+                            <ul>
+                                <li>🔐 Authentication state in your app</li>
+                                <li>🏠 Community membership check</li>
+                                <li>📱 Browser cache (try hard refresh)</li>
+                                <li>🌐 App deployment (frontend changes not deployed)</li>
+                            </ul>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>`);
+                }
+            } catch (err) {
+                addStep(`
+                    <div class="error">
+                        <h4>❌ Frontend Query Exception</h4>
+                        <p>${err.message}</p>
+                        <pre>${err.stack}</pre>
+                    </div>`);
+            }
+            addStep('</div>');
+
+            // Step 4: Test without profiles reference
+            addStep('<div class="step"><h4>Step 4: Test Query Without Profiles</h4>');
+            try {
+                const { data, error } = await supabase
+                    .from('community_resources')
+                    .select(`
+                        *,
+                        category:resource_categories(id, name, color, icon),
+                        tags:resource_tag_assignments(
+                            tag:resource_tags(id, name)
+                        )
+                    `)
+                    .eq('community_id', testCommunityId)
+                    .eq('is_approved', true)
+                    .limit(5);
+
+                if (error) {
+                    addStep(`<div class="error">❌ Query without profiles also failed: ${error.message}</div>`);
+                } else {
+                    addStep(`
+                        <div class="success">
+                            ✅ Query without profiles works! 
+                            <p><strong>The issue is likely with the profiles foreign key reference.</strong></p>
+                        </div>`);
+                }
+            } catch (err) {
+                addStep(`<div class="error">❌ Exception: ${err.message}</div>`);
+            }
+            addStep('</div>');
+        };
+    </script>
+
+    <div class="warning">
+        <h3>🎯 What This Will Find</h3>
+        <p>This test reproduces the exact frontend query process to identify the specific error causing "failed to load resources".</p>
+    </div>
+</body>
+</html>
