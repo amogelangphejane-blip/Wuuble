@@ -36,7 +36,7 @@ export const useNotifications = () => {
     if ('Notification' in window && Notification.permission === 'granted') {
       const browserNotification = new Notification(notification.title, {
         body: notification.message,
-        icon: '/wuuble-logo.svg',
+        icon: '/favicon.ico',
         tag: notification.id,
         requireInteraction: notification.type === 'warning' || notification.type === 'error'
       });

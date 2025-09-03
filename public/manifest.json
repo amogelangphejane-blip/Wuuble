@@ -9,12 +9,7 @@
   "orientation": "portrait-primary",
   "categories": ["social", "communication", "entertainment"],
   "icons": [
-    {
-      "src": "/wuuble-logo.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
+
     {
       "src": "/favicon.ico",
       "sizes": "32x32",

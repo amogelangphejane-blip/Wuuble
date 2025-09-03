@@ -45,12 +45,8 @@ export const ModernFooter = () => {
                 className="flex items-center space-x-2 cursor-pointer group mb-4"
                 onClick={() => navigate('/')}
               >
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <img 
-                    src="/wuuble-logo.svg" 
-                    alt="Wuuble Logo" 
-                    className="w-8 h-8 group-hover:scale-110 transition-transform duration-200 drop-shadow-sm"
-                  />
+                <div className="w-8 h-8 rounded-full bg-gradient-hero flex items-center justify-center text-white font-bold text-sm group-hover:scale-110 transition-transform duration-200 drop-shadow-sm">
+                  W
                 </div>
                 <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
                   Wuuble
