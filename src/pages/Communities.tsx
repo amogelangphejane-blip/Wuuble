@@ -889,76 +889,78 @@ const Communities = () => {
 
       {/* Enhanced Create Community Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="text-center pb-4 flex-shrink-0">
-            <div className="mx-auto mb-4 w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center">
-              <Plus className="w-8 h-8 text-white" />
+        <DialogContent className="sm:max-w-[600px] w-[95vw] max-w-[95vw] sm:w-full rounded-2xl !max-h-[90vh] sm:!max-h-[85vh] !overflow-hidden !flex !flex-col !p-0">
+          <DialogHeader className="text-center p-4 sm:p-6 pb-3 sm:pb-4 border-b border-border/20 flex-shrink-0">
+            <div className="mx-auto mb-3 sm:mb-4 w-14 h-14 sm:w-16 sm:h-16 bg-gradient-hero rounded-full flex items-center justify-center">
+              <Plus className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <DialogTitle className="text-3xl font-bold">Create New Community</DialogTitle>
-            <DialogDescription className="text-base text-muted-foreground">
+            <DialogTitle className="text-2xl sm:text-3xl font-bold">Create New Community</DialogTitle>
+            <DialogDescription className="text-sm sm:text-base text-muted-foreground px-2 sm:px-0">
               Start your own learning community and bring people together around shared interests and goals.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6 py-4 overflow-y-auto flex-1 px-1">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-semibold">Community Name</Label>
-              <Input
-                id="name"
-                placeholder="Enter a catchy community name"
-                value={newCommunity.name}
-                onChange={(e) => setNewCommunity({ ...newCommunity, name: e.target.value })}
-                className="h-12 rounded-xl border-2 focus:border-primary"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-semibold">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="What's your community about? What will members learn and discuss?"
-                value={newCommunity.description}
-                onChange={(e) => setNewCommunity({ ...newCommunity, description: e.target.value })}
-                className="min-h-[120px] resize-none rounded-xl border-2 focus:border-primary"
-              />
-            </div>
-            <div className="space-y-2">
-              <CommunityAvatarUpload
-                currentAvatarUrl={newCommunity.avatar_url}
-                onAvatarUpdate={(avatarUrl) => setNewCommunity({ ...newCommunity, avatar_url: avatarUrl })}
-                size="lg"
-                showLabel={true}
-              />
-            </div>
-            <div className="flex items-center space-x-4 p-6 bg-gradient-to-r from-muted/30 to-muted/20 rounded-xl border border-border/50">
-              <Switch
-                id="private"
-                checked={newCommunity.is_private}
-                onCheckedChange={(checked) => setNewCommunity({ ...newCommunity, is_private: checked })}
-              />
-              <div className="flex-1">
-                <Label htmlFor="private" className="text-sm font-semibold cursor-pointer flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  Private Community
-                </Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Only invited members can join and see content
-                </p>
+          <div className="dialog-scroll-content overflow-y-auto flex-1 px-4 sm:px-6 py-4 sm:py-6 scrollbar-thin" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-semibold">Community Name</Label>
+                <Input
+                  id="name"
+                  placeholder="Enter a catchy community name"
+                  value={newCommunity.name}
+                  onChange={(e) => setNewCommunity({ ...newCommunity, name: e.target.value })}
+                  className="h-12 rounded-xl border-2 focus:border-primary"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-semibold">Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder="What's your community about? What will members learn and discuss?"
+                  value={newCommunity.description}
+                  onChange={(e) => setNewCommunity({ ...newCommunity, description: e.target.value })}
+                  className="min-h-[120px] resize-none rounded-xl border-2 focus:border-primary"
+                />
+              </div>
+              <div className="space-y-2">
+                <CommunityAvatarUpload
+                  currentAvatarUrl={newCommunity.avatar_url}
+                  onAvatarUpdate={(avatarUrl) => setNewCommunity({ ...newCommunity, avatar_url: avatarUrl })}
+                  size="lg"
+                  showLabel={true}
+                />
+              </div>
+              <div className="flex items-center space-x-4 p-6 bg-gradient-to-r from-muted/30 to-muted/20 rounded-xl border border-border/50">
+                <Switch
+                  id="private"
+                  checked={newCommunity.is_private}
+                  onCheckedChange={(checked) => setNewCommunity({ ...newCommunity, is_private: checked })}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="private" className="text-sm font-semibold cursor-pointer flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    Private Community
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Only invited members can join and see content
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-          <div className="flex-shrink-0 pt-4">
+          <div className="border-t border-border/20 p-4 sm:p-6 flex-shrink-0">
             <Button 
               onClick={createCommunity}
               disabled={isCreating || !newCommunity.name.trim()}
-              className="w-full h-14 bg-gradient-hero hover:opacity-90 text-white font-bold text-lg rounded-xl shadow-lg"
+              className="w-full h-12 sm:h-14 bg-gradient-hero hover:opacity-90 text-white font-bold text-base sm:text-lg rounded-xl shadow-lg"
             >
               {isCreating ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2 sm:mr-3"></div>
                   Creating Community...
                 </>
               ) : (
                 <>
-                  <Zap className="mr-2 w-5 h-5" />
+                  <Zap className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
                   Create Community
                 </>
               )}

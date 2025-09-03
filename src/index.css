@@ -191,6 +191,45 @@
   background: rgba(0, 0, 0, 0.3);
 }
 
+/* Custom scrollbar styles for dialogs and other scrollable areas */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Ensure dialogs can scroll properly */
+[role="dialog"] {
+  max-height: 85vh;
+}
+
+/* Fix for dialog content scrolling */
+.dialog-scroll-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(85vh - 200px);
+}
+
 /* Typing indicator styles */
 .typing-indicator {
   @apply flex items-center gap-1;
