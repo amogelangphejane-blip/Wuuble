@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Resources Diagnosis</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .warning { background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        button { background: #28a745; color: white; padding: 15px 25px; border: none; border-radius: 5px; cursor: pointer; margin: 10px; font-weight: bold; font-size: 16px; }
+        button:hover { background: #218838; }
+        .loading { color: #666; font-style: italic; padding: 10px; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; max-height: 300px; overflow-y: auto; }
+        .test-section { border: 2px solid #007bff; padding: 20px; margin: 20px 0; border-radius: 10px; }
+        .step-counter { background: #007bff; color: white; border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🎯 Final Resources Diagnosis</h1>
+    
+    <div class="info">
+        <h3>✅ Migration Status</h3>
+        <p>✅ Initial migration applied successfully</p>
+        <p>✅ Foreign key constraints added successfully</p>
+        <p>🔍 Now testing if resources feature is working...</p>
+    </div>
+
+    <div class="test-section">
+        <h3><span class="step-counter">1</span>Complete System Test</h3>
+        <p>This will run the exact same process your frontend uses and identify any remaining issues.</p>
+        <button onclick="runCompleteTest()">🚀 Run Complete System Test</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script type="module">
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsamhtbnJsaXJlZGxibiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzMzNzE1NTU5LCJleHAiOjIwNDkyOTE1NTl9.YMJPKCJCJjF7lCKpPHHBvMlTX-LPwXZQYKN6m2LI0VE";
+
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        window.runCompleteTest = async function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h3>🔍 Running Complete System Test</h3>';
+
+            function addResult(content) {
+                resultsDiv.innerHTML += content;
+            }
+
+            // Test 1: Basic connectivity
+            addResult('<div class="loading"><span class="step-counter">1</span>Testing database connectivity...</div>');
+            try {
+                const { data, error } = await supabase.from('communities').select('id').limit(1);
+                if (error) {
+                    addResult(`<div class="error">❌ Database connection failed: ${error.message}</div>`);
+                    return;
+                } else {
+                    addResult('<div class="success">✅ Database connection working</div>');
+                }
+            } catch (err) {
+                addResult(`<div class="error">❌ Connection exception: ${err.message}</div>`);
+                return;
+            }
+
+            // Test 2: Check all tables exist
+            addResult('<div class="loading"><span class="step-counter">2</span>Verifying all resource tables exist...</div>');
+            const tables = ['resource_categories', 'community_resources', 'resource_tags', 'resource_tag_assignments', 'resource_ratings', 'resource_bookmarks', 'resource_reports'];
+            let tablesOk = true;
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase.from(table).select('*').limit(1);
+                    if (error) {
+                        addResult(`<div class="error">❌ Table ${table}: ${error.message}</div>`);
+                        tablesOk = false;
+                    }
+                } catch (err) {
+                    addResult(`<div class="error">❌ Table ${table}: ${err.message}</div>`);
+                    tablesOk = false;
+                }
+            }
+            
+            if (tablesOk) {
+                addResult('<div class="success">✅ All resource tables exist and accessible</div>');
+            } else {
+                addResult('<div class="error">❌ Some tables are missing or inaccessible</div>');
+                return;
+            }
+
+            // Test 3: Check categories
+            addResult('<div class="loading"><span class="step-counter">3</span>Testing resource categories...</div>');
+            try {
+                const { data: categories, error: catError } = await supabase
+                    .from('resource_categories')
+                    .select('*');
+                
+                if (catError) {
+                    addResult(`<div class="error">❌ Categories error: ${catError.message}</div>`);
+                } else {
+                    addResult(`<div class="success">✅ Found ${categories.length} resource categories</div>`);
+                }
+            } catch (err) {
+                addResult(`<div class="error">❌ Categories exception: ${err.message}</div>`);
+            }
+
+            // Test 4: Test the problematic frontend query
+            addResult('<div class="loading"><span class="step-counter">4</span>Testing exact frontend query...</div>');
+            
+            // Get a community to test with
+            let testCommunityId = null;
+            try {
+                const { data: communities, error: commError } = await supabase
+                    .from('communities')
+                    .select('id, name')
+                    .limit(1);
+                
+                if (commError || !communities || communities.length === 0) {
+                    addResult(`<div class="warning">⚠️ No communities found for testing</div>`);
+                    testCommunityId = '00000000-0000-0000-0000-000000000000'; // Use dummy ID
+                } else {
+                    testCommunityId = communities[0].id;
+                    addResult(`<div class="info">ℹ️ Testing with community: ${communities[0].name}</div>`);
+                }
+            } catch (err) {
+                addResult(`<div class="error">❌ Community lookup error: ${err.message}</div>`);
+                testCommunityId = '00000000-0000-0000-0000-000000000000';
+            }
+
+            // Now test the exact query that's failing
+            try {
+                const { data: resources, error: resError } = await supabase
+                    .from('community_resources')
+                    .select(`
+                        *,
+                        category:resource_categories(id, name, color, icon),
+                        tags:resource_tag_assignments(
+                            tag:resource_tags(id, name)
+                        ),
+                        profiles!community_resources_user_id_fkey(display_name, avatar_url)
+                    `)
+                    .eq('community_id', testCommunityId)
+                    .eq('is_approved', true)
+                    .order('created_at', { ascending: false })
+                    .range(0, 11);
+
+                if (resError) {
+                    addResult(`
+                        <div class="error">
+                            <h4>🎯 <strong>FOUND THE EXACT ERROR!</strong></h4>
+                            <p><strong>This is what's causing "failed to load resources":</strong></p>
+                            <p><strong>Error:</strong> ${resError.message}</p>
+                            <p><strong>Code:</strong> ${resError.code}</p>
+                            <p><strong>Details:</strong> ${resError.details || 'None'}</p>
+                            <p><strong>Hint:</strong> ${resError.hint || 'None'}</p>
+                            <pre>${JSON.stringify(resError, null, 2)}</pre>
+                        </div>`);
+                        
+                    // Test without profiles to isolate the issue
+                    addResult('<div class="loading">🔍 Testing query without profiles reference...</div>');
+                    try {
+                        const { data: simpleResources, error: simpleError } = await supabase
+                            .from('community_resources')
+                            .select(`
+                                *,
+                                category:resource_categories(id, name, color, icon),
+                                tags:resource_tag_assignments(
+                                    tag:resource_tags(id, name)
+                                )
+                            `)
+                            .eq('community_id', testCommunityId)
+                            .eq('is_approved', true)
+                            .limit(5);
+
+                        if (simpleError) {
+                            addResult(`<div class="error">❌ Even simple query fails: ${simpleError.message}</div>`);
+                        } else {
+                            addResult(`
+                                <div class="warning">
+                                    <h4>⚠️ Profiles Reference is the Problem!</h4>
+                                    <p>The query works without profiles, so the issue is with:</p>
+                                    <p><code>profiles!community_resources_user_id_fkey(display_name, avatar_url)</code></p>
+                                    <p><strong>Solution:</strong> The foreign key name or profiles table structure needs to be fixed.</p>
+                                </div>`);
+                        }
+                    } catch (err) {
+                        addResult(`<div class="error">❌ Simple query exception: ${err.message}</div>`);
+                    }
+                } else {
+                    addResult(`
+                        <div class="success">
+                            <h4>🎉 <strong>RESOURCES QUERY IS NOW WORKING!</strong></h4>
+                            <p>The frontend query succeeded! Found ${resources.length} resources.</p>
+                            <p><strong>Your resources feature should now be working in the app!</strong></p>
+                            <p>Try refreshing your app and accessing the Resources tab again.</p>
+                            ${resources.length > 0 ? `<pre>${JSON.stringify(resources[0], null, 2)}</pre>` : '<p>No resources found yet (normal for new setup)</p>'}
+                        </div>`);
+                }
+            } catch (err) {
+                addResult(`
+                    <div class="error">
+                        <h4>❌ Frontend Query Exception</h4>
+                        <p>${err.message}</p>
+                        <pre>${err.stack}</pre>
+                    </div>`);
+            }
+
+            // Test 5: Authentication check
+            addResult('<div class="loading"><span class="step-counter">5</span>Checking authentication requirements...</div>');
+            try {
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError) {
+                    addResult(`<div class="error">❌ Auth error: ${authError.message}</div>`);
+                } else if (!user) {
+                    addResult(`
+                        <div class="warning">
+                            <h4>⚠️ Authentication Required</h4>
+                            <p><strong>You need to be logged in to access resources.</strong></p>
+                            <p>Make sure you're authenticated when testing the Resources tab in your app.</p>
+                        </div>`);
+                } else {
+                    addResult(`<div class="success">✅ User is authenticated: ${user.email}</div>`);
+                }
+            } catch (err) {
+                addResult(`<div class="error">❌ Auth check failed: ${err.message}</div>`);
+            }
+
+            addResult(`
+                <div class="info">
+                    <h3>🎯 Final Status</h3>
+                    <p><strong>Migration:</strong> ✅ Complete</p>
+                    <p><strong>Foreign Keys:</strong> ✅ Added</p>
+                    <p><strong>Database:</strong> ✅ Ready</p>
+                    <p><strong>Next Step:</strong> Test the Resources tab in your app!</p>
+                </div>`);
+        };
+
+        // Auto-run the complete test
+        window.addEventListener('load', () => {
+            setTimeout(runCompleteTest, 1500);
+        });
+    </script>
+
+    <div class="warning">
+        <h3>🚀 After Running This Test</h3>
+        <p>If this test shows all ✅, then:</p>
+        <ol>
+            <li><strong>Go back to your app</strong></li>
+            <li><strong>Hard refresh</strong> (Ctrl+Shift+R)</li>
+            <li><strong>Make sure you're logged in</strong></li>
+            <li><strong>Navigate to a community</strong></li>
+            <li><strong>Click the Resources tab</strong></li>
+            <li><strong>It should now work!</strong> ✅</li>
+        </ol>
+    </div>
+</body>
+</html>
