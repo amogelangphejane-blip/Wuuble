@@ -132,10 +132,7 @@ export const CommunityResources = ({
       .select(`
         *,
         category:resource_categories(id, name, color, icon),
-        tags:resource_tag_assignments(
-          tag:resource_tags(id, name)
-        ),
-        profiles!community_resources_user_id_fkey(display_name, avatar_url)
+        profiles(display_name, avatar_url)
       `)
       .eq('community_id', communityId)
       .eq('is_approved', true);

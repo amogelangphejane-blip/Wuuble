@@ -348,16 +348,7 @@ export const ResourceCard = ({
               {resource.category.name}
             </Badge>
           )}
-          {resource.tags?.slice(0, 3).map((tag) => (
-            <Badge key={tag.id} variant="outline" className="text-xs">
-              #{tag.name}
-            </Badge>
-          ))}
-          {resource.tags && resource.tags.length > 3 && (
-            <Badge variant="outline" className="text-xs">
-              +{resource.tags.length - 3} more
-            </Badge>
-          )}
+          {/* Tags will be added in future update */}
         </div>
       </CardHeader>
 
