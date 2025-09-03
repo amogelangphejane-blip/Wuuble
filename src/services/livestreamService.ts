@@ -156,6 +156,51 @@ class LivestreamService {
     this.peerConnections.clear();
   }
 
+  // Check if user can create streams
+  async canCreateStream(community_id?: string): Promise<{ canCreate: boolean; reason?: string }> {
+    try {
+      // Check authentication first
+      const { data: user, error: authError } = await supabase.auth.getUser();
+      if (authError || !user.user) {
+        return { canCreate: false, reason: 'You must be logged in to create streams' };
+      }
+
+      // If no community specified, check if personal streams are allowed
+      if (!community_id) {
+        // Try a test query to see if we can access the live_streams table
+        const { error: testError } = await supabase
+          .from('live_streams')
+          .select('id')
+          .limit(1);
+        
+        if (testError && testError.message.includes('permission denied')) {
+          return { canCreate: false, reason: 'Database policies need to be updated to allow personal streams' };
+        }
+        
+        return { canCreate: true };
+      }
+
+      // If community specified, check membership
+      const { data: membership, error: membershipError } = await supabase
+        .from('community_members')
+        .select('status')
+        .eq('community_id', community_id)
+        .eq('user_id', user.user.id)
+        .single();
+
+      if (membershipError || !membership || membership.status !== 'approved') {
+        return { 
+          canCreate: false, 
+          reason: 'You need to be an approved member of this community to create streams' 
+        };
+      }
+
+      return { canCreate: true };
+    } catch (error: any) {
+      return { canCreate: false, reason: `Error checking permissions: ${error.message}` };
+    }
+  }
+
   // Create a new livestream
   async createLivestream(data: {
     title: string;
@@ -203,13 +248,23 @@ class LivestreamService {
       if (error) {
         this.debugLog('Stream creation error:', error);
         
-        if (error.message.includes('permission denied')) {
-          throw new Error('Permission denied. Please check if you have access to create streams in this community.');
-        } else if (error.message.includes('violates row-level security')) {
-          throw new Error('Access denied. You may need to be a member of the community to create streams.');
+        // Enhanced error handling with specific guidance
+        if (error.message.includes('permission denied') || error.message.includes('violates row-level security')) {
+          if (data.community_id) {
+            throw new Error('Access denied: You need to be a member of this community to create streams. Try creating a personal stream instead by not selecting a community.');
+          } else {
+            throw new Error('Access denied: Please make sure you are logged in and have permission to create streams. If this persists, the database policies may need to be updated.');
+          }
+        } else if (error.message.includes('authentication')) {
+          throw new Error('You must be logged in to create a livestream. Please sign in and try again.');
+        } else if (error.message.includes('duplicate')) {
+          throw new Error('A stream with this information already exists. Please modify your stream details.');
+        } else if (error.message.includes('foreign key')) {
+          throw new Error('Invalid community selected. Please choose a valid community or create a personal stream.');
         }
         
-        throw error;
+        // Provide a more user-friendly error message
+        throw new Error(`Failed to create stream: ${error.message}. Please try again or contact support if the issue persists.`);
       }
       
       return stream;
@@ -616,3 +671,6 @@ class LivestreamService {
 }
 
 export const livestreamService = new LivestreamService();
+
+// Export the service class for type checking
+export type { LivestreamService };
