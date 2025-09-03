@@ -977,6 +977,24 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
                               alt="Post image"
                               className="w-full max-h-96 rounded-xl border border-border object-cover cursor-pointer hover:opacity-95 transition-opacity"
                               onClick={() => window.open(post.image_url!, '_blank')}
+                              onError={(e) => {
+                                console.error('Failed to load post image:', post.image_url);
+                                // Hide the broken image element
+                                e.currentTarget.style.display = 'none';
+                                // Show a fallback message
+                                const fallback = document.createElement('div');
+                                fallback.className = 'w-full p-8 text-center bg-muted rounded-xl border border-border';
+                                fallback.innerHTML = `
+                                  <div class="text-muted-foreground">
+                                    <svg class="mx-auto h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <p class="text-sm">Image could not be loaded</p>
+                                    <p class="text-xs mt-1">The image may have been moved or deleted</p>
+                                  </div>
+                                `;
+                                e.currentTarget.parentNode?.appendChild(fallback);
+                              }}
                             />
                           </div>
                         )}

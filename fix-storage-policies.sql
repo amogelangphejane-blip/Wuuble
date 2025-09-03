@@ -90,6 +90,52 @@ USING (
 );
 
 -- ============================================================================
+-- COMMUNITY POST IMAGES POLICIES
+-- ============================================================================
+
+-- Drop existing policies if they exist to avoid conflicts
+DROP POLICY IF EXISTS "Users can upload post images" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view all post images" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own post images" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own post images" ON storage.objects;
+
+-- Policy to allow authenticated users to upload post images
+CREATE POLICY "Users can upload post images"
+ON storage.objects 
+FOR INSERT 
+WITH CHECK (
+  bucket_id = 'community-post-images' 
+  AND auth.role() = 'authenticated'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- Policy to allow public viewing of all post images
+CREATE POLICY "Users can view all post images"
+ON storage.objects 
+FOR SELECT 
+USING (bucket_id = 'community-post-images');
+
+-- Policy to allow users to update their own post images
+CREATE POLICY "Users can update their own post images"
+ON storage.objects 
+FOR UPDATE 
+USING (
+  bucket_id = 'community-post-images'
+  AND auth.role() = 'authenticated'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- Policy to allow users to delete their own post images
+CREATE POLICY "Users can delete their own post images"
+ON storage.objects 
+FOR DELETE 
+USING (
+  bucket_id = 'community-post-images'
+  AND auth.role() = 'authenticated'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- ============================================================================
 -- ADDITIONAL HELPFUL POLICIES (More Permissive for Testing)
 -- ============================================================================
 
@@ -97,7 +143,7 @@ USING (
 -- This helps with testing and troubleshooting
 CREATE POLICY "Authenticated users can upload to temp folders" ON storage.objects
 FOR INSERT WITH CHECK (
-  bucket_id IN ('profile-pictures', 'community-avatars')
+  bucket_id IN ('profile-pictures', 'community-avatars', 'community-post-images')
   AND auth.role() = 'authenticated'
   AND (storage.foldername(name))[1] = 'temp'
 );
@@ -105,7 +151,7 @@ FOR INSERT WITH CHECK (
 -- Policy to allow users to manage temp files
 CREATE POLICY "Users can manage temp files" ON storage.objects
 FOR ALL USING (
-  bucket_id IN ('profile-pictures', 'community-avatars')
+  bucket_id IN ('profile-pictures', 'community-avatars', 'community-post-images')
   AND auth.role() = 'authenticated'
   AND (storage.foldername(name))[1] = 'temp'
 );
@@ -126,5 +172,5 @@ SELECT
 FROM pg_policies 
 WHERE tablename = 'objects' 
   AND schemaname = 'storage'
-  AND policyname LIKE '%profile%' OR policyname LIKE '%community%' OR policyname LIKE '%avatar%'
+  AND (policyname LIKE '%profile%' OR policyname LIKE '%community%' OR policyname LIKE '%avatar%' OR policyname LIKE '%post%')
 ORDER BY policyname;
