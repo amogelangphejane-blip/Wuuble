@@ -1,0 +1,47 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Redirect all routes to index.html for SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# API routes (if you have serverless functions)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-XSS-Protection = "1; mode=block"
+
+# Cache static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache service worker
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+# Environment variables (set these in Netlify dashboard)
+# VITE_APP_URL = "https://yourdomain.com"
+# VITE_FRONTEND_URL = "https://yourdomain.com"
+# VITE_SUPABASE_URL = "https://your-project.supabase.co"
+# VITE_SUPABASE_ANON_KEY = "your-supabase-anon-key"
+# VITE_SIGNALING_SERVER_URL = "wss://your-signaling-server.herokuapp.com"
+# VITE_STRIPE_PUBLISHABLE_KEY = "pk_live_your-stripe-key"
