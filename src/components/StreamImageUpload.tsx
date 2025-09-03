@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { thumbnailService } from '@/services/thumbnailService';
+import { streamImageService } from '@/services/streamImageService';
 import { ThumbnailGenerator } from './ThumbnailGenerator';
 import {
   Upload,
@@ -101,9 +101,10 @@ export const StreamImageUpload: React.FC<StreamImageUploadProps> = ({
     setError(null);
 
     try {
-      const thumbnailUrl = await thumbnailService.uploadThumbnail(streamId, file, {
+      const imageResult = await streamImageService.uploadDisplayImage(streamId, file, {
         maxSizeBytes: maxSizeMB * 1024 * 1024
       });
+      const thumbnailUrl = imageResult.image_url;
 
       onImageUploaded?.(thumbnailUrl);
       setPreviewUrl(null);
