@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources Feature - Migration Check & Apply</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .table-check {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin: 4px 0;
+            background: white;
+            border-radius: 4px;
+        }
+        .table-check.exists {
+            border-left: 4px solid #28a745;
+        }
+        .table-check.missing {
+            border-left: 4px solid #dc3545;
+        }
+        .migration-sql {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .migration-sql textarea {
+            width: 100%;
+            height: 400px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .step ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .step li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        .copy-button {
+            background: #28a745;
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+        .url-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+        code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #e83e8c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Resources Feature - Migration Check & Apply</h1>
+        <p class="subtitle">Check if the resources database tables exist and apply migration if needed</p>
+        
+        <div class="status info">
+            <strong>Connected to:</strong> tgmflbglhmnrliredlbn.supabase.co
+        </div>
+
+        <div class="step">
+            <h3>Step 1: Check Database Status</h3>
+            <button onclick="checkTables()">🔍 Check Resource Tables</button>
+            <button onclick="testQuery()">📊 Test Resource Query</button>
+        </div>
+
+        <div id="results" class="results" style="display: none;"></div>
+
+        <div class="step" id="migration-step" style="display: none;">
+            <h3>Step 2: Apply Migration</h3>
+            <div class="status warning">
+                ⚠️ The resource tables are missing. You need to apply the migration to enable the Resources feature.
+            </div>
+            
+            <h4>Option A: Apply via Supabase Dashboard (Recommended)</h4>
+            <ol>
+                <li>Click the button below to copy the migration SQL</li>
+                <li>Go to your <a href="https://supabase.com/dashboard/project/tgmflbglhmnrliredlbn/sql/new" target="_blank">Supabase SQL Editor</a></li>
+                <li>Paste the SQL and click "Run"</li>
+                <li>Come back here and check the tables again</li>
+            </ol>
+            <button onclick="showMigrationSQL()">📋 Show Migration SQL</button>
+            
+            <div id="migration-sql" class="migration-sql">
+                <button class="copy-button" onclick="copyMigration()">📋 Copy Migration SQL</button>
+                <textarea id="migration-content" readonly></textarea>
+            </div>
+        </div>
+
+        <div class="step" id="success-step" style="display: none;">
+            <h3>✅ Resources Feature is Ready!</h3>
+            <div class="status success">
+                All resource tables are properly configured. The Resources feature should now be working on your deployed sites.
+            </div>
+            
+            <h4>Test Your Deployment:</h4>
+            <div class="url-display">
+                <strong>Vercel App:</strong> <a href="https://chablo.vercel.app" target="_blank">https://chablo.vercel.app</a>
+            </div>
+            <div class="url-display">
+                <strong>Custom Domain:</strong> <a href="https://wuuble.co.za" target="_blank">https://wuuble.co.za</a>
+            </div>
+            
+            <p>Navigate to any community and click on the <strong>Resources</strong> tab to see the feature in action.</p>
+            
+            <h4>Troubleshooting:</h4>
+            <ul>
+                <li>Clear your browser cache (Ctrl+F5 or Cmd+Shift+R)</li>
+                <li>Try incognito/private browsing mode</li>
+                <li>Check the browser console for any errors</li>
+                <li>Ensure your deployment has the latest code from Git</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        const supabaseUrl = 'https://tgmflbglhmnrliredlbn.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsa21ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU2MTk3NDcsImV4cCI6MjA0MTE5NTc0N30.gT2HGDIvujN_eeJNvfqt-OXqB8Vt9aBQ6qTKskLRJkI';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        const requiredTables = [
+            'resource_categories',
+            'community_resources',
+            'resource_tags',
+            'resource_tag_assignments',
+            'resource_ratings',
+            'resource_bookmarks',
+            'resource_reports'
+        ];
+
+        async function checkTables() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '🔍 Checking database tables...\n\n';
+            
+            let allTablesExist = true;
+            
+            for (const table of requiredTables) {
+                try {
+                    const { data, error } = await supabase
+                        .from(table)
+                        .select('*')
+                        .limit(1);
+                    
+                    if (error && error.code === '42P01') {
+                        resultsDiv.innerHTML += `❌ Table "${table}" does not exist\n`;
+                        allTablesExist = false;
+                    } else if (error) {
+                        resultsDiv.innerHTML += `⚠️ Table "${table}" exists but has permissions issue: ${error.message}\n`;
+                    } else {
+                        resultsDiv.innerHTML += `✅ Table "${table}" exists\n`;
+                    }
+                } catch (err) {
+                    resultsDiv.innerHTML += `❌ Error checking "${table}": ${err.message}\n`;
+                    allTablesExist = false;
+                }
+            }
+            
+            if (allTablesExist) {
+                document.getElementById('migration-step').style.display = 'none';
+                document.getElementById('success-step').style.display = 'block';
+                resultsDiv.innerHTML += '\n✅ All resource tables exist! The feature should be working.';
+            } else {
+                document.getElementById('migration-step').style.display = 'block';
+                document.getElementById('success-step').style.display = 'none';
+                resultsDiv.innerHTML += '\n⚠️ Some tables are missing. Please apply the migration.';
+            }
+        }
+
+        async function testQuery() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '📊 Testing resource query...\n\n';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('resource_categories')
+                    .select('*');
+                
+                if (error) {
+                    resultsDiv.innerHTML += `❌ Error: ${error.message}\n`;
+                    if (error.code === '42P01') {
+                        resultsDiv.innerHTML += '\n⚠️ The resource_categories table does not exist. Please apply the migration first.';
+                    }
+                } else {
+                    resultsDiv.innerHTML += `✅ Successfully queried resource_categories table\n`;
+                    resultsDiv.innerHTML += `📊 Found ${data.length} categories:\n\n`;
+                    data.forEach(cat => {
+                        resultsDiv.innerHTML += `  ${cat.icon} ${cat.name}\n`;
+                    });
+                }
+            } catch (err) {
+                resultsDiv.innerHTML += `❌ Error: ${err.message}\n`;
+            }
+        }
+
+        async function showMigrationSQL() {
+            const sqlDiv = document.getElementById('migration-sql');
+            const textarea = document.getElementById('migration-content');
+            
+            // Fetch the migration SQL from the file
+            try {
+                const response = await fetch('/supabase/migrations/20250815000000_add_community_resources.sql');
+                if (!response.ok) {
+                    // If fetch fails, use the inline migration SQL
+                    textarea.value = getMigrationSQL();
+                } else {
+                    const sql = await response.text();
+                    textarea.value = sql;
+                }
+            } catch (err) {
+                // Fallback to inline SQL
+                textarea.value = getMigrationSQL();
+            }
+            
+            sqlDiv.style.display = 'block';
+        }
+
+        function copyMigration() {
+            const textarea = document.getElementById('migration-content');
+            textarea.select();
+            document.execCommand('copy');
+            
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '✅ Copied!';
+            button.style.background = '#28a745';
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '#28a745';
+            }, 2000);
+        }
+
+        function getMigrationSQL() {
+            // This is a fallback - the actual migration should be loaded from the file
+            return `-- Migration SQL for Community Resources Feature
+-- Please use the SQL from: supabase/migrations/20250815000000_add_community_resources.sql
+
+-- This migration creates:
+-- 1. resource_categories table with 10 default categories
+-- 2. community_resources table for storing resources
+-- 3. resource_tags table for flexible tagging
+-- 4. resource_tag_assignments for many-to-many relationships
+-- 5. resource_ratings for user ratings
+-- 6. resource_bookmarks for user bookmarks
+-- 7. resource_reports for content moderation
+-- 8. Comprehensive RLS policies for security
+
+-- To apply this migration:
+-- 1. Go to your Supabase SQL Editor
+-- 2. Copy the contents of the migration file
+-- 3. Paste and run the SQL
+-- 4. Verify the tables are created
+`;
+        }
+    </script>
+</body>
+</html>
