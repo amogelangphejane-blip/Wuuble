@@ -889,8 +889,8 @@ const Communities = () => {
 
       {/* Enhanced Create Community Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] rounded-2xl">
-          <DialogHeader className="text-center pb-4">
+        <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="text-center pb-4 flex-shrink-0">
             <div className="mx-auto mb-4 w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center">
               <Plus className="w-8 h-8 text-white" />
             </div>
@@ -899,7 +899,7 @@ const Communities = () => {
               Start your own learning community and bring people together around shared interests and goals.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4 overflow-y-auto flex-1 px-1">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-semibold">Community Name</Label>
               <Input
@@ -945,23 +945,25 @@ const Communities = () => {
               </div>
             </div>
           </div>
-          <Button 
-            onClick={createCommunity}
-            disabled={isCreating || !newCommunity.name.trim()}
-            className="w-full h-14 bg-gradient-hero hover:opacity-90 text-white font-bold text-lg rounded-xl shadow-lg"
-          >
-            {isCreating ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                Creating Community...
-              </>
-            ) : (
-              <>
-                <Zap className="mr-2 w-5 h-5" />
-                Create Community
-              </>
-            )}
-          </Button>
+          <div className="flex-shrink-0 pt-4">
+            <Button 
+              onClick={createCommunity}
+              disabled={isCreating || !newCommunity.name.trim()}
+              className="w-full h-14 bg-gradient-hero hover:opacity-90 text-white font-bold text-lg rounded-xl shadow-lg"
+            >
+              {isCreating ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  Creating Community...
+                </>
+              ) : (
+                <>
+                  <Zap className="mr-2 w-5 h-5" />
+                  Create Community
+                </>
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
