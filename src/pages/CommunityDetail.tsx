@@ -27,7 +27,7 @@ import {
   Info,
   Trash2,
   Trophy,
-  Camera
+  BookOpen
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
@@ -35,9 +35,10 @@ import { CommunitySearch } from '@/components/CommunitySearch';
 import { CommunityAvatarUpload } from '@/components/CommunityAvatarUpload';
 import { ModernHeader } from '@/components/ModernHeader';
 import { QuickAccess } from '@/components/QuickAccess';
-import { CommunityStories } from '@/components/CommunityStories';
+
 
 import { CommunityAbout } from '@/components/CommunityAbout';
+import { CommunityResources } from '@/components/CommunityResources';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
 import { CommunitySettings } from '@/components/CommunitySettings';
 
@@ -329,7 +330,7 @@ const CommunityDetail = () => {
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
     { id: 'quick-access', label: 'Quick Access', icon: Zap },
-    { id: 'stories', label: 'Stories', icon: Camera },
+    { id: 'resources', label: 'Resources', icon: BookOpen },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'about', label: 'About', icon: Info }
   ];
@@ -745,8 +746,8 @@ const CommunityDetail = () => {
                 />
               )}
 
-              {activeTab === 'stories' && (
-                <CommunityStories 
+              {activeTab === 'resources' && (
+                <CommunityResources 
                   communityId={community.id}
                   communityName={community.name}
                   isMember={isMember}
