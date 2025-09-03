@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources Feature Status Check</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .status-card {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            background: white;
+            border: 2px solid #e9ecef;
+        }
+        .status-card.ok {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .status-card.fail {
+            border-color: #dc3545;
+            background: #fff8f8;
+        }
+        .icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Resources Feature Status Check</h1>
+        
+        <div class="test-section">
+            <h2>Database Connection</h2>
+            <button onclick="testConnection()">Test Connection</button>
+            <div id="connection-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Table Status</h2>
+            <button onclick="checkTables()">Check All Tables</button>
+            <div id="tables-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Categories Check</h2>
+            <button onclick="checkCategories()">Check Categories</button>
+            <div id="categories-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Query</h2>
+            <button onclick="testResourceQuery()">Test Resources Query</button>
+            <div id="query-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Create Test Resource</h2>
+            <button onclick="createTestResource()">Create Test Resource</button>
+            <div id="create-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Overall Status</h2>
+            <div id="overall-status" class="status-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://tgmflbglhmnrliredlbn.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsa21ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU2MTk3NDcsImV4cCI6MjA0MTE5NTc0N30.gT2HGDIvujN_eeJNvfqt-OXqB8Vt9aBQ6qTKskLRJkI';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        let statusChecks = {
+            connection: false,
+            tables: false,
+            categories: false,
+            query: false
+        };
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.innerHTML = '<div class="info">Testing connection...</div>';
+            
+            try {
+                const { data, error } = await supabase.from('communities').select('id').limit(1);
+                if (error) throw error;
+                
+                resultDiv.innerHTML = '<div class="success">✅ Database connection successful!</div>';
+                statusChecks.connection = true;
+                updateOverallStatus();
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error">❌ Connection failed: ${err.message}</div>`;
+                statusChecks.connection = false;
+                updateOverallStatus();
+            }
+        }
+
+        async function checkTables() {
+            const resultDiv = document.getElementById('tables-result');
+            resultDiv.innerHTML = '<div class="info">Checking tables...</div>';
+            
+            const tables = [
+                'resource_categories',
+                'community_resources',
+                'resource_tags',
+                'resource_tag_assignments',
+                'resource_ratings',
+                'resource_bookmarks',
+                'resource_reports'
+            ];
+            
+            let allExist = true;
+            let html = '';
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase.from(table).select('id').limit(1);
+                    if (error && error.code === '42P01') {
+                        html += `<div class="error">❌ Table "${table}" does not exist</div>`;
+                        allExist = false;
+                    } else if (error) {
+                        html += `<div class="warning">⚠️ Table "${table}" exists but has issues: ${error.message}</div>`;
+                    } else {
+                        html += `<div class="success">✅ Table "${table}" exists</div>`;
+                    }
+                } catch (err) {
+                    html += `<div class="error">❌ Error checking "${table}": ${err.message}</div>`;
+                    allExist = false;
+                }
+            }
+            
+            resultDiv.innerHTML = html;
+            statusChecks.tables = allExist;
+            updateOverallStatus();
+        }
+
+        async function checkCategories() {
+            const resultDiv = document.getElementById('categories-result');
+            resultDiv.innerHTML = '<div class="info">Checking categories...</div>';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('resource_categories')
+                    .select('*')
+                    .order('name');
+                
+                if (error) throw error;
+                
+                if (data && data.length > 0) {
+                    let html = `<div class="success">✅ Found ${data.length} categories:</div>`;
+                    html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px;">';
+                    data.forEach(cat => {
+                        html += `<div style="padding: 8px; background: ${cat.color}20; border: 1px solid ${cat.color}; border-radius: 4px;">
+                            ${cat.icon || '📁'} ${cat.name}
+                        </div>`;
+                    });
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                    statusChecks.categories = true;
+                } else {
+                    resultDiv.innerHTML = '<div class="warning">⚠️ No categories found. Run the migration to add default categories.</div>';
+                    statusChecks.categories = false;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${err.message}</div>`;
+                statusChecks.categories = false;
+            }
+            updateOverallStatus();
+        }
+
+        async function testResourceQuery() {
+            const resultDiv = document.getElementById('query-result');
+            resultDiv.innerHTML = '<div class="info">Testing resource query...</div>';
+            
+            try {
+                // First get a community ID
+                const { data: communities, error: commError } = await supabase
+                    .from('communities')
+                    .select('id, name')
+                    .limit(1);
+                
+                if (commError) throw commError;
+                
+                if (!communities || communities.length === 0) {
+                    resultDiv.innerHTML = '<div class="warning">⚠️ No communities found to test with</div>';
+                    return;
+                }
+                
+                const communityId = communities[0].id;
+                const communityName = communities[0].name;
+                
+                // Test the exact query used in the app
+                const { data, error } = await supabase
+                    .from('community_resources')
+                    .select(`
+                        *,
+                        category:resource_categories(id, name, color, icon),
+                        profiles(display_name, avatar_url)
+                    `)
+                    .eq('community_id', communityId)
+                    .eq('is_approved', true)
+                    .limit(5);
+                
+                if (error) throw error;
+                
+                let html = `<div class="success">✅ Query successful for community "${communityName}"</div>`;
+                if (data && data.length > 0) {
+                    html += `<div class="info">Found ${data.length} resources</div>`;
+                    html += '<pre>' + JSON.stringify(data[0], null, 2) + '</pre>';
+                } else {
+                    html += '<div class="info">No resources found (this is normal if none have been created yet)</div>';
+                }
+                
+                resultDiv.innerHTML = html;
+                statusChecks.query = true;
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error">❌ Query error: ${err.message}</div>`;
+                statusChecks.query = false;
+            }
+            updateOverallStatus();
+        }
+
+        async function createTestResource() {
+            const resultDiv = document.getElementById('create-result');
+            resultDiv.innerHTML = '<div class="info">Creating test resource...</div>';
+            
+            try {
+                // Get current user
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError || !user) {
+                    resultDiv.innerHTML = '<div class="warning">⚠️ You need to be logged in to create a resource</div>';
+                    return;
+                }
+                
+                // Get a community
+                const { data: communities, error: commError } = await supabase
+                    .from('communities')
+                    .select('id, name')
+                    .limit(1);
+                
+                if (commError || !communities || communities.length === 0) {
+                    resultDiv.innerHTML = '<div class="warning">⚠️ No communities found</div>';
+                    return;
+                }
+                
+                // Get a category
+                const { data: categories, error: catError } = await supabase
+                    .from('resource_categories')
+                    .select('id, name')
+                    .limit(1);
+                
+                if (catError || !categories || categories.length === 0) {
+                    resultDiv.innerHTML = '<div class="warning">⚠️ No categories found</div>';
+                    return;
+                }
+                
+                // Create test resource
+                const testResource = {
+                    community_id: communities[0].id,
+                    user_id: user.id,
+                    title: 'Test Resource - ' + new Date().toISOString(),
+                    description: 'This is a test resource created to verify the system is working',
+                    resource_type: 'article',
+                    category_id: categories[0].id,
+                    is_free: true,
+                    is_approved: true,
+                    content_url: 'https://example.com'
+                };
+                
+                const { data, error } = await supabase
+                    .from('community_resources')
+                    .insert(testResource)
+                    .select();
+                
+                if (error) throw error;
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Test resource created successfully!</div>
+                    <div class="info">Resource ID: ${data[0].id}</div>
+                    <div class="info">Community: ${communities[0].name}</div>
+                    <div class="info">Category: ${categories[0].name}</div>
+                `;
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error">❌ Error creating resource: ${err.message}</div>`;
+            }
+        }
+
+        function updateOverallStatus() {
+            const statusDiv = document.getElementById('overall-status');
+            let html = '';
+            
+            const statuses = [
+                { name: 'Database', ok: statusChecks.connection },
+                { name: 'Tables', ok: statusChecks.tables },
+                { name: 'Categories', ok: statusChecks.categories },
+                { name: 'Queries', ok: statusChecks.query }
+            ];
+            
+            statuses.forEach(status => {
+                html += `
+                    <div class="status-card ${status.ok ? 'ok' : 'fail'}">
+                        <div class="icon">${status.ok ? '✅' : '❌'}</div>
+                        <div>${status.name}</div>
+                    </div>
+                `;
+            });
+            
+            statusDiv.innerHTML = html;
+            
+            // Check if everything is working
+            const allOk = Object.values(statusChecks).every(v => v === true);
+            if (allOk) {
+                statusDiv.innerHTML += `
+                    <div class="success" style="grid-column: 1 / -1; margin-top: 20px; padding: 20px; text-align: center;">
+                        <h3>🎉 Resources Feature is Fully Operational!</h3>
+                        <p>All systems are working correctly. The Resources tab should be visible on your deployed sites.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Run initial test
+        window.onload = () => {
+            testConnection();
+        };
+    </script>
+</body>
+</html>
