@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources Feature Deployment Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Resources Feature Deployment Test</h1>
+    
+    <div class="test-section">
+        <h3>📋 Deployment Checklist</h3>
+        <p>This test will verify if the Resources feature is properly deployed:</p>
+        <ul>
+            <li>✅ Component files exist and build successfully</li>
+            <li>✅ Navigation includes Resources tab</li>
+            <li>✅ Migration file exists</li>
+            <li>❓ Database tables are created</li>
+            <li>❓ RLS policies are applied</li>
+            <li>❓ Frontend can connect to database</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>🧪 Database Connection Test</h3>
+        <p>Click the button below to test the database connection and check if the resources tables exist:</p>
+        <button onclick="testDatabaseConnection()">Test Database Connection</button>
+        <button onclick="testResourceTables()">Check Resource Tables</button>
+        <button onclick="testResourceCategories()">Test Resource Categories</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script type="module">
+        // Import the Supabase client (this would normally be from your app)
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsamhtbnJsaXJlZGxibiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzMzNzE1NTU5LCJleHAiOjIwNDkyOTE1NTl9.YMJPKCJCJjF7lCKpPHHBvMlTX-LPwXZQYKN6m2LI0VE";
+
+        // Import Supabase from CDN
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        window.testDatabaseConnection = async function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">Testing database connection...</div>';
+
+            try {
+                const { data, error } = await supabase
+                    .from('communities')
+                    .select('id')
+                    .limit(1);
+
+                if (error) {
+                    resultsDiv.innerHTML = `<div class="error">❌ Database Connection Failed: ${error.message}</div>`;
+                } else {
+                    resultsDiv.innerHTML = '<div class="success">✅ Database Connection Successful!</div>';
+                }
+            } catch (err) {
+                resultsDiv.innerHTML = `<div class="error">❌ Connection Error: ${err.message}</div>`;
+            }
+        };
+
+        window.testResourceTables = async function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">Checking resource tables...</div>';
+
+            const tablesToCheck = [
+                'resource_categories',
+                'community_resources',
+                'resource_tags',
+                'resource_tag_assignments',
+                'resource_ratings',
+                'resource_bookmarks',
+                'resource_reports'
+            ];
+
+            let results = '<h4>📊 Table Check Results:</h4>';
+
+            for (const table of tablesToCheck) {
+                try {
+                    const { data, error } = await supabase
+                        .from(table)
+                        .select('*')
+                        .limit(1);
+
+                    if (error) {
+                        if (error.code === '42P01') {
+                            results += `<div class="error">❌ Table "${table}" does not exist</div>`;
+                        } else {
+                            results += `<div class="error">❌ Table "${table}": ${error.message}</div>`;
+                        }
+                    } else {
+                        results += `<div class="success">✅ Table "${table}" exists and is accessible</div>`;
+                    }
+                } catch (err) {
+                    results += `<div class="error">❌ Table "${table}": ${err.message}</div>`;
+                }
+            }
+
+            resultsDiv.innerHTML = results;
+        };
+
+        window.testResourceCategories = async function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">Testing resource categories...</div>';
+
+            try {
+                const { data, error } = await supabase
+                    .from('resource_categories')
+                    .select('*');
+
+                if (error) {
+                    if (error.code === '42P01') {
+                        resultsDiv.innerHTML = `
+                            <div class="error">
+                                <h4>❌ Resource Categories Table Missing</h4>
+                                <p>The <code>resource_categories</code> table does not exist in the database.</p>
+                                <p><strong>Solution:</strong> The migration <code>20250815000000_add_community_resources.sql</code> needs to be applied to the database.</p>
+                            </div>`;
+                    } else {
+                        resultsDiv.innerHTML = `<div class="error">❌ Error accessing resource categories: ${error.message}</div>`;
+                    }
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Resource Categories Working!</h4>
+                            <p>Found ${data.length} categories:</p>
+                            <ul>
+                                ${data.map(cat => `<li>${cat.name} (${cat.icon})</li>`).join('')}
+                            </ul>
+                        </div>`;
+                }
+            } catch (err) {
+                resultsDiv.innerHTML = `<div class="error">❌ Error: ${err.message}</div>`;
+            }
+        };
+
+        // Auto-run basic connection test on load
+        window.addEventListener('load', () => {
+            setTimeout(testDatabaseConnection, 1000);
+        });
+    </script>
+
+    <div class="warning">
+        <h3>⚠️ Common Deployment Issues</h3>
+        <ul>
+            <li><strong>Migration not applied:</strong> If tables don't exist, run the migration file in your Supabase dashboard</li>
+            <li><strong>RLS policies:</strong> Check that Row Level Security policies allow access to the tables</li>
+            <li><strong>Environment variables:</strong> Ensure SUPABASE_URL and SUPABASE_ANON_KEY are correctly set</li>
+            <li><strong>Build deployment:</strong> Make sure the latest build with resources feature is deployed</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>🔧 Manual Migration Steps</h3>
+        <p>If the database tables are missing, you can apply the migration manually:</p>
+        <ol>
+            <li>Go to your Supabase dashboard</li>
+            <li>Navigate to SQL Editor</li>
+            <li>Copy and paste the contents of <code>supabase/migrations/20250815000000_add_community_resources.sql</code></li>
+            <li>Run the SQL script</li>
+            <li>Refresh this test page and check again</li>
+        </ol>
+    </div>
+</body>
+</html>
