@@ -38,7 +38,7 @@ import { QuickAccess } from '@/components/QuickAccess';
 
 
 import { CommunityAbout } from '@/components/CommunityAbout';
-import { CommunityResources } from '@/components/CommunityResources';
+import { SimpleCommunityResources } from '@/components/SimpleCommunityResources';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
 import { CommunitySettings } from '@/components/CommunitySettings';
 
@@ -747,7 +747,7 @@ const CommunityDetail = () => {
               )}
 
               {activeTab === 'resources' && (
-                <CommunityResources 
+                <SimpleCommunityResources 
                   communityId={community.id}
                   communityName={community.name}
                   isMember={isMember}
