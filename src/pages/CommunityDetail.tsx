@@ -26,9 +26,9 @@ import {
   Radio,
   Info,
   Trash2,
-  Trophy,
-  BookOpen
+  Trophy
 } from 'lucide-react';
+import { ResourcesIcon } from '@/components/icons/ResourcesIcon';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
 import { CommunitySearch } from '@/components/CommunitySearch';
@@ -330,7 +330,7 @@ const CommunityDetail = () => {
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
     { id: 'quick-access', label: 'Quick Access', icon: Zap },
-    { id: 'resources', label: 'Resources', icon: BookOpen },
+    { id: 'resources', label: 'Resources', icon: ResourcesIcon },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'about', label: 'About', icon: Info }
   ];

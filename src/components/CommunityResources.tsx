@@ -20,6 +20,7 @@ import {
   FolderOpen,
   Shield
 } from 'lucide-react';
+import { ResourcesIcon } from '@/components/icons/ResourcesIcon';
 import { ResourceCard } from '@/components/ResourceCard';
 import { ResourceForm } from '@/components/ResourceForm';
 import { ResourceSearchFilters } from '@/components/ResourceSearchFilters';
@@ -464,7 +465,7 @@ export const CommunityResources = ({
       <Card className="border-primary/20 bg-gradient-to-r from-blue-500/5 to-green-500/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-blue-500" />
+            <ResourcesIcon className="w-5 h-5 text-blue-500" />
             Community Resources
           </CardTitle>
           <CardDescription>
