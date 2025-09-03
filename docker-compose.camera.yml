@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+  streaming-app:
+    build: .
+    container_name: streaming-app-with-camera
+    ports:
+      - "5173:5173"
+    
+    # CAMERA ACCESS CONFIGURATION
+    devices:
+      - "/dev/video0:/dev/video0"
+      - "/dev/video1:/dev/video1"  # if you have multiple cameras
+    
+    volumes:
+      - "/dev/shm:/dev/shm"  # Shared memory for video processing
+      - ".:/workspace"       # Mount current directory
+      - "node_modules:/workspace/node_modules"  # Node modules cache
+    
+    working_dir: /workspace
+    
+    environment:
+      - NODE_ENV=development
+      - VITE_HOST=0.0.0.0
+      - VITE_PORT=5173
+    
+    command: npm run dev
+    
+    # Optional: For GUI applications (if needed)
+    # volumes:
+    #   - "/tmp/.X11-unix:/tmp/.X11-unix:rw"
+    # environment:
+    #   - DISPLAY=${DISPLAY}
+    
+    # Health check to ensure app is running
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  node_modules:

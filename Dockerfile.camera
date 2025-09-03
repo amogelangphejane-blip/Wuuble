@@ -1,0 +1,32 @@
+FROM node:18-bullseye
+
+# Install system dependencies for camera support
+RUN apt-get update && apt-get install -y \
+    v4l-utils \
+    ffmpeg \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /workspace
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy application code
+COPY . .
+
+# Add user to video group for camera access
+RUN groupadd -f video && usermod -a -G video node
+
+# Switch to non-root user
+USER node
+
+# Expose the port
+EXPOSE 5173
+
+# Start the development server
+CMD ["npm", "run", "dev"]
