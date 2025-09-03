@@ -66,14 +66,14 @@ async function testDatabaseTables() {
         .limit(1);
       
       if (error) {
-        error(`Table '${table}': ${error.message}`);
+        console.error(`❌ Table '${table}': ${error.message}`);
         results[table] = false;
       } else {
         success(`Table '${table}': Accessible`);
         results[table] = true;
       }
     } catch (err) {
-      error(`Table '${table}': ${err.message}`);
+      console.error(`❌ Table '${table}': ${err.message}`);
       results[table] = false;
     }
   }
@@ -113,7 +113,7 @@ async function testStreamCreation() {
         warning('Stream creation requires authentication (expected for anonymous test)');
         return { canCreate: false, reason: 'authentication_required' };
       } else {
-        error(`Stream creation failed: ${error.message}`);
+        console.error(`❌ Stream creation failed: ${error.message}`);
         return { canCreate: false, reason: error.message };
       }
     } else {
@@ -129,7 +129,7 @@ async function testStreamCreation() {
       return { canCreate: true, streamId: data.id };
     }
   } catch (err) {
-    error(`Stream creation test failed: ${err.message}`);
+    console.error(`❌ Stream creation test failed: ${err.message}`);
     return { canCreate: false, reason: err.message };
   }
 }
@@ -153,7 +153,7 @@ async function testStreamRetrieval() {
       .limit(10);
     
     if (error) {
-      error(`Stream retrieval failed: ${error.message}`);
+      console.error(`❌ Stream retrieval failed: ${error.message}`);
       return { canRetrieve: false, reason: error.message };
     } else {
       success(`Retrieved ${data.length} streams`);
@@ -167,7 +167,7 @@ async function testStreamRetrieval() {
       return { canRetrieve: true, count: data.length };
     }
   } catch (err) {
-    error(`Stream retrieval test failed: ${err.message}`);
+    console.error(`❌ Stream retrieval test failed: ${err.message}`);
     return { canRetrieve: false, reason: err.message };
   }
 }
@@ -203,7 +203,7 @@ async function testRealtimeConnection() {
             resolve({ connected: true });
           }, 2000);
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          error('Realtime connection failed');
+          console.error('❌ Realtime connection failed');
           clearTimeout(timeout);
           resolve({ connected: false, reason: status });
         }
@@ -212,7 +212,7 @@ async function testRealtimeConnection() {
     // Timeout after 10 seconds
     setTimeout(() => {
       if (!connected) {
-        error('Realtime connection timeout');
+        console.error('❌ Realtime connection timeout');
         channel.unsubscribe();
         resolve({ connected: false, reason: 'timeout' });
       }
@@ -280,7 +280,7 @@ async function generateReport(results) {
     warning(`Overall Status: DEGRADED (${passedCritical}/${totalCritical} critical tests passed)`);
   } else {
     report.overall = 'critical';
-    error(`Overall Status: CRITICAL (${passedCritical}/${totalCritical} critical tests passed)`);
+    console.error(`❌ Overall Status: CRITICAL (${passedCritical}/${totalCritical} critical tests passed)`);
   }
   
   log('\n📋 Summary:', 'cyan');
@@ -344,7 +344,7 @@ async function main() {
     process.exit(report.overall === 'critical' ? 1 : 0);
     
   } catch (err) {
-    error(`Test suite failed: ${err.message}`);
+    console.error(`❌ Test suite failed: ${err.message}`);
     process.exit(1);
   }
 }
