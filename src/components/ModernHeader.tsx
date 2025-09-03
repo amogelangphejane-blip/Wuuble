@@ -122,11 +122,9 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
             className="flex items-center space-x-2 cursor-pointer group"
             onClick={() => navigate('/communities')}
           >
-            <img 
-              src="/wuuble-logo.svg" 
-              alt="Wuuble Logo" 
-              className="w-8 h-8"
-            />
+            <div className="w-8 h-8 rounded-full bg-gradient-hero flex items-center justify-center text-white font-bold text-sm">
+              W
+            </div>
             <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
               Wuuble
             </span>

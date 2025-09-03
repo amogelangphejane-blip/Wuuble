@@ -2,7 +2,7 @@ const CACHE_NAME = 'pompeii-v1.0.0';
 const STATIC_CACHE_URLS = [
   '/',
   '/manifest.json',
-  '/wuuble-logo.svg',
+
   '/favicon.ico'
 ];
 
@@ -106,7 +106,7 @@ function doBackgroundSync() {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'New notification from Pompeii',
-    icon: '/wuuble-logo.svg',
+    icon: '/favicon.ico',
     badge: '/assets/badge-icon.png',
     vibrate: [100, 50, 100],
     data: {
