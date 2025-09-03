@@ -82,8 +82,12 @@ export const StoragePolicyTest = () => {
 
       // Test 4: Test Upload Permission (dry run - create a tiny test file)
       try {
-        const testFileName = `${user.id}/test-upload-${Date.now()}.txt`;
-        const testFile = new File(['test'], 'test.txt', { type: 'text/plain' });
+        const testFileName = `${user.id}/test-upload-${Date.now()}.png`;
+        const base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
+        const byteString = atob(base64);
+        const byteArray = new Uint8Array(byteString.length);
+        for (let i = 0; i < byteString.length; i++) byteArray[i] = byteString.charCodeAt(i);
+        const testFile = new File([byteArray], 'test.png', { type: 'image/png' });
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('profile-pictures')
