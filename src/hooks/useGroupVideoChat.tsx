@@ -2,6 +2,13 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { GroupWebRTCService, GroupParticipant, GroupWebRTCEvents } from '@/services/groupWebRTCService';
 import { GroupSignalingService, createGroupSignalingService, GroupSignalingEvents } from '@/services/groupSignalingService';
 import { defaultWebRTCConfig, WebRTCConfig } from '@/services/webRTCService';
+import { 
+  HighQualityWebRTCConfig, 
+  createOptimalConfig, 
+  createHighQualityConfig,
+  detectDeviceCapabilities,
+  estimateNetworkQuality
+} from '@/config/highQualityWebRTC';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,11 +24,14 @@ export interface GroupChatMessage {
 }
 
 export interface UseGroupVideoChatOptions {
-  webRTCConfig?: WebRTCConfig;
+  webRTCConfig?: HighQualityWebRTCConfig;
   useMockSignaling?: boolean;
   maxParticipants?: number;
   communityId: string;
   callId?: string;
+  videoQuality?: 'auto' | 'ultra' | 'high' | 'medium' | 'low';
+  enableAdaptiveBitrate?: boolean;
+  enableQualityMonitoring?: boolean;
 }
 
 export interface UseGroupVideoChatReturn {
@@ -44,6 +54,11 @@ export interface UseGroupVideoChatReturn {
   isScreenSharing: boolean;
   localVideoRef: React.RefObject<HTMLVideoElement>;
   
+  // Quality state
+  currentVideoQuality: 'ultra' | 'high' | 'medium' | 'low';
+  connectionQuality: 'excellent' | 'good' | 'poor' | 'disconnected';
+  qualityMetrics: Map<string, any>;
+  
   // Chat
   messages: GroupChatMessage[];
   unreadMessages: number;
@@ -59,6 +74,10 @@ export interface UseGroupVideoChatReturn {
   sendMessage: (text: string) => void;
   markMessagesAsRead: () => void;
   
+  // Quality controls
+  setVideoQuality: (quality: 'ultra' | 'high' | 'medium' | 'low') => Promise<void>;
+  getQualityMetrics: () => Map<string, any>;
+  
   // Participant management
   muteParticipant: (participantId: string) => void;
   kickParticipant: (participantId: string) => void;
@@ -72,11 +91,14 @@ export interface UseGroupVideoChatReturn {
 
 export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVideoChatReturn => {
   const {
-    webRTCConfig = defaultWebRTCConfig,
+    webRTCConfig,
     useMockSignaling = true,
     maxParticipants = 50,
     communityId,
-    callId: initialCallId
+    callId: initialCallId,
+    videoQuality = 'auto',
+    enableAdaptiveBitrate = true,
+    enableQualityMonitoring = true
   } = options;
 
   const { user } = useAuth();
@@ -96,6 +118,12 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
   const [messages, setMessages] = useState<GroupChatMessage[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [currentCall, setCurrentCall] = useState<any>(null);
+  
+  // Quality state
+  const [currentVideoQuality, setCurrentVideoQuality] = useState<'ultra' | 'high' | 'medium' | 'low'>('high');
+  const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor' | 'disconnected'>('disconnected');
+  const [qualityMetrics, setQualityMetrics] = useState<Map<string, any>>(new Map());
+  const [highQualityConfig, setHighQualityConfig] = useState<HighQualityWebRTCConfig | null>(null);
 
   // Refs
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -106,15 +134,78 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
   const isConnecting = callStatus === 'connecting';
   const isConnected = callStatus === 'connected';
 
+  // Initialize high-quality configuration
+  const initializeHighQualityConfig = useCallback(async () => {
+    try {
+      let config: HighQualityWebRTCConfig;
+      
+      if (webRTCConfig) {
+        config = webRTCConfig;
+      } else if (videoQuality === 'auto') {
+        console.log('🎯 Auto-detecting optimal video quality...');
+        config = await createOptimalConfig();
+      } else {
+        console.log(`🎥 Using ${videoQuality} quality preset...`);
+        config = createHighQualityConfig(videoQuality, {
+          adaptiveBitrate: enableAdaptiveBitrate,
+          simulcast: true
+        });
+      }
+      
+      // Add device and network capability information
+      const deviceCaps = detectDeviceCapabilities();
+      const networkQuality = await estimateNetworkQuality();
+      
+      console.log('📊 High-quality configuration initialized:', {
+        chosenQuality: config.connectionQuality,
+        deviceCapabilities: deviceCaps,
+        networkQuality,
+        adaptiveBitrate: config.adaptiveBitrate,
+        simulcast: config.simulcast
+      });
+      
+      setHighQualityConfig(config);
+      setCurrentVideoQuality(config.connectionQuality === 'high' ? 'high' : 'medium');
+      
+      return config;
+    } catch (error) {
+      console.error('❌ Failed to initialize high-quality config:', error);
+      // Fallback to default high quality config
+      const fallbackConfig = createHighQualityConfig('medium');
+      setHighQualityConfig(fallbackConfig);
+      return fallbackConfig;
+    }
+  }, [webRTCConfig, videoQuality, enableAdaptiveBitrate]);
+
+  // Helper function to calculate average connection quality
+  const calculateAverageQuality = useCallback((participants: GroupParticipant[]): 'excellent' | 'good' | 'poor' | 'disconnected' => {
+    if (participants.length === 0) return 'disconnected';
+    
+    const qualityScores = participants
+      .filter(p => p.qualityScore !== undefined)
+      .map(p => p.qualityScore!);
+    
+    if (qualityScores.length === 0) return 'good';
+    
+    const avgScore = qualityScores.reduce((sum, score) => sum + score, 0) / qualityScores.length;
+    
+    if (avgScore >= 85) return 'excellent';
+    if (avgScore >= 70) return 'good';
+    if (avgScore >= 40) return 'poor';
+    return 'disconnected';
+  }, []);
+
   // Initialize services
   const initializeServices = useCallback(async () => {
-    console.log('🚀 Initializing services...', { user: !!user, userId: user?.id });
+    console.log('🚀 Initializing high-quality services...', { user: !!user, userId: user?.id });
     if (!user) {
       console.log('❌ No user found, skipping service initialization');
       return;
     }
 
     try {
+      // Initialize high-quality configuration first
+      const config = await initializeHighQualityConfig();
       // Create participant data
       const participantData = {
         id: participantIdRef.current,
@@ -183,7 +274,29 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
           }
         },
         onParticipantUpdated: (participant) => {
+          console.log('🔄 Participant updated with quality info:', participant);
           setParticipants(prev => prev.map(p => p.id === participant.id ? participant : p));
+          
+          // Update overall connection quality based on participants
+          const allParticipants = prev.map(p => p.id === participant.id ? participant : p);
+          const avgQuality = calculateAverageQuality(allParticipants);
+          setConnectionQuality(avgQuality);
+        },
+        onConnectionQualityChanged: (participantId, quality, metrics) => {
+          console.log('📊 Connection quality changed for', participantId, { quality, metrics });
+          if (metrics) {
+            setQualityMetrics(prev => new Map(prev.set(participantId, metrics)));
+          }
+        },
+        onBitrateAdapted: (participantId, newBitrate) => {
+          console.log('🔄 Bitrate adapted for', participantId, 'to', newBitrate);
+          toast({
+            title: "Quality Adapted",
+            description: `Video quality adjusted for optimal performance`,
+          });
+        },
+        onVideoResolutionChanged: (participantId, resolution) => {
+          console.log('📹 Video resolution changed for', participantId, 'to', resolution);
         },
         onDataChannelMessage: (participantId, message) => {
           if (message.type === 'chat') {
@@ -213,7 +326,7 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
 
       webRTCServiceRef.current = new GroupWebRTCService(
         participantIdRef.current,
-        webRTCConfig,
+        config,
         webRTCEvents
       );
 
@@ -695,6 +808,39 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
     return currentCall;
   }, [currentCall]);
 
+  // Quality control methods
+  const setVideoQualityLevel = useCallback(async (quality: 'ultra' | 'high' | 'medium' | 'low') => {
+    if (webRTCServiceRef.current) {
+      try {
+        await webRTCServiceRef.current.setVideoQuality(quality);
+        setCurrentVideoQuality(quality);
+        
+        toast({
+          title: "Video Quality Changed",
+          description: `Video quality set to ${quality}`,
+        });
+        
+        console.log('📹 Video quality changed to:', quality);
+      } catch (error) {
+        console.error('❌ Failed to change video quality:', error);
+        toast({
+          title: "Quality Change Failed",
+          description: "Could not change video quality",
+          variant: "destructive"
+        });
+      }
+    }
+  }, [toast]);
+
+  const getQualityMetricsData = useCallback(() => {
+    if (webRTCServiceRef.current) {
+      const metrics = webRTCServiceRef.current.getQualityMetrics();
+      setQualityMetrics(metrics);
+      return metrics;
+    }
+    return new Map();
+  }, []);
+
   // Initialize on mount
   useEffect(() => {
     if (user) {
@@ -743,6 +889,11 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
     isScreenSharing,
     localVideoRef,
     
+    // Quality state
+    currentVideoQuality,
+    connectionQuality,
+    qualityMetrics,
+    
     // Chat
     messages,
     unreadMessages,
@@ -757,6 +908,10 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
     stopScreenShare,
     sendMessage,
     markMessagesAsRead,
+    
+    // Quality controls
+    setVideoQuality: setVideoQualityLevel,
+    getQualityMetrics: getQualityMetricsData,
     
     // Participant management
     muteParticipant,
