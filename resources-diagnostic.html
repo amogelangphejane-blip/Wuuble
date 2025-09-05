@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resources Feature Diagnostic</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Resources Feature Diagnostic Test</h1>
+    <button onclick="testResourcesTables()">Test Resources Tables</button>
+    <button onclick="testResourceCategories()">Test Resource Categories</button>
+    <button onclick="testDatabaseConnection()">Test Database Connection</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://tgmflbglhmnrliredlbn.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsamhtbnJsaXJlZGxibiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzM1NjY4Mjg1LCJleHAiOjIwNTEyNDQyODV9.4_2zNpZhqJF5PFLbJUhb5yDLCFBXJEoGiUGGxUx4fZM';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function showResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'warning';
+            results.innerHTML += `<p class="${className}">${message}</p>`;
+        }
+        
+        async function testDatabaseConnection() {
+            document.getElementById('results').innerHTML = '<h2>🔍 Testing Database Connection...</h2>';
+            try {
+                const { data, error } = await supabase.from('communities').select('id').limit(1);
+                if (error) {
+                    showResult(`❌ Database connection failed: ${error.message}`, 'error');
+                } else {
+                    showResult('✅ Database connection successful', 'success');
+                }
+            } catch (err) {
+                showResult(`❌ Database connection error: ${err.message}`, 'error');
+            }
+        }
+        
+        async function testResourcesTables() {
+            document.getElementById('results').innerHTML = '<h2>🔍 Testing Resources Tables...</h2>';
+            
+            const tables = [
+                'resource_categories',
+                'community_resources', 
+                'resource_tags',
+                'resource_tag_assignments',
+                'resource_ratings',
+                'resource_bookmarks',
+                'resource_reports'
+            ];
+            
+            let existingTables = 0;
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase.from(table).select('*').limit(1);
+                    if (error) {
+                        showResult(`❌ Table ${table}: ${error.message}`, 'error');
+                    } else {
+                        showResult(`✅ Table ${table}: EXISTS`, 'success');
+                        existingTables++;
+                    }
+                } catch (err) {
+                    showResult(`❌ Table ${table}: ${err.message}`, 'error');
+                }
+            }
+            
+            if (existingTables === 0) {
+                showResult('🚨 CRITICAL: No Resources tables found! Migration needs to be applied.', 'error');
+                showResult('📋 Solution: Apply the migration from supabase/migrations/20250815000000_add_community_resources.sql', 'warning');
+            } else if (existingTables < tables.length) {
+                showResult(`⚠️ WARNING: Only ${existingTables}/${tables.length} tables exist. Partial migration applied.`, 'warning');
+            } else {
+                showResult('🎉 SUCCESS: All Resources tables exist!', 'success');
+            }
+        }
+        
+        async function testResourceCategories() {
+            document.getElementById('results').innerHTML = '<h2>🔍 Testing Resource Categories...</h2>';
+            try {
+                const { data, error } = await supabase
+                    .from('resource_categories')
+                    .select('*')
+                    .order('name');
+                    
+                if (error) {
+                    showResult(`❌ Resource categories test failed: ${error.message}`, 'error');
+                    if (error.message.includes('does not exist')) {
+                        showResult('💡 This confirms the migration has not been applied.', 'warning');
+                    }
+                } else if (data && data.length > 0) {
+                    showResult(`✅ Resource categories found: ${data.length} categories`, 'success');
+                    data.forEach(category => {
+                        showResult(`   📂 ${category.name} (${category.description})`, 'info');
+                    });
+                } else {
+                    showResult('⚠️ Resource categories table exists but is empty', 'warning');
+                }
+            } catch (err) {
+                showResult(`❌ Resource categories error: ${err.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
