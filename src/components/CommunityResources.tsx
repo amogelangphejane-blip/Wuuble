@@ -132,6 +132,9 @@ export const CommunityResources = ({
       .select(`
         *,
         category:resource_categories(id, name, color, icon),
+        tags:resource_tag_assignments(
+          tag:resource_tags(id, name)
+        ),
         profiles(display_name, avatar_url)
       `)
       .eq('community_id', communityId)
