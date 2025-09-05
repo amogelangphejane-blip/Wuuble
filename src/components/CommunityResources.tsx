@@ -132,7 +132,10 @@ export const CommunityResources = ({
       .select(`
         *,
         category:resource_categories(id, name, color, icon),
-        profiles(display_name, avatar_url)
+        profiles(display_name, avatar_url),
+        tags:resource_tag_assignments(
+          resource_tags(id, name)
+        )
       `)
       .eq('community_id', communityId)
       .eq('is_approved', true);
@@ -240,7 +243,10 @@ export const CommunityResources = ({
 
           // Process tags
           const tags = resource.tags
-            ?.map((tagAssignment: any) => tagAssignment.tag)
+            ?.map((tagAssignment: any) => ({
+              id: tagAssignment.resource_tags.id,
+              name: tagAssignment.resource_tags.name
+            }))
             .filter(Boolean) || [];
 
           return {
@@ -306,7 +312,10 @@ export const CommunityResources = ({
         .select(`
           *,
           category:resource_categories(id, name, color, icon),
-          profiles!community_resources_user_id_fkey(display_name, avatar_url)
+          profiles!community_resources_user_id_fkey(display_name, avatar_url),
+          tags:resource_tag_assignments(
+            resource_tags(id, name)
+          )
         `)
         .single();
 
