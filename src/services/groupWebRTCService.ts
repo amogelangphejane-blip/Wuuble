@@ -430,6 +430,14 @@ export class GroupWebRTCService {
     this.closePeerConnection(participantId);
   }
 
+  hasParticipant(participantId: string): boolean {
+    return this.participants.has(participantId);
+  }
+
+  getLocalStream(): MediaStream | null {
+    return this.localStream;
+  }
+
   updateParticipant(participantId: string, updates: Partial<GroupParticipant>): void {
     const participant = this.participants.get(participantId);
     if (participant) {

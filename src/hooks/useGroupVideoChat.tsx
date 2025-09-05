@@ -338,6 +338,14 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
           if (webRTCServiceRef.current) {
             console.log('📡 Adding participant to WebRTC service and creating peer connection');
             webRTCServiceRef.current.addParticipant(participantData);
+            
+            // Ensure local media is available before creating peer connection
+            if (!webRTCServiceRef.current.getLocalStream()) {
+              console.log('🎥 Initializing local media for new participant connection');
+              await webRTCServiceRef.current.initializeLocalMedia();
+            }
+            
+            // Create peer connection and send offer
             await webRTCServiceRef.current.createPeerConnection(participantId, participantData.userId, true);
             const offer = await webRTCServiceRef.current.createOffer(participantId);
             signalingServiceRef.current?.sendGroupOffer(offer, participantId);
@@ -350,6 +358,19 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
           if (webRTCServiceRef.current) {
             const fromParticipant = signalingServiceRef.current?.getParticipant(fromParticipantId);
             if (fromParticipant) {
+              console.log('🤝 Received offer from participant:', fromParticipantId);
+              
+              // Ensure we have the participant in our WebRTC service
+              if (!webRTCServiceRef.current.hasParticipant(fromParticipantId)) {
+                webRTCServiceRef.current.addParticipant(fromParticipant);
+              }
+              
+              // Ensure local media is available
+              if (!webRTCServiceRef.current.getLocalStream()) {
+                console.log('🎥 Initializing local media for offer response');
+                await webRTCServiceRef.current.initializeLocalMedia();
+              }
+              
               await webRTCServiceRef.current.createPeerConnection(fromParticipantId, fromParticipant.userId, false);
               await webRTCServiceRef.current.setRemoteDescription(fromParticipantId, offer);
               const answer = await webRTCServiceRef.current.createAnswer(fromParticipantId);
@@ -481,12 +502,19 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
 
       setCurrentCall(newCall);
 
+      // Initialize local media first
+      setCameraPermission('pending');
+      await webRTCServiceRef.current.initializeLocalMedia();
+      setCameraPermission('granted');
+
       // Join the group call
       const groupId = `community-${communityId}-call-${newCall.id}`;
-      signalingServiceRef.current.joinGroup(groupId, {
+      const hostParticipant = {
         ...localParticipant,
-        role: 'host'
-      });
+        role: 'host' as const
+      };
+      console.log('🎬 Starting call and joining group as host:', hostParticipant);
+      signalingServiceRef.current.joinGroup(groupId, hostParticipant);
 
       // Add self as participant in database
       const { error: participantError } = await supabase
@@ -579,14 +607,19 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
 
       setCurrentCall(call);
 
-      // Initialize local media
+      // Initialize local media first
       setCameraPermission('pending');
       await webRTCServiceRef.current.initializeLocalMedia();
       setCameraPermission('granted');
 
-      // Join the group call
+      // Join the group call with updated participant data
       const groupId = `community-${communityId}-call-${callId}`;
-      signalingServiceRef.current.joinGroup(groupId, localParticipant);
+      const updatedParticipant = {
+        ...localParticipant,
+        role: 'participant' as const
+      };
+      console.log('🚪 Joining group with participant data:', updatedParticipant);
+      signalingServiceRef.current.joinGroup(groupId, updatedParticipant);
 
       // Add self as participant in database
       const { error: participantError } = await supabase
