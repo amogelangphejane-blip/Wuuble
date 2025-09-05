@@ -249,7 +249,11 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
           setParticipants(prev => {
             const filtered = prev.filter(p => p.id !== participant.id);
             const updated = [...filtered, participant];
-            console.log('🔄 Updated participants list:', updated.map(p => ({ id: p.id, name: p.displayName })));
+            console.log('🔄 Updated participants list:', {
+              previousCount: prev.length,
+              newCount: updated.length,
+              participants: updated.map(p => ({ id: p.id, name: p.displayName }))
+            });
             return updated;
           });
           toast({
@@ -333,7 +337,11 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       // Initialize signaling service
       const signalingEvents: GroupSignalingEvents = {
         onParticipantJoined: async (participantId, participantData) => {
-          console.log('🔄 Signaling: Participant joined event received:', { participantId, participantData });
+          console.log('🔄 Signaling: Participant joined event received:', { 
+            participantId, 
+            participantData,
+            currentParticipants: participants.length
+          });
           // Add participant to WebRTC service
           if (webRTCServiceRef.current) {
             console.log('📡 Adding participant to WebRTC service and creating peer connection');
@@ -517,6 +525,12 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       signalingServiceRef.current.joinGroup(groupId, hostParticipant);
 
       // Add self as participant in database
+      console.log('📝 Adding host participant to database:', {
+        call_id: newCall.id,
+        user_id: user.id,
+        role: 'host'
+      });
+      
       const { error: participantError } = await supabase
         .from('community_group_call_participants')
         .insert({
@@ -528,6 +542,8 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       if (participantError) {
         console.warn('Failed to add participant record:', participantError);
         // Don't fail the entire call for this
+      } else {
+        console.log('✅ Successfully added host participant to database');
       }
 
       setCallStatus('connected');
@@ -622,6 +638,12 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       signalingServiceRef.current.joinGroup(groupId, updatedParticipant);
 
       // Add self as participant in database
+      console.log('📝 Adding participant to database:', {
+        call_id: callId,
+        user_id: user.id,
+        role: 'participant'
+      });
+      
       const { error: participantError } = await supabase
         .from('community_group_call_participants')
         .insert({
@@ -633,6 +655,8 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       if (participantError) {
         console.warn('Failed to add participant record:', participantError);
         // Don't fail the entire call for this
+      } else {
+        console.log('✅ Successfully added participant to database');
       }
 
       setCallStatus('connected');

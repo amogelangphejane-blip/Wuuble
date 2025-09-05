@@ -459,6 +459,14 @@ export const GroupVideoChat: React.FC<GroupVideoChatProps> = ({
 
   // Calculate grid layout
   const totalParticipants = participants.length + (localParticipant ? 1 : 0);
+  console.log('🎥 Participant count debug:', {
+    participantsArray: participants.length,
+    hasLocalParticipant: !!localParticipant,
+    totalParticipants,
+    participants: participants.map(p => ({ id: p.id, name: p.displayName })),
+    localParticipant: localParticipant ? { id: localParticipant.id, name: localParticipant.displayName } : null
+  });
+  
   const getGridCols = () => {
     if (totalParticipants <= 1) return 1;
     if (totalParticipants <= 4) return 2;
