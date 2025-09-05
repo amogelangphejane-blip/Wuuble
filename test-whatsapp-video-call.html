@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Video Call Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .test-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .success { background: rgba(34, 197, 94, 0.3); border: 1px solid rgba(34, 197, 94, 0.5); }
+        .error { background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); }
+        .warning { background: rgba(251, 191, 36, 0.3); border: 1px solid rgba(251, 191, 36, 0.5); }
+        .info { background: rgba(59, 130, 246, 0.3); border: 1px solid rgba(59, 130, 246, 0.5); }
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            border-left: 4px solid #25D366;
+        }
+        button {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #20B358;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .file-list {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .file-item {
+            padding: 8px;
+            margin: 4px 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .checklist li:before {
+            content: '✅ ';
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 WhatsApp Video Call Integration Test</h1>
+        <p>Testing the WhatsApp-style video call feature integration</p>
+
+        <div class="test-section">
+            <h2>📋 Integration Checklist</h2>
+            <ul class="checklist">
+                <li>WhatsAppVideoCall.tsx component created</li>
+                <li>useWhatsAppVideoCall.tsx hook created</li>
+                <li>whatsapp-video-call.css styles created</li>
+                <li>QuickAccess.tsx updated with WhatsApp integration</li>
+                <li>Console logging added for debugging</li>
+                <li>Test buttons added to QuickAccess</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>📁 Created Files</h2>
+            <div class="file-list">
+                <div class="file-item">✅ /src/components/WhatsAppVideoCall.tsx (22KB, 617 lines)</div>
+                <div class="file-item">✅ /src/hooks/useWhatsAppVideoCall.tsx (1.4KB, 73 lines)</div>
+                <div class="file-item">✅ /src/styles/whatsapp-video-call.css (3.3KB, 185 lines)</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Modified Files</h2>
+            <div class="file-list">
+                <div class="file-item">✅ /src/components/QuickAccess.tsx - Added WhatsApp imports and integration</div>
+                <div class="file-item">✅ Added WhatsApp video call state management</div>
+                <div class="file-item">✅ Added "Test WhatsApp Call" button</div>
+                <div class="file-item">✅ Updated "Start Group Call" to use WhatsApp interface</div>
+                <div class="file-item">✅ Updated join call buttons to use WhatsApp interface</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Testing Instructions</h2>
+            
+            <div class="status info">
+                <strong>Step 1:</strong> Navigate to a community page where you're a member
+            </div>
+            
+            <div class="status info">
+                <strong>Step 2:</strong> Look for the QuickAccess section with video chat options
+            </div>
+            
+            <div class="status info">
+                <strong>Step 3:</strong> You should see these buttons:
+                <ul>
+                    <li>"Test WhatsApp Call" - Green outlined button</li>
+                    <li>"Start Group Call" - Main blue button</li>
+                </ul>
+            </div>
+            
+            <div class="status info">
+                <strong>Step 4:</strong> Click either button to trigger WhatsApp-style interface
+            </div>
+            
+            <div class="status info">
+                <strong>Step 5:</strong> Check browser console for debug logs:
+                <div class="code-block">🎥 WhatsApp Video Call - Starting call: { communityId, contactName, ... }
+🎥 QuickAccess - WhatsApp call state: { isOpen: true, ... }
+🎥 WhatsApp Video Call Component Rendered: { ... }</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎨 Expected WhatsApp Interface</h2>
+            
+            <div class="status success">
+                <strong>Pre-call Screen:</strong>
+                <ul>
+                    <li>WhatsApp green gradient background</li>
+                    <li>Contact avatar and name</li>
+                    <li>Audio and video call buttons</li>
+                    <li>Smooth animations</li>
+                </ul>
+            </div>
+            
+            <div class="status warning">
+                <strong>If nothing appears:</strong>
+                <ul>
+                    <li>Check browser console for errors</li>
+                    <li>Ensure you're on a community page as a member</li>
+                    <li>Try refreshing the page</li>
+                    <li>Check network tab for failed imports</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Debugging</h2>
+            
+            <div class="status error">
+                <strong>Common Issues:</strong>
+            </div>
+            
+            <div class="code-block">
+// Check if components exist
+console.log('WhatsApp Component:', WhatsAppVideoCall);
+console.log('WhatsApp Hook:', useWhatsAppVideoCall);
+
+// Check CSS import
+console.log('CSS loaded:', document.querySelector('[href*="whatsapp-video-call.css"]'));
+
+// Check button clicks
+document.addEventListener('click', (e) => {
+    if (e.target.textContent.includes('WhatsApp')) {
+        console.log('WhatsApp button clicked!');
+    }
+});
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Integration Status</h2>
+            
+            <div class="status success">
+                <strong>COMPLETED:</strong> WhatsApp-style video call integration
+            </div>
+            
+            <div class="status info">
+                <strong>Next Steps:</strong>
+                <ul>
+                    <li>Test the interface on a community page</li>
+                    <li>Verify console logs appear when clicking buttons</li>
+                    <li>Check that WhatsApp-style overlay appears</li>
+                    <li>Test call functionality and controls</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Key Changes Made</h2>
+            
+            <div class="code-block">
+// QuickAccess.tsx - Main integration
+import { WhatsAppVideoCall } from '@/components/WhatsAppVideoCall';
+import { useWhatsAppVideoCall } from '@/hooks/useWhatsAppVideoCall';
+
+// WhatsApp call state
+const { callState, startCall, joinCall, minimizeCall, maximizeCall, endCall } = useWhatsAppVideoCall();
+
+// Render WhatsApp component when active
+{callState.isOpen && (
+  &lt;WhatsAppVideoCall
+    communityId={callState.communityId!}
+    callId={callState.callId}
+    contactName={callState.contactName}
+    contactAvatar={callState.contactAvatar}
+    isMinimized={callState.isMinimized}
+    onClose={endCall}
+    onMinimize={minimizeCall}
+    onMaximize={maximizeCall}
+  /&gt;
+)}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some client-side debugging
+        console.log('🎥 WhatsApp Video Call Test Page Loaded');
+        
+        // Check if we're in the right environment
+        if (window.location.pathname.includes('communities')) {
+            console.log('✅ On community page - good for testing');
+        } else {
+            console.log('⚠️ Not on community page - navigate to a community to test');
+        }
+        
+        // Monitor for WhatsApp component
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1 && node.classList && 
+                        (node.classList.contains('whatsapp-gradient-green') || 
+                         node.classList.contains('whatsapp-fade-in'))) {
+                        console.log('🎉 WhatsApp Video Call Interface Detected!', node);
+                    }
+                });
+            });
+        });
+        
+        observer.observe(document.body, { childList: true, subtree: true });
+        
+        // Test button functionality
+        setTimeout(() => {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                if (button.textContent.includes('WhatsApp') || button.textContent.includes('Group Call')) {
+                    console.log('Found WhatsApp/Group Call button:', button.textContent);
+                }
+            });
+        }, 2000);
+    </script>
+</body>
+</html>

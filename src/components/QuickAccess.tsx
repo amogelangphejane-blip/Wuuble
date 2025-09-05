@@ -64,6 +64,9 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
   
   // WhatsApp-style video call state
   const { callState, startCall, joinCall, minimizeCall, maximizeCall, endCall } = useWhatsAppVideoCall();
+  
+  // Debug logging
+  console.log('🎥 QuickAccess - WhatsApp call state:', callState);
 
   // Fetch ongoing calls
   const fetchOngoingCalls = async () => {
@@ -224,12 +227,41 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
         <CardContent className="space-y-4">
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Debug WhatsApp Call Button */}
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="h-16 flex-col gap-2 border-green-500 text-green-600 hover:bg-green-50"
+              onClick={() => startCall({
+                communityId,
+                contactName: `${communityName} Video Call`,
+                contactAvatar: undefined,
+              })}
+            >
+              <Video className="w-6 h-6" />
+              <span>Test WhatsApp Call</span>
+            </Button>
             {/* Create Group Call */}
+            <Button 
+              size="lg" 
+              className="h-16 flex-col gap-2"
+              onClick={() => startCall({
+                communityId,
+                contactName: `${communityName} Group Call`,
+                contactAvatar: undefined,
+              })}
+            >
+              <Users className="w-6 h-6" />
+              <span>Start Group Call</span>
+            </Button>
+            
+            {/* Original Dialog (Hidden) */}
             <Dialog open={createCallDialogOpen} onOpenChange={setCreateCallDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="lg" className="h-16 flex-col gap-2">
+                <Button size="lg" className="h-16 flex-col gap-2 hidden">
                   <Users className="w-6 h-6" />
-                  <span>Start Group Call</span>
+                  <span>Start Group Call (Old)</span>
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -350,7 +382,12 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
                           </Badge>
                           <Button 
                             size="sm"
-                            onClick={() => joinWhatsAppCall(call)}
+                            onClick={() => joinCall({
+                              communityId,
+                              callId: call.id,
+                              contactName: call.title,
+                              contactAvatar: call.creator_profile?.avatar_url || undefined,
+                            })}
                             className="bg-green-600 hover:bg-green-700"
                           >
                             <UserPlus className="w-4 h-4 mr-2" />

@@ -21,6 +21,7 @@ export const useWhatsAppVideoCall = () => {
     contactAvatar?: string;
     callId?: string;
   }) => {
+    console.log('🎥 WhatsApp Video Call - Starting call:', params);
     setCallState({
       isOpen: true,
       isMinimized: false,
@@ -34,6 +35,7 @@ export const useWhatsAppVideoCall = () => {
     contactName?: string;
     contactAvatar?: string;
   }) => {
+    console.log('🎥 WhatsApp Video Call - Joining call:', params);
     setCallState({
       isOpen: true,
       isMinimized: false,

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import '@/styles/whatsapp-video-call.css';
+import '../styles/whatsapp-video-call.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -62,6 +62,12 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
   contactAvatar,
   ...options
 }) => {
+  console.log('🎥 WhatsApp Video Call Component Rendered:', {
+    communityId,
+    callId,
+    contactName,
+    isMinimized
+  });
   const [callState, setCallState] = useState<CallState>('idle');
   const [showControls, setShowControls] = useState(true);
   const [controlsTimeout, setControlsTimeout] = useState<NodeJS.Timeout | null>(null);
