@@ -325,15 +325,15 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
               </DialogContent>
             </Dialog>
 
-            {/* Random Video Chat */}
+            {/* Random Messaging */}
             <Button 
               size="lg" 
               variant="outline" 
               className="h-16 flex-col gap-2"
-              onClick={startRandomVideoChat}
+              onClick={() => navigate('/random-messaging')}
             >
-              <Phone className="w-6 h-6" />
-              <span>Random Video Chat</span>
+              <MessageCircle className="w-6 h-6" />
+              <span>Random Messaging</span>
             </Button>
           </div>
 
@@ -438,7 +438,7 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
               <h4 className="font-semibold mb-2">Quick Access Features</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• Start group video calls with community members</li>
-                <li>• Join random video chats with other users</li>
+                <li>• Connect via random text messaging with global users</li>
                 <li>• Quick navigation to discussions and events</li>
                 <li>• Real-time activity updates</li>
 
