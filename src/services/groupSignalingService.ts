@@ -174,125 +174,242 @@ export class GroupSignalingService extends SignalingService {
   }
 }
 
-// Mock implementation for group signaling
+// Cross-tab compatible mock implementation for group signaling
 export class MockGroupSignalingService extends GroupSignalingService {
-  private static groups: Map<string, MockGroupSignalingService[]> = new Map();
-  private static instances: MockGroupSignalingService[] = [];
+  private broadcastChannel: BroadcastChannel | null = null;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private lastHeartbeat: number = Date.now();
 
   constructor(participantId: string, events: GroupSignalingEvents = {}) {
     super('ws://localhost:8080', participantId, events);
-    MockGroupSignalingService.instances.push(this);
   }
 
   async connect(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Initialize BroadcastChannel for cross-tab communication
+    try {
+      this.broadcastChannel = new BroadcastChannel('group-video-signaling');
+      this.broadcastChannel.onmessage = (event) => {
+        this.handleBroadcastMessage(event.data);
+      };
+      
+      console.log(`🔌 Mock group signaling connected for participant ${this.participantId} with cross-tab support`);
+      
+      // Start heartbeat to maintain presence
+      this.startHeartbeat();
+      
+    } catch (error) {
+      console.warn('BroadcastChannel not supported, falling back to single-tab mode:', error);
+    }
+    
     this.groupEvents.onConnected?.();
-    console.log(`Mock group signaling connected for participant ${this.participantId}`);
+  }
+
+  private startHeartbeat(): void {
+    this.heartbeatInterval = setInterval(() => {
+      if (this.groupId && this.broadcastChannel) {
+        this.broadcastMessage({
+          type: 'heartbeat',
+          participantId: this.participantId,
+          groupId: this.groupId,
+          timestamp: Date.now()
+        });
+      }
+    }, 5000); // Send heartbeat every 5 seconds
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+  }
+
+  private broadcastMessage(message: any): void {
+    if (this.broadcastChannel) {
+      try {
+        this.broadcastChannel.postMessage(message);
+      } catch (error) {
+        console.warn('Failed to broadcast message:', error);
+      }
+    }
+  }
+
+  private handleBroadcastMessage(message: any): void {
+    // Ignore messages from self
+    if (message.participantId === this.participantId) {
+      return;
+    }
+
+    // Only handle messages for our group
+    if (message.groupId !== this.groupId) {
+      return;
+    }
+
+    console.log(`📡 Received broadcast message:`, message);
+
+    switch (message.type) {
+      case 'participant-joined':
+        if (message.participantData) {
+          console.log(`👋 Cross-tab participant joined: ${message.participantId}`);
+          this.participants.set(message.participantId, message.participantData);
+          this.groupEvents.onParticipantJoined?.(message.participantId, message.participantData);
+          
+          // Send our own info to the new participant
+          setTimeout(() => {
+            this.broadcastMessage({
+              type: 'participant-info',
+              participantId: this.participantId,
+              groupId: this.groupId,
+              participantData: this.participants.get(this.participantId),
+              targetParticipant: message.participantId
+            });
+          }, 100);
+        }
+        break;
+        
+      case 'participant-info':
+        // Only process if this message is for us
+        if (message.targetParticipant === this.participantId && message.participantData) {
+          console.log(`📝 Received participant info: ${message.participantId}`);
+          this.participants.set(message.participantId, message.participantData);
+          this.groupEvents.onParticipantJoined?.(message.participantId, message.participantData);
+        }
+        break;
+        
+      case 'participant-left':
+        console.log(`👋 Cross-tab participant left: ${message.participantId}`);
+        this.participants.delete(message.participantId);
+        this.groupEvents.onParticipantLeft?.(message.participantId);
+        break;
+        
+      case 'participant-update':
+        if (message.updates) {
+          const existing = this.participants.get(message.participantId);
+          if (existing) {
+            Object.assign(existing, message.updates);
+            this.participants.set(message.participantId, existing);
+            this.groupEvents.onParticipantUpdated?.(message.participantId, message.updates);
+          }
+        }
+        break;
+        
+      case 'signaling-message':
+        // Forward signaling messages
+        if (message.signalingData) {
+          const signalingMessage: GroupSignalingMessage = {
+            ...message.signalingData,
+            from: message.participantId
+          };
+          this.handleMessage(signalingMessage);
+        }
+        break;
+        
+      case 'heartbeat':
+        // Update last seen time for participant
+        const participant = this.participants.get(message.participantId);
+        if (participant) {
+          participant.lastSeen = message.timestamp;
+        }
+        break;
+        
+      case 'request-participants':
+        // Send our participant info to the requester
+        const ourParticipantData = this.participants.get(this.participantId);
+        if (ourParticipantData) {
+          setTimeout(() => {
+            this.broadcastMessage({
+              type: 'participant-info',
+              participantId: this.participantId,
+              groupId: this.groupId,
+              participantData: ourParticipantData,
+              targetParticipant: message.participantId
+            });
+          }, 50 + Math.random() * 100); // Add some jitter to avoid message flooding
+        }
+        break;
+    }
   }
 
   joinGroup(groupId: string, participantData: any): void {
     this.groupId = groupId;
-    
-    // Get or create group
-    if (!MockGroupSignalingService.groups.has(groupId)) {
-      MockGroupSignalingService.groups.set(groupId, []);
-    }
-    
-    const groupMembers = MockGroupSignalingService.groups.get(groupId)!;
-    
-    // Add this participant to the group
-    groupMembers.push(this);
     this.participants.set(this.participantId, participantData);
     
-    // Notify existing participants about new joiner
-    groupMembers.forEach(member => {
-      if (member !== this) {
-        setTimeout(() => {
-          member.groupEvents.onParticipantJoined?.(this.participantId, participantData);
-        }, 100);
-      }
+    console.log(`🚪 Joining group: ${groupId} with cross-tab support`);
+    
+    // Broadcast join to other tabs
+    this.broadcastMessage({
+      type: 'participant-joined',
+      participantId: this.participantId,
+      groupId: groupId,
+      participantData: participantData
     });
     
-    // Notify new joiner about existing participants
-    groupMembers.forEach(member => {
-      if (member !== this) {
-        const existingParticipantData = member.participants.get(member.participantId);
-        if (existingParticipantData) {
-          setTimeout(() => {
-            this.groupEvents.onParticipantJoined?.(member.participantId, existingParticipantData);
-          }, 150);
-        }
-      }
-    });
+    // Request existing participants info
+    setTimeout(() => {
+      this.broadcastMessage({
+        type: 'request-participants',
+        participantId: this.participantId,
+        groupId: groupId
+      });
+    }, 200);
   }
 
   leaveGroup(): void {
     if (!this.groupId) return;
     
-    const groupMembers = MockGroupSignalingService.groups.get(this.groupId);
-    if (groupMembers) {
-      // Remove from group
-      const index = groupMembers.indexOf(this);
-      if (index > -1) {
-        groupMembers.splice(index, 1);
-      }
-      
-      // Notify other participants
-      groupMembers.forEach(member => {
-        setTimeout(() => {
-          member.groupEvents.onParticipantLeft?.(this.participantId);
-        }, 50);
-      });
-      
-      // Clean up empty group
-      if (groupMembers.length === 0) {
-        MockGroupSignalingService.groups.delete(this.groupId);
-      }
-    }
+    console.log(`🚪 Leaving group: ${this.groupId}`);
+    
+    // Broadcast leave to other tabs
+    this.broadcastMessage({
+      type: 'participant-left',
+      participantId: this.participantId,
+      groupId: this.groupId
+    });
     
     this.groupId = null;
     this.participants.clear();
+    this.stopHeartbeat();
   }
 
   sendMessage(message: GroupSignalingMessage): void {
     if (!this.groupId) return;
     
-    const groupMembers = MockGroupSignalingService.groups.get(this.groupId);
-    if (!groupMembers) return;
-    
-    const messageWithMetadata: GroupSignalingMessage = {
-      ...message,
-      from: this.participantId,
-      timestamp: Date.now()
-    };
-    
-    if (message.to) {
-      // Send to specific participant
-      const targetMember = groupMembers.find(member => member.participantId === message.to);
-      if (targetMember) {
-        setTimeout(() => {
-          targetMember.handleMessage(messageWithMetadata);
-        }, 50 + Math.random() * 100);
+    // Broadcast signaling message to other tabs
+    this.broadcastMessage({
+      type: 'signaling-message',
+      participantId: this.participantId,
+      groupId: this.groupId,
+      signalingData: message
+    });
+  }
+
+  sendParticipantUpdate(updates: any): void {
+    if (this.groupId) {
+      // Update local participant data
+      const participant = this.participants.get(this.participantId);
+      if (participant) {
+        Object.assign(participant, updates);
       }
-    } else {
-      // Broadcast to all other participants
-      groupMembers.forEach(member => {
-        if (member !== this) {
-          setTimeout(() => {
-            member.handleMessage(messageWithMetadata);
-          }, 50 + Math.random() * 100);
-        }
+      
+      // Broadcast update to other tabs
+      this.broadcastMessage({
+        type: 'participant-update',
+        participantId: this.participantId,
+        groupId: this.groupId,
+        updates: updates
       });
     }
   }
 
   disconnect(): void {
     this.leaveGroup();
+    this.stopHeartbeat();
     
-    // Remove from instances
-    const index = MockGroupSignalingService.instances.indexOf(this);
-    if (index > -1) {
-      MockGroupSignalingService.instances.splice(index, 1);
+    if (this.broadcastChannel) {
+      this.broadcastChannel.close();
+      this.broadcastChannel = null;
     }
     
     this.groupEvents.onDisconnected?.();
@@ -302,13 +419,13 @@ export class MockGroupSignalingService extends GroupSignalingService {
     return true; // Always connected in mock mode
   }
 
-  static getActiveGroups(): string[] {
-    return Array.from(MockGroupSignalingService.groups.keys());
+  getActiveGroups(): string[] {
+    // This would need to be implemented with shared storage in a real cross-tab scenario
+    return this.groupId ? [this.groupId] : [];
   }
 
-  static getGroupParticipantCount(groupId: string): number {
-    const group = MockGroupSignalingService.groups.get(groupId);
-    return group ? group.length : 0;
+  getGroupParticipantCount(): number {
+    return this.participants.size;
   }
 }
 

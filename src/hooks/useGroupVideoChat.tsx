@@ -154,7 +154,13 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
           setParticipantStreams(prev => new Map(prev.set(participantId, stream)));
         },
         onParticipantJoined: (participant) => {
-          setParticipants(prev => [...prev.filter(p => p.id !== participant.id), participant]);
+          console.log('🎉 Participant joined via WebRTC events:', participant);
+          setParticipants(prev => {
+            const filtered = prev.filter(p => p.id !== participant.id);
+            const updated = [...filtered, participant];
+            console.log('🔄 Updated participants list:', updated.map(p => ({ id: p.id, name: p.displayName })));
+            return updated;
+          });
           toast({
             title: "Participant Joined",
             description: `${participant.displayName} joined the call`,
@@ -214,8 +220,10 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       // Initialize signaling service
       const signalingEvents: GroupSignalingEvents = {
         onParticipantJoined: async (participantId, participantData) => {
+          console.log('🔄 Signaling: Participant joined event received:', { participantId, participantData });
           // Add participant to WebRTC service
           if (webRTCServiceRef.current) {
+            console.log('📡 Adding participant to WebRTC service and creating peer connection');
             webRTCServiceRef.current.addParticipant(participantData);
             await webRTCServiceRef.current.createPeerConnection(participantId, participantData.userId, true);
             const offer = await webRTCServiceRef.current.createOffer(participantId);
