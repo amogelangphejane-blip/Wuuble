@@ -206,10 +206,9 @@ export class MockSignalingService extends SignalingService {
   joinRoom(roomId: string): void {
     this.roomId = roomId;
     
-    // Find another user looking for a partner
+    // Find another user looking for a partner (only check if they don't have a partner, ignore roomId)
     const availablePartner = MockSignalingService.instances.find(
       instance => instance !== this && 
-      instance.roomId === null && 
       instance.partner === null
     );
 
@@ -219,22 +218,52 @@ export class MockSignalingService extends SignalingService {
       availablePartner.partner = this;
       availablePartner.roomId = roomId;
       
+      console.log(`🔗 Mock signaling: User ${this.userId} matched with ${availablePartner.userId} in room ${roomId}`);
+      
       // Simulate user joined events with realistic delay
       setTimeout(() => {
         this.events.onUserJoined?.(availablePartner.userId);
         availablePartner.events.onUserJoined?.(this.userId);
-      }, 1000 + Math.random() * 2000); // 1-3 second delay
+      }, 500 + Math.random() * 1000); // Reduced delay for better UX: 0.5-1.5 seconds
     } else {
-      // Simulate finding a partner after some time (for demo purposes)
-      // In a real app, this would wait for another user to join
-      setTimeout(() => {
-        // Check if we still need a partner and haven't been disconnected
+      console.log(`⏳ Mock signaling: User ${this.userId} waiting for partner in room ${roomId}`);
+      
+      // Check periodically for new partners instead of creating fake ones
+      const checkForPartner = () => {
         if (this.roomId === roomId && !this.partner) {
-          // Create a mock partner for demo purposes
+          const newPartner = MockSignalingService.instances.find(
+            instance => instance !== this && 
+            instance.partner === null &&
+            instance.roomId !== null // Only match with users who are also looking
+          );
+          
+          if (newPartner) {
+            this.partner = newPartner;
+            newPartner.partner = this;
+            newPartner.roomId = roomId;
+            
+            console.log(`🔗 Mock signaling: User ${this.userId} found delayed match with ${newPartner.userId}`);
+            
+            this.events.onUserJoined?.(newPartner.userId);
+            newPartner.events.onUserJoined?.(this.userId);
+          } else {
+            // Continue checking for real partners, only create demo partner after longer wait
+            setTimeout(checkForPartner, 1000);
+          }
+        }
+      };
+      
+      // Start checking after a short delay
+      setTimeout(checkForPartner, 1000);
+      
+      // Only create a demo partner if no real partner is found after 10 seconds
+      setTimeout(() => {
+        if (this.roomId === roomId && !this.partner) {
+          console.log(`🤖 Mock signaling: Creating demo partner for ${this.userId} (no real users available)`);
           const mockPartnerId = 'demo-partner-' + Math.random().toString(36).substr(2, 9);
           this.events.onUserJoined?.(mockPartnerId);
         }
-      }, 3000 + Math.random() * 5000); // 3-8 second delay for demo partner
+      }, 10000); // Increased timeout to 10 seconds to give real users more time to connect
     }
   }
 

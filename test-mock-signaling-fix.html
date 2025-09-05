@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Signaling Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+        .user-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .user-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Mock Signaling Fix - Direct Test</h1>
+    
+    <div class="test-container">
+        <h2>Test Description</h2>
+        <p>This test directly simulates the fixed MockSignalingService to verify that two users can properly detect and connect to each other.</p>
+        
+        <div class="status info">
+            <strong>Before Fix:</strong> Users would get fake "demo-partner" connections<br>
+            <strong>After Fix:</strong> Users should connect to each other when both are available
+        </div>
+    </div>
+
+    <div class="user-grid">
+        <div class="user-panel">
+            <h3>👤 User A</h3>
+            <div id="userA-status" class="status info">Ready</div>
+            <button onclick="connectUserA()">Connect User A</button>
+            <button onclick="findPartnerA()">Find Partner</button>
+            <button onclick="disconnectUserA()">Disconnect</button>
+        </div>
+        
+        <div class="user-panel">
+            <h3>👤 User B</h3>
+            <div id="userB-status" class="status info">Ready</div>
+            <button onclick="connectUserB()">Connect User B</button>
+            <button onclick="findPartnerB()">Find Partner</button>
+            <button onclick="disconnectUserB()">Disconnect</button>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h3>📊 Test Results</h3>
+        <div id="test-results" class="status info">Click "Run Full Test" to test the fix</div>
+        <button onclick="runFullTest()" style="background: #28a745; font-size: 16px; padding: 15px 30px;">🚀 Run Full Test</button>
+        <button onclick="clearLog()">🗑️ Clear Log</button>
+        
+        <h4>Test Log:</h4>
+        <div id="test-log" class="log">Test not started...</div>
+    </div>
+
+    <script>
+        // Mock the fixed signaling service logic
+        class MockSignalingService {
+            static instances = [];
+            
+            constructor(userId, events = {}) {
+                this.userId = userId;
+                this.events = events;
+                this.partner = null;
+                this.roomId = null;
+                MockSignalingService.instances.push(this);
+                this.log(`Created MockSignalingService for user ${userId}`);
+            }
+            
+            log(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logElement = document.getElementById('test-log');
+                logElement.innerHTML += `[${timestamp}] ${this.userId}: ${message}\n`;
+                logElement.scrollTop = logElement.scrollHeight;
+                console.log(`${this.userId}: ${message}`);
+            }
+            
+            async connect() {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                this.events.onConnected?.();
+                this.log('✅ Connected to mock signaling');
+            }
+            
+            // FIXED VERSION of joinRoom
+            joinRoom(roomId) {
+                this.roomId = roomId;
+                
+                // Find another user looking for a partner (only check if they don't have a partner, ignore roomId)
+                const availablePartner = MockSignalingService.instances.find(
+                    instance => instance !== this && 
+                    instance.partner === null
+                );
+
+                if (availablePartner) {
+                    // Connect with partner
+                    this.partner = availablePartner;
+                    availablePartner.partner = this;
+                    availablePartner.roomId = roomId;
+                    
+                    this.log(`🔗 MATCHED with ${availablePartner.userId} in room ${roomId}`);
+                    availablePartner.log(`🔗 MATCHED with ${this.userId} in room ${roomId}`);
+                    
+                    // Simulate user joined events with realistic delay
+                    setTimeout(() => {
+                        this.events.onUserJoined?.(availablePartner.userId);
+                        availablePartner.events.onUserJoined?.(this.userId);
+                    }, 500 + Math.random() * 1000);
+                } else {
+                    this.log(`⏳ Waiting for partner in room ${roomId}`);
+                    
+                    // Check periodically for new partners
+                    const checkForPartner = () => {
+                        if (this.roomId === roomId && !this.partner) {
+                            const newPartner = MockSignalingService.instances.find(
+                                instance => instance !== this && 
+                                instance.partner === null &&
+                                instance.roomId !== null
+                            );
+                            
+                            if (newPartner) {
+                                this.partner = newPartner;
+                                newPartner.partner = this;
+                                newPartner.roomId = roomId;
+                                
+                                this.log(`🔗 Found delayed match with ${newPartner.userId}`);
+                                newPartner.log(`🔗 Found delayed match with ${this.userId}`);
+                                
+                                this.events.onUserJoined?.(newPartner.userId);
+                                newPartner.events.onUserJoined?.(this.userId);
+                            } else {
+                                setTimeout(checkForPartner, 1000);
+                            }
+                        }
+                    };
+                    
+                    setTimeout(checkForPartner, 1000);
+                    
+                    // Only create demo partner after 10 seconds
+                    setTimeout(() => {
+                        if (this.roomId === roomId && !this.partner) {
+                            this.log(`🤖 Creating demo partner (no real users available)`);
+                            const mockPartnerId = 'demo-partner-' + Math.random().toString(36).substr(2, 9);
+                            this.events.onUserJoined?.(mockPartnerId);
+                        }
+                    }, 10000);
+                }
+            }
+            
+            disconnect() {
+                if (this.partner) {
+                    const partnerId = this.partner.userId;
+                    this.partner.events.onUserLeft?.(this.userId);
+                    this.partner.partner = null;
+                    this.partner.roomId = null;
+                    this.partner = null;
+                    this.events.onUserLeft?.(partnerId);
+                }
+                
+                const index = MockSignalingService.instances.indexOf(this);
+                if (index > -1) {
+                    MockSignalingService.instances.splice(index, 1);
+                }
+                
+                this.log('📡 Disconnected');
+                this.events.onDisconnected?.();
+            }
+        }
+        
+        // Test users
+        let userA = null;
+        let userB = null;
+        let testResults = { userA: null, userB: null };
+        
+        function updateUserStatus(user, message, statusClass = 'info') {
+            const statusElement = document.getElementById(`${user}-status`);
+            statusElement.textContent = message;
+            statusElement.className = `status ${statusClass}`;
+        }
+        
+        function updateTestResults() {
+            const resultsElement = document.getElementById('test-results');
+            
+            if (testResults.userA && testResults.userB) {
+                if (testResults.userA === testResults.userB) {
+                    resultsElement.innerHTML = `<div class="status success">✅ SUCCESS! Both users connected to each other (Partner: ${testResults.userA})</div>`;
+                } else {
+                    resultsElement.innerHTML = `<div class="status error">❌ ISSUE: Users connected to different partners (A: ${testResults.userA}, B: ${testResults.userB})</div>`;
+                }
+            } else if (testResults.userA || testResults.userB) {
+                resultsElement.innerHTML = `<div class="status warning">⚠️ Partial connection: Only one user found a partner</div>`;
+            } else {
+                resultsElement.innerHTML = `<div class="status info">🔄 Test in progress...</div>`;
+            }
+        }
+        
+        async function connectUserA() {
+            if (userA) userA.disconnect();
+            
+            userA = new MockSignalingService('user-A-' + Date.now(), {
+                onConnected: () => {
+                    updateUserStatus('userA', 'Connected', 'success');
+                },
+                onUserJoined: (partnerId) => {
+                    updateUserStatus('userA', `Partner: ${partnerId}`, 'success');
+                    testResults.userA = partnerId;
+                    updateTestResults();
+                },
+                onUserLeft: () => {
+                    updateUserStatus('userA', 'Partner left', 'warning');
+                    testResults.userA = null;
+                    updateTestResults();
+                },
+                onDisconnected: () => {
+                    updateUserStatus('userA', 'Disconnected', 'error');
+                    testResults.userA = null;
+                    updateTestResults();
+                }
+            });
+            
+            await userA.connect();
+        }
+        
+        async function connectUserB() {
+            if (userB) userB.disconnect();
+            
+            userB = new MockSignalingService('user-B-' + Date.now(), {
+                onConnected: () => {
+                    updateUserStatus('userB', 'Connected', 'success');
+                },
+                onUserJoined: (partnerId) => {
+                    updateUserStatus('userB', `Partner: ${partnerId}`, 'success');
+                    testResults.userB = partnerId;
+                    updateTestResults();
+                },
+                onUserLeft: () => {
+                    updateUserStatus('userB', 'Partner left', 'warning');
+                    testResults.userB = null;
+                    updateTestResults();
+                },
+                onDisconnected: () => {
+                    updateUserStatus('userB', 'Disconnected', 'error');
+                    testResults.userB = null;
+                    updateTestResults();
+                }
+            });
+            
+            await userB.connect();
+        }
+        
+        function findPartnerA() {
+            if (userA) {
+                updateUserStatus('userA', 'Searching...', 'warning');
+                userA.joinRoom('test-room-' + Date.now());
+            }
+        }
+        
+        function findPartnerB() {
+            if (userB) {
+                updateUserStatus('userB', 'Searching...', 'warning');
+                userB.joinRoom('test-room-' + Date.now());
+            }
+        }
+        
+        function disconnectUserA() {
+            if (userA) {
+                userA.disconnect();
+                userA = null;
+            }
+        }
+        
+        function disconnectUserB() {
+            if (userB) {
+                userB.disconnect();
+                userB = null;
+            }
+        }
+        
+        async function runFullTest() {
+            clearLog();
+            testResults = { userA: null, userB: null };
+            
+            const logElement = document.getElementById('test-log');
+            logElement.innerHTML = '🚀 Starting full test...\n';
+            
+            try {
+                // Connect both users
+                await connectUserA();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await connectUserB();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Have User A find a partner first
+                findPartnerA();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Have User B find a partner (should connect to User A)
+                findPartnerB();
+                
+                logElement.innerHTML += '✅ Full test initiated. Watch the results above.\n';
+            } catch (error) {
+                logElement.innerHTML += `❌ Test failed: ${error.message}\n`;
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('test-log').innerHTML = '';
+        }
+        
+        // Initialize
+        console.log('Mock Signaling Fix Test initialized');
+    </script>
+</body>
+</html>
