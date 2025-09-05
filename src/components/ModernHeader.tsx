@@ -74,9 +74,15 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
       active: location.pathname.startsWith('/communities')
     },
     {
-      label: 'Chat',
-      href: '/chat',
+      label: 'Random Messaging',
+      href: '/random-messaging',
       icon: MessageCircle,
+      active: location.pathname.startsWith('/random-messaging')
+    },
+    {
+      label: 'Video Chat',
+      href: '/chat',
+      icon: Video,
       active: location.pathname.startsWith('/chat')
     },
     {
@@ -88,7 +94,7 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
     {
       label: 'Live Streams',
       href: '/azar-livestreams',
-      icon: Video,
+      icon: Radio,
       active: location.pathname.startsWith('/azar-livestreams')
     }
   ];

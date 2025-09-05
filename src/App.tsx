@@ -13,6 +13,7 @@ import { registerServiceWorker } from "@/utils/pwaUtils";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
+import RandomMessaging from "./pages/RandomMessaging";
 import Messages from "./pages/Messages";
 import Auth from "./pages/Auth";
 import Communities from "./pages/Communities";
@@ -76,6 +77,7 @@ const App = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/chat" element={<Chat />} />
+                <Route path="/random-messaging" element={<RandomMessaging />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/connect-video-call" element={<ConnectVideoCall />} />
                 <Route path="/auth" element={<Auth />} />
