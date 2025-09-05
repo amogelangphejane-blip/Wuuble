@@ -90,7 +90,6 @@ export const ResourceForm = ({
   editingResource,
   loading = false 
 }: ResourceFormProps) => {
-  console.log('ResourceForm render:', { isOpen, editingResource, communityId });
   const [formData, setFormData] = useState<Resource>({
     title: '',
     description: '',
