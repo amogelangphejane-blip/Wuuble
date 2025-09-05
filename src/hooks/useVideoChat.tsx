@@ -117,10 +117,29 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
   // Initialize services
   const initializeServices = useCallback(async () => {
     try {
-      // Prevent multiple initializations
-      if (webRTCServiceRef.current || signalingServiceRef.current) {
-        console.log('Services already initialized, skipping...');
+      // Prevent multiple initializations - but allow re-initialization if services are broken
+      const hasWorkingSignaling = (socketIOSignalingRef.current?.isConnected() || signalingServiceRef.current?.isConnected());
+      const hasWorkingWebRTC = webRTCServiceRef.current && webRTCServiceRef.current.getLocalStream();
+      
+      if (hasWorkingSignaling && hasWorkingWebRTC) {
+        console.log('Services already initialized and working, skipping...');
         return;
+      }
+      
+      // Clean up any broken services first
+      if (webRTCServiceRef.current && !hasWorkingWebRTC) {
+        console.log('🧹 Cleaning up broken WebRTC service');
+        webRTCServiceRef.current.cleanup();
+        webRTCServiceRef.current = null;
+      }
+      
+      if ((socketIOSignalingRef.current && !socketIOSignalingRef.current.isConnected()) || 
+          (signalingServiceRef.current && !signalingServiceRef.current.isConnected())) {
+        console.log('🧹 Cleaning up broken signaling service');
+        socketIOSignalingRef.current?.disconnect();
+        signalingServiceRef.current?.disconnect();
+        socketIOSignalingRef.current = null;
+        signalingServiceRef.current = null;
       }
 
       // Initialize WebRTC service
@@ -440,23 +459,56 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
         setCameraPermission('pending');
       }
 
-      // Ensure services are initialized
-      const hasSignaling = socketIOSignalingRef.current || signalingServiceRef.current;
-      if (!hasSignaling || !webRTCServiceRef.current) {
+      // Ensure services are initialized with retry logic
+      let hasValidSignaling = (socketIOSignalingRef.current?.isConnected() || signalingServiceRef.current?.isConnected());
+      let hasValidWebRTC = webRTCServiceRef.current && webRTCServiceRef.current.getLocalStream();
+      
+      if (!hasValidSignaling || !hasValidWebRTC) {
         toast({
           title: "Initializing...",
           description: "Setting up video chat services"
         });
-        await initializeServices();
         
-        // Wait a moment for services to be ready
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Try to initialize services up to 2 times
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            console.log(`🔄 Service initialization attempt ${attempt}/2`);
+            await initializeServices();
+            
+            // Wait for services to be ready
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Check if services are now working
+            hasValidSignaling = (socketIOSignalingRef.current?.isConnected() || signalingServiceRef.current?.isConnected());
+            hasValidWebRTC = webRTCServiceRef.current && webRTCServiceRef.current.getLocalStream();
+            
+            if (hasValidSignaling && hasValidWebRTC) {
+              console.log(`✅ Services initialized successfully on attempt ${attempt}`);
+              break;
+            }
+            
+            if (attempt < 2) {
+              console.log(`⚠️ Attempt ${attempt} failed, retrying...`);
+              // Clean up for retry
+              webRTCServiceRef.current?.cleanup();
+              socketIOSignalingRef.current?.disconnect();
+              signalingServiceRef.current?.disconnect();
+              webRTCServiceRef.current = null;
+              socketIOSignalingRef.current = null;
+              signalingServiceRef.current = null;
+            }
+          } catch (initError) {
+            console.error(`❌ Initialization attempt ${attempt} failed:`, initError);
+            if (attempt === 2) {
+              throw new Error(`Failed to initialize services after ${attempt} attempts`);
+            }
+          }
+        }
       }
 
-      // Verify services are ready
-      const hasValidSignaling = socketIOSignalingRef.current || signalingServiceRef.current;
-      if (!hasValidSignaling || !webRTCServiceRef.current) {
-        throw new Error('Failed to initialize services');
+      // Final verification
+      if (!hasValidSignaling || !hasValidWebRTC) {
+        throw new Error('Services not ready after initialization attempts');
       }
 
       if (cameraPermission !== 'granted') {

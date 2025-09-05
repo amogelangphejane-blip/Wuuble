@@ -534,13 +534,26 @@ io.on('connection', (socket) => {
 
     console.log(`🔍 User ${socket.userId} looking for random partner`);
 
-    // Check if user is already in a room
+    // Check if user is already in a room - but allow cleanup and retry
     const existingRoom = matcher.findUserRoom(socket.userId);
     if (existingRoom) {
-      socket.emit('error', { 
-        message: 'You are already in a chat room',
-        roomId: existingRoom.roomId
-      });
+      console.log(`⚠️ User ${socket.userId} already in room ${existingRoom.roomId}, cleaning up first`);
+      
+      // Clean up the existing room first
+      matcher.removeUser(socket.userId, 'new-search');
+      
+      // Small delay to ensure cleanup is complete
+      setTimeout(() => {
+        if (socket.connected) {
+          console.log(`🔄 Retrying partner search for user ${socket.userId}`);
+          matcher.addWaitingUser(socket.userId, socket, data.preferences);
+          socket.emit('searching', {
+            message: 'Looking for a chat partner...',
+            status: 'searching',
+            timestamp: Date.now()
+          });
+        }
+      }, 500);
       return;
     }
 
@@ -682,14 +695,26 @@ io.on('connection', (socket) => {
     
     const userId = matcher.socketUsers.get(socket.id);
     if (userId) {
-      // Give user a chance to reconnect for temporary disconnections
-      const reconnectGrace = reason === 'transport close' ? 10000 : 2000;
+      // Immediate cleanup for intentional disconnections
+      if (reason === 'client namespace disconnect' || reason === 'server namespace disconnect') {
+        console.log(`🧹 Immediate cleanup for intentional disconnect: ${userId}`);
+        matcher.removeUser(userId, 'disconnect');
+        return;
+      }
+      
+      // Give user a chance to reconnect for network issues
+      const reconnectGrace = reason === 'transport close' || reason === 'transport error' ? 10000 : 3000;
+      
+      console.log(`⏳ Giving user ${userId} ${reconnectGrace}ms grace period for reconnection`);
       
       setTimeout(() => {
-        // Check if user reconnected
+        // Check if user reconnected with a different socket
         const currentSocket = matcher.userSockets.get(userId);
-        if (!currentSocket || !currentSocket.connected) {
+        if (!currentSocket || !currentSocket.connected || currentSocket.id === socket.id) {
+          console.log(`🧹 Grace period expired, removing user ${userId}`);
           matcher.removeUser(userId, 'disconnect');
+        } else {
+          console.log(`✅ User ${userId} reconnected successfully`);
         }
       }, reconnectGrace);
     }

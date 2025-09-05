@@ -124,11 +124,17 @@ export const getTurnServers = (): RTCIceServer[] => {
   const isProduction = import.meta.env.MODE === 'production';
   const servers = isProduction ? PRODUCTION_TURN_SERVERS : DEVELOPMENT_TURN_SERVERS;
   
-  return servers
+  const validServers = servers
     .filter(server => {
       // Filter out servers with missing credentials
-      if (server.username && !server.credential) return false;
-      if (server.credential && !server.username) return false;
+      if (server.username && !server.credential) {
+        console.warn(`⚠️ TURN server missing credential for username: ${server.username}`);
+        return false;
+      }
+      if (server.credential && !server.username) {
+        console.warn(`⚠️ TURN server missing username for credential`);
+        return false;
+      }
       return true;
     })
     .map(server => ({
@@ -137,6 +143,28 @@ export const getTurnServers = (): RTCIceServer[] => {
       credential: server.credential,
       credentialType: server.credentialType || 'password'
     } as RTCIceServer));
+
+  // Log TURN server configuration for debugging
+  console.log(`🌐 Configured ${validServers.length} ICE servers:`, 
+    validServers.map(server => ({
+      urls: Array.isArray(server.urls) ? server.urls.length + ' URLs' : server.urls,
+      hasCredentials: !!(server.username && server.credential)
+    }))
+  );
+
+  // Ensure we have at least STUN servers even if TURN servers are not configured
+  if (validServers.length === 0) {
+    console.warn('⚠️ No TURN servers configured, falling back to Google STUN servers only');
+    return [{
+      urls: [
+        'stun:stun.l.google.com:19302',
+        'stun:stun1.l.google.com:19302',
+        'stun:stun2.l.google.com:19302'
+      ]
+    }];
+  }
+
+  return validServers;
 };
 
 /**
