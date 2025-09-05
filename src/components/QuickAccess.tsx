@@ -28,6 +28,8 @@ import { validateAvatarUrl } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { WhatsAppVideoCall } from '@/components/WhatsAppVideoCall';
 import { useWhatsAppVideoCall } from '@/hooks/useWhatsAppVideoCall';
+import { useRandomTextChat } from '@/hooks/useRandomTextChat';
+import { RandomTextChat } from '@/components/RandomTextChat';
 
 
 interface OngoingCall {
@@ -65,8 +67,12 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
   // WhatsApp-style video call state
   const { callState, startCall, joinCall, minimizeCall, maximizeCall, endCall } = useWhatsAppVideoCall();
   
+  // Random text chat state
+  const { chatState, openRandomChat, closeRandomChat } = useRandomTextChat();
+  
   // Debug logging
   console.log('🎥 QuickAccess - WhatsApp call state:', callState);
+  console.log('💬 QuickAccess - Random chat state:', chatState);
 
   // Fetch ongoing calls
   const fetchOngoingCalls = async () => {
@@ -167,13 +173,9 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
     });
   };
 
-  // Start a random video chat with WhatsApp-style interface
-  const startRandomVideoChat = () => {
-    startCall({
-      communityId: 'random', // Special ID for random chats
-      contactName: 'Random Video Chat',
-      contactAvatar: undefined,
-    });
+  // Start a random text chat
+  const startRandomTextChat = () => {
+    openRandomChat();
   };
 
   useEffect(() => {
@@ -325,15 +327,15 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
               </DialogContent>
             </Dialog>
 
-            {/* Random Video Chat */}
+            {/* Random Text Chat */}
             <Button 
               size="lg" 
               variant="outline" 
-              className="h-16 flex-col gap-2"
-              onClick={startRandomVideoChat}
+              className="h-16 flex-col gap-2 border-purple-500 text-purple-600 hover:bg-purple-50"
+              onClick={openRandomChat}
             >
-              <Phone className="w-6 h-6" />
-              <span>Random Video Chat</span>
+              <MessageCircle className="w-6 h-6" />
+              <span>Random Text Chat</span>
             </Button>
           </div>
 
@@ -438,7 +440,7 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
               <h4 className="font-semibold mb-2">Quick Access Features</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• Start group video calls with community members</li>
-                <li>• Join random video chats with other users</li>
+                <li>• Join random text chats with people worldwide</li>
                 <li>• Quick navigation to discussions and events</li>
                 <li>• Real-time activity updates</li>
 
@@ -459,6 +461,14 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
           onClose={endCall}
           onMinimize={minimizeCall}
           onMaximize={maximizeCall}
+        />
+      )}
+
+      {/* Random Text Chat Component */}
+      {chatState.isOpen && (
+        <RandomTextChat
+          isOpen={chatState.isOpen}
+          onClose={closeRandomChat}
         />
       )}
     </div>

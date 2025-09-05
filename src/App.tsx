@@ -25,6 +25,7 @@ import CommunityMembers from "./pages/CommunityMembers";
 import CommunitySubscriptions from "./pages/CommunitySubscriptions";
 import ProfileSettings from "./pages/ProfileSettings";
 import ConnectVideoCall from "./pages/ConnectVideoCall";
+import RandomTextChat from "./pages/RandomTextChat";
 
 import CommunityGroupCall from "./pages/CommunityGroupCall";
 import TestGroupCall from "./pages/TestGroupCall";
@@ -78,6 +79,7 @@ const App = () => {
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/connect-video-call" element={<ConnectVideoCall />} />
+                <Route path="/random-text-chat" element={<RandomTextChat />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/communities" element={<Communities />} />
                 <Route path="/communities/:id" element={<CommunityDetail />} />
