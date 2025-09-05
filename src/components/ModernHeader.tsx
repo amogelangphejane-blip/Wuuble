@@ -18,7 +18,6 @@ import {
   X,
   MessageCircle,
   Radio,
-  Video,
   Home,
   Mail,
   Wallet
@@ -86,10 +85,10 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
       active: location.pathname.startsWith('/messages')
     },
     {
-      label: 'Live Streams',
-      href: '/azar-livestreams',
-      icon: Video,
-      active: location.pathname.startsWith('/azar-livestreams')
+      label: 'Random Text Chat',
+      href: '/random-text-chat',
+      icon: MessageCircle,
+      active: location.pathname.startsWith('/random-text-chat')
     }
   ];
 

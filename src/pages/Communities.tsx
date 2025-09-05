@@ -117,7 +117,8 @@ const Communities = () => {
 
       const communitiesWithCounts = data?.map(community => ({
         ...community,
-        member_count: community.community_members?.length || 0
+        // Use the actual member_count from database, fallback to counting members if needed
+        member_count: community.member_count || community.community_members?.length || 0
       })) || [];
 
       setCommunities(communitiesWithCounts);
