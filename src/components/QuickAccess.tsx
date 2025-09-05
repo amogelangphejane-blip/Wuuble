@@ -26,6 +26,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { validateAvatarUrl } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { WhatsAppVideoCall } from '@/components/WhatsAppVideoCall';
+import { useWhatsAppVideoCall } from '@/hooks/useWhatsAppVideoCall';
 
 
 interface OngoingCall {
@@ -59,6 +61,12 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // WhatsApp-style video call state
+  const { callState, startCall, joinCall, minimizeCall, maximizeCall, endCall } = useWhatsAppVideoCall();
+  
+  // Debug logging
+  console.log('🎥 QuickAccess - WhatsApp call state:', callState);
 
   // Fetch ongoing calls
   const fetchOngoingCalls = async () => {
@@ -101,8 +109,8 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
     }
   };
 
-  // Create a new group video call
-  const createGroupCall = async () => {
+  // Create a new WhatsApp-style group video call
+  const createWhatsAppCall = async () => {
     if (!user || !newCallTitle.trim()) return;
 
     setCreatingCall(true);
@@ -130,8 +138,13 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
       setNewCallTitle('');
       setNewCallMaxParticipants(10);
       
-      // Navigate to the group call
-      navigate(`/communities/${communityId}/group-call/${call.id}`);
+      // Start WhatsApp-style call
+      startCall({
+        communityId,
+        contactName: newCallTitle.trim(),
+        contactAvatar: undefined, // Could be community avatar
+      });
+      
     } catch (error: any) {
       console.error('Error creating group call:', error);
       toast({
@@ -144,14 +157,23 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
     }
   };
 
-  // Join an existing call
-  const joinCall = (callId: string) => {
-    navigate(`/communities/${communityId}/group-call/${callId}`);
+  // Join an existing WhatsApp-style call
+  const joinWhatsAppCall = (call: OngoingCall) => {
+    joinCall({
+      communityId,
+      callId: call.id,
+      contactName: call.title,
+      contactAvatar: call.creator_profile?.avatar_url || undefined,
+    });
   };
 
-  // Start a random video chat
+  // Start a random video chat with WhatsApp-style interface
   const startRandomVideoChat = () => {
-    navigate('/chat');
+    startCall({
+      communityId: 'random', // Special ID for random chats
+      contactName: 'Random Video Chat',
+      contactAvatar: undefined,
+    });
   };
 
   useEffect(() => {
@@ -205,12 +227,41 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
         <CardContent className="space-y-4">
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Debug WhatsApp Call Button */}
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="h-16 flex-col gap-2 border-green-500 text-green-600 hover:bg-green-50"
+              onClick={() => startCall({
+                communityId,
+                contactName: `${communityName} Video Call`,
+                contactAvatar: undefined,
+              })}
+            >
+              <Video className="w-6 h-6" />
+              <span>Test WhatsApp Call</span>
+            </Button>
             {/* Create Group Call */}
+            <Button 
+              size="lg" 
+              className="h-16 flex-col gap-2"
+              onClick={() => startCall({
+                communityId,
+                contactName: `${communityName} Group Call`,
+                contactAvatar: undefined,
+              })}
+            >
+              <Users className="w-6 h-6" />
+              <span>Start Group Call</span>
+            </Button>
+            
+            {/* Original Dialog (Hidden) */}
             <Dialog open={createCallDialogOpen} onOpenChange={setCreateCallDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="lg" className="h-16 flex-col gap-2">
+                <Button size="lg" className="h-16 flex-col gap-2 hidden">
                   <Users className="w-6 h-6" />
-                  <span>Start Group Call</span>
+                  <span>Start Group Call (Old)</span>
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -247,7 +298,7 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
                 </div>
                 <div className="flex gap-3">
                   <Button 
-                    onClick={createGroupCall}
+                    onClick={createWhatsAppCall}
                     disabled={!newCallTitle.trim() || creatingCall}
                     className="flex-1"
                   >
@@ -331,7 +382,12 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
                           </Badge>
                           <Button 
                             size="sm"
-                            onClick={() => joinCall(call.id)}
+                            onClick={() => joinCall({
+                              communityId,
+                              callId: call.id,
+                              contactName: call.title,
+                              contactAvatar: call.creator_profile?.avatar_url || undefined,
+                            })}
                             className="bg-green-600 hover:bg-green-700"
                           >
                             <UserPlus className="w-4 h-4 mr-2" />
@@ -391,6 +447,20 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
           </div>
         </CardContent>
       </Card>
+
+      {/* WhatsApp-style Video Call Component */}
+      {callState.isOpen && (
+        <WhatsAppVideoCall
+          communityId={callState.communityId!}
+          callId={callState.callId}
+          contactName={callState.contactName}
+          contactAvatar={callState.contactAvatar}
+          isMinimized={callState.isMinimized}
+          onClose={endCall}
+          onMinimize={minimizeCall}
+          onMaximize={maximizeCall}
+        />
+      )}
     </div>
   );
 };
