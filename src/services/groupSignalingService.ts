@@ -172,6 +172,10 @@ export class GroupSignalingService extends SignalingService {
   getParticipant(participantId: string): any {
     return this.participants.get(participantId);
   }
+
+  getAllParticipants(): Map<string, any> {
+    return new Map(this.participants);
+  }
 }
 
 // Cross-tab compatible mock implementation for group signaling
@@ -314,6 +318,30 @@ export class MockGroupSignalingService extends GroupSignalingService {
         }
         break;
         
+      case 'participant-discovery':
+        // Handle immediate participant discovery - respond with our info
+        if (message.participantData && message.participantId !== this.participantId) {
+          console.log(`🔍 Participant discovery from: ${message.participantId}`);
+          // Add the discovering participant
+          this.participants.set(message.participantId, message.participantData);
+          this.groupEvents.onParticipantJoined?.(message.participantId, message.participantData);
+          
+          // Send our info back immediately
+          const ourParticipantData = this.participants.get(this.participantId);
+          if (ourParticipantData) {
+            setTimeout(() => {
+              this.broadcastMessage({
+                type: 'participant-info',
+                participantId: this.participantId,
+                groupId: this.groupId,
+                participantData: ourParticipantData,
+                targetParticipant: message.participantId
+              });
+            }, 25 + Math.random() * 50);
+          }
+        }
+        break;
+        
       case 'request-participants':
         // Send our participant info to the requester
         const ourParticipantData = this.participants.get(this.participantId);
@@ -354,6 +382,16 @@ export class MockGroupSignalingService extends GroupSignalingService {
         groupId: groupId
       });
     }, 200);
+    
+    // Also send a discovery request immediately for faster connection
+    setTimeout(() => {
+      this.broadcastMessage({
+        type: 'participant-discovery',
+        participantId: this.participantId,
+        groupId: groupId,
+        participantData: participantData
+      });
+    }, 50);
   }
 
   leaveGroup(): void {
