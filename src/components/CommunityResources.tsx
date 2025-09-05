@@ -21,7 +21,7 @@ import {
   Shield
 } from 'lucide-react';
 import { ResourceCard } from '@/components/ResourceCard';
-import { ResourceForm } from '@/components/ResourceForm';
+import { SimpleResourceForm } from '@/components/SimpleResourceForm';
 import { ResourceSearchFilters } from '@/components/ResourceSearchFilters';
 import { ResourceModerationPanel } from '@/components/ResourceModerationPanel';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -132,7 +132,10 @@ export const CommunityResources = ({
       .select(`
         *,
         category:resource_categories(id, name, color, icon),
-        profiles(display_name, avatar_url)
+        profiles(display_name, avatar_url),
+        tags:resource_tag_assignments(
+          resource_tags(id, name)
+        )
       `)
       .eq('community_id', communityId)
       .eq('is_approved', true);
@@ -240,7 +243,10 @@ export const CommunityResources = ({
 
           // Process tags
           const tags = resource.tags
-            ?.map((tagAssignment: any) => tagAssignment.tag)
+            ?.map((tagAssignment: any) => ({
+              id: tagAssignment.resource_tags.id,
+              name: tagAssignment.resource_tags.name
+            }))
             .filter(Boolean) || [];
 
           return {
@@ -306,7 +312,10 @@ export const CommunityResources = ({
         .select(`
           *,
           category:resource_categories(id, name, color, icon),
-          profiles!community_resources_user_id_fkey(display_name, avatar_url)
+          profiles!community_resources_user_id_fkey(display_name, avatar_url),
+          tags:resource_tag_assignments(
+            resource_tags(id, name)
+          )
         `)
         .single();
 
@@ -617,15 +626,11 @@ export const CommunityResources = ({
       </div>
 
       {/* Create/Edit Resource Form */}
-      <ResourceForm
-        isOpen={createFormOpen || !!editingResource}
-        onClose={() => {
-          setCreateFormOpen(false);
-          setEditingResource(null);
-        }}
-        onSubmit={editingResource ? handleEditResource : handleCreateResource}
+      <SimpleResourceForm
+        isOpen={createFormOpen}
+        onClose={() => setCreateFormOpen(false)}
+        onSubmit={handleCreateResource}
         communityId={communityId}
-        editingResource={editingResource}
         loading={submitting}
       />
 

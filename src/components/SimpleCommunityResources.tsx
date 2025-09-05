@@ -41,9 +41,9 @@ export const SimpleCommunityResources = ({
       setLoading(true);
       setError(null);
 
-      // Simple query without joins
+      // Use the helper view that includes tags properly
       const { data, error } = await supabase
-        .from('community_resources')
+        .from('community_resources_with_tags')
         .select('*')
         .eq('community_id', communityId)
         .eq('is_approved', true)
