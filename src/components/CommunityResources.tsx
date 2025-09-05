@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -493,7 +494,11 @@ export const CommunityResources = ({
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => setCreateFormOpen(true)}
+                onClick={() => {
+                  console.log('Add Resource button clicked');
+                  setCreateFormOpen(true);
+                  console.log('createFormOpen set to true');
+                }}
                 className="flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
@@ -626,9 +631,46 @@ export const CommunityResources = ({
       </div>
 
       {/* Create/Edit Resource Form */}
+      {console.log('Rendering ResourceForm with:', { 
+        createFormOpen, 
+        editingResource: !!editingResource, 
+        isOpen: createFormOpen || !!editingResource 
+      })}
+      
+      {/* Temporary Test Dialog */}
+      <Dialog open={createFormOpen || !!editingResource} onOpenChange={(open) => {
+        if (!open) {
+          console.log('Test dialog closing');
+          setCreateFormOpen(false);
+          setEditingResource(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Test Dialog</DialogTitle>
+            <DialogDescription>
+              This is a test dialog to see if the dialog system works.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-4">
+            <p>If you can see this, the dialog system is working!</p>
+            <p>createFormOpen: {createFormOpen.toString()}</p>
+            <p>editingResource: {editingResource ? 'yes' : 'no'}</p>
+            <Button onClick={() => {
+              setCreateFormOpen(false);
+              setEditingResource(null);
+            }}>
+              Close Test Dialog
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Original ResourceForm - commented out for testing
       <ResourceForm
         isOpen={createFormOpen || !!editingResource}
         onClose={() => {
+          console.log('ResourceForm onClose called');
           setCreateFormOpen(false);
           setEditingResource(null);
         }}
@@ -637,6 +679,7 @@ export const CommunityResources = ({
         editingResource={editingResource}
         loading={submitting}
       />
+      */}
 
       {/* Moderation Panel */}
       {isCreator && (
