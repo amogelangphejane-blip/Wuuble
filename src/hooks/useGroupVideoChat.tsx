@@ -198,6 +198,33 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
   // Initialize services
   const initializeServices = useCallback(async () => {
     console.log('🚀 Initializing high-quality services...', { user: !!user, userId: user?.id });
+    
+    try {
+      // Initialize local media first to ensure we have streams before connecting
+      await webRTCServiceRef.current?.initializeLocalMedia();
+      const localStream = webRTCServiceRef.current?.getLocalStream();
+      if (localStream) {
+        setLocalStream(localStream);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = localStream;
+        }
+      }
+      
+      // Update signaling service configuration for cross-tab communication
+      if (signalingServiceRef.current) {
+        signalingServiceRef.current.enableCrossTabCommunication();
+      }
+      
+      setServicesReady(true);
+    } catch (error) {
+      console.error('❌ Failed to initialize services:', error);
+      setServicesReady(false);
+      toast({
+        title: 'Service Initialization Failed',
+        description: 'Failed to initialize video call services. Please try again.',
+        variant: 'destructive'
+      });
+    }
     if (!user) {
       console.log('❌ No user found, skipping service initialization');
       return;
@@ -333,6 +360,16 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
       // Initialize signaling service
       const signalingEvents: GroupSignalingEvents = {
         onParticipantJoined: async (participantId, participantData) => {
+          console.log('👥 Participant joining:', { participantId, participantData });
+          
+          // Add participant to our state first
+          webRTCServiceRef.current?.addParticipant(participantData);
+          
+          // Ensure local media is available before creating peer connection
+          if (!webRTCServiceRef.current?.getLocalStream()) {
+            console.log('🎥 Initializing local media for new participant...');
+            await webRTCServiceRef.current?.initializeLocalMedia();
+          }
           console.log('🔄 Signaling: Participant joined event received:', { participantId, participantData });
           // Add participant to WebRTC service
           if (webRTCServiceRef.current) {
@@ -559,6 +596,62 @@ export const useGroupVideoChat = (options: UseGroupVideoChatOptions): UseGroupVi
 
   // Join an existing group call
   const joinCall = useCallback(async (callId: string) => {
+    console.log('📞 Joining call:', { callId, communityId });
+    
+    try {
+      setCallStatus('connecting');
+      
+      // Initialize local media first
+      setCameraPermission('pending');
+      await webRTCServiceRef.current?.initializeLocalMedia();
+      setCameraPermission('granted');
+      
+      const localStream = webRTCServiceRef.current?.getLocalStream();
+      if (localStream) {
+        setLocalStream(localStream);
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = localStream;
+        }
+      }
+
+      // Join the signaling group with our participant info
+      const groupId = `community-${communityId}-call-${callId}`;
+      const updatedParticipant = { 
+        ...localParticipant, 
+        role: 'participant' as const,
+        stream: localStream,
+        isVideoEnabled: true,
+        isAudioEnabled: true
+      };
+
+      // Enable cross-tab communication before joining
+      signalingServiceRef.current?.enableCrossTabCommunication();
+      signalingServiceRef.current?.joinGroup(groupId, updatedParticipant);
+
+      setCallStatus('connected');
+      toast({
+        title: "Joined Call",
+        description: "You've successfully joined the group video call"
+      });
+    } catch (error: any) {
+      console.error('Failed to join call:', error);
+      setCallStatus('disconnected');
+      
+      if (error.name === 'NotAllowedError') {
+        setCameraPermission('denied');
+        toast({
+          title: "Camera Access Denied",
+          description: "Please allow camera access to join the call",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Failed to Join",
+          description: error.message || "Could not join the video call",
+          variant: "destructive"
+        });
+      }
+    }
     if (!user || !webRTCServiceRef.current || !signalingServiceRef.current || !localParticipant) {
       console.error('Services or user data not ready');
       toast({
