@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { WebRTCService, defaultWebRTCConfig, WebRTCConfig } from '@/services/webRTCService';
-import { SignalingService, createSignalingService, SignalingMessage } from '@/services/signalingService';
-import { ProductionSignalingService, createProductionSignalingService } from '@/services/productionSignalingService';
-import { SocketIOSignalingService, createSocketIOSignalingService, SignalingEvents, UserPreferences } from '@/services/socketIOSignalingService';
+import { 
+  SignalingService, 
+  createSignalingService, 
+  SignalingMessage,
+  SignalingEvents
+} from '@/services/signalingService';
 import { FilterConfig, VideoFilterService } from '@/services/videoFilterService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,10 +22,9 @@ export interface ChatMessage {
 export interface UseVideoChatOptions {
   webRTCConfig?: WebRTCConfig;
   useMockSignaling?: boolean;
-  useProductionSignaling?: boolean;
-  useSocketIOSignaling?: boolean;
   userPreferences?: UserPreferences;
   autoConnect?: boolean;
+  serverUrl?: string;
 }
 
 export interface UseVideoChatReturn {
@@ -75,7 +77,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
     webRTCConfig = defaultWebRTCConfig,
     useMockSignaling = false, // Default to false for production use
     userPreferences = {},
-    autoConnect = true // Default to true for better UX
+    autoConnect = true, // Default to true for better UX
     serverUrl = 'https://wuuble.onrender.com'
   } = options;
 
@@ -427,6 +429,56 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
       description: "Your chat partner has left the conversation.",
     });
   }, [toast]);
+
+  // Create signaling events
+  const createSignalingEvents = useCallback((): SignalingEvents => ({
+    onUserJoined: (userId) => {
+      console.log('👤 User joined:', userId);
+      setPartnerConnected(true);
+      setIsSearching(false);
+      toast({
+        title: "Partner Connected",
+        description: "You've been matched with someone!"
+      });
+    },
+    onUserLeft: (userId) => {
+      console.log('👋 User left:', userId);
+      setPartnerConnected(false);
+      toast({
+        title: "Partner Left",
+        description: "Your chat partner has disconnected"
+      });
+    },
+    onMessage: (message) => {
+      console.log('📨 Received message:', message);
+      handleSignalingMessage(message);
+    },
+    onDisconnected: () => {
+      console.log('🔌 Disconnected from signaling server');
+      setConnectionStatus('disconnected');
+      cleanup();
+    },
+    onReconnecting: (attempt) => {
+      console.log('🔄 Reconnecting to signaling server:', attempt);
+      setConnectionStatus('reconnecting');
+      setReconnectAttempts(attempt);
+    },
+    onError: (error) => {
+      console.error('❌ Signaling error:', error);
+      toast({
+        title: "Connection Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    },
+    onQueueStatus: (status) => {
+      console.log('⏳ Queue status:', status);
+      toast({
+        title: "Finding Partner",
+        description: status.message
+      });
+    }
+  }), [toast, handleSignalingMessage, cleanup]);
 
   // Start chat - Using real signaling service
   const startChat = useCallback(async () => {
