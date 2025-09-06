@@ -73,11 +73,10 @@ export interface UseVideoChatReturn {
 export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatReturn => {
   const {
     webRTCConfig = defaultWebRTCConfig,
-    useMockSignaling = false,
-    useProductionSignaling = false,
-    useSocketIOSignaling = true, // Default to Socket.IO for production
+    useMockSignaling = false, // Default to false for production use
     userPreferences = {},
-    autoConnect = false
+    autoConnect = true // Default to true for better UX
+    serverUrl = 'https://wuuble.onrender.com'
   } = options;
 
   // Connection state
@@ -429,7 +428,7 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
     });
   }, [toast]);
 
-  // Start chat - Fixed: Better service initialization flow
+  // Start chat - Using real signaling service
   const startChat = useCallback(async () => {
     try {
       setIsSearching(true);
@@ -440,14 +439,35 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
         setCameraPermission('pending');
       }
 
-      // Ensure services are initialized
-      const hasSignaling = socketIOSignalingRef.current || signalingServiceRef.current;
-      if (!hasSignaling || !webRTCServiceRef.current) {
+      // Initialize services if needed
+      if (!webRTCServiceRef.current || !signalingServiceRef.current) {
         toast({
           title: "Initializing...",
           description: "Setting up video chat services"
         });
-        await initializeServices();
+        
+        // Initialize WebRTC first
+        webRTCServiceRef.current = new WebRTCService(webRTCConfig);
+        
+        try {
+          // Initialize media devices
+          await webRTCServiceRef.current.initializeLocalMedia();
+          setCameraPermission('granted');
+        } catch (error: any) {
+          if (error.name === 'NotAllowedError') {
+            setCameraPermission('denied');
+            throw new Error('Camera access denied');
+          }
+          throw error;
+        }
+        
+        // Initialize signaling service
+        signalingServiceRef.current = createSignalingService(
+          userId, 
+          createSignalingEvents(),
+          useMockSignaling,
+          serverUrl
+        );
         
         // Wait a moment for services to be ready
         await new Promise(resolve => setTimeout(resolve, 500));

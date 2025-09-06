@@ -320,13 +320,14 @@ export class MockSignalingService extends SignalingService {
 export function createSignalingService(
   userId: string, 
   events: SignalingEvents = {}, 
-  useMock: boolean = true
+  useMock: boolean = false,
+  serverUrl: string = 'https://wuuble.onrender.com'
 ): SignalingService {
   if (useMock) {
+    console.warn('⚠️ Using mock signaling service - not recommended for production');
     return new MockSignalingService(userId, events);
   } else {
-    // In production, use real WebSocket URL
-    const wsUrl = process.env.REACT_APP_SIGNALING_URL || 'ws://localhost:8080';
-    return new SignalingService(wsUrl, userId, events);
+    const { SocketIOSignalingService } = require('./socketioSignalingService');
+    return new SocketIOSignalingService(userId, events, serverUrl);
   }
 }
