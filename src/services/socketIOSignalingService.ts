@@ -15,7 +15,7 @@ export interface SignalingMessage {
 
 export interface SignalingEvents {
   onMessage?: (message: SignalingMessage) => void;
-  onUserJoined?: (userId: string) => void;
+  onUserJoined?: (userId: string, roomId?: string) => void;
   onUserLeft?: (userId: string) => void;
   onError?: (error: string) => void;
   onConnected?: () => void;
@@ -198,6 +198,20 @@ export class SocketIOSignalingService {
       this.events.onQueueStatus?.(data);
     });
 
+    // Successfully matched with a partner
+    this.socket.on('matched', (data) => {
+      console.log(`✅ Matched with partner ${data.partnerId} in room ${data.roomId}`);
+      this.currentRoomId = data.roomId;
+      this.currentPartnerId = data.partnerId;
+      this.events.onUserJoined?.(data.partnerId, data.roomId);
+    });
+
+    // Queue position update
+    this.socket.on('queue-status', (data) => {
+      console.log(`📍 Queue status: position ${data.position}, wait time ${data.estimatedWaitTime}s`);
+      this.events.onQueueStatus?.(data);
+    });
+
     // Currently searching for partner
     this.socket.on('searching', (data) => {
       console.log(`🔍 ${data.message}`);
@@ -286,7 +300,17 @@ export class SocketIOSignalingService {
     // Chat messages (for text chat during video)
     this.socket.on('chat-message', (data) => {
       console.log(`💬 Chat message from ${data.fromUserId}: ${data.message}`);
-      // Handle text messages if needed
+      this.events.onMessage?.({
+        type: 'chat-message' as any,
+        data: {
+          id: data.id,
+          message: data.message,
+          text: data.message, // Alias for compatibility
+          timestamp: data.timestamp
+        },
+        from: data.fromUserId,
+        timestamp: data.timestamp
+      });
     });
   }
 
@@ -443,6 +467,57 @@ export class SocketIOSignalingService {
       roomId: this.currentRoomId,
       message,
       type
+    });
+  }
+
+  /**
+   * Send a generic signaling message
+   */
+  sendMessage(message: SignalingMessage): void {
+    if (!this.socket || !this.currentRoomId) return;
+
+    // Handle different message types
+    switch (message.type) {
+      case 'offer':
+        this.sendOffer(message.data);
+        break;
+      case 'answer':
+        this.sendAnswer(message.data);
+        break;
+      case 'ice-candidate':
+        this.sendIceCandidate(message.data);
+        break;
+      case 'chat-message':
+        this.sendChatMessage(message.data.message || message.data.text, message.data.type);
+        break;
+      default:
+        console.warn('Unknown message type:', message.type);
+    }
+  }
+
+  /**
+   * Report a user for inappropriate behavior
+   */
+  async reportUser(userId: string, reason: string, description?: string): Promise<void> {
+    if (!this.socket) {
+      throw new Error('Not connected to signaling server');
+    }
+
+    return new Promise((resolve, reject) => {
+      this.socket!.emit('report-user', {
+        userId,
+        reason,
+        description,
+        timestamp: Date.now()
+      }, (response: { success: boolean; error?: string }) => {
+        if (response.success) {
+          console.log('✅ User report submitted successfully');
+          resolve();
+        } else {
+          console.error('❌ Failed to report user:', response.error);
+          reject(new Error(response.error || 'Failed to report user'));
+        }
+      });
     });
   }
 

@@ -82,10 +82,21 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
               size="lg" 
               variant="outline" 
               className="h-16 flex-col gap-2"
+              onClick={() => navigate('/random-chat')}
+            >
+              <Video className="w-6 h-6" />
+              <span>Random Chat</span>
+            </Button>
+            
+            {/* Community Video Chat */}
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="h-16 flex-col gap-2"
               onClick={startRandomVideoChat}
             >
               <Phone className="w-6 h-6" />
-              <span>Random Video Chat</span>
+              <span>Community Call</span>
             </Button>
           </div>
         </CardContent>
