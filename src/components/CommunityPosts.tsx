@@ -1038,11 +1038,23 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
                               <div className="p-4">
                                 <div className="flex items-start justify-between gap-3 mb-2">
                                   <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold text-foreground line-clamp-2 text-sm">
+                                    <h3 className="font-semibold text-foreground text-sm mb-1 leading-tight overflow-hidden"
+                                        style={{
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: 2,
+                                          WebkitBoxOrient: 'vertical',
+                                          maxHeight: '2.8em'
+                                        }}>
                                       {post.link_title || 'Untitled'}
                                     </h3>
                                     {post.link_description && (
-                                      <p className="text-muted-foreground text-xs mt-1 line-clamp-2">
+                                      <p className="text-muted-foreground text-xs mt-1 leading-relaxed overflow-hidden"
+                                         style={{
+                                           display: '-webkit-box',
+                                           WebkitLineClamp: 2,
+                                           WebkitBoxOrient: 'vertical',
+                                           maxHeight: '2.4em'
+                                         }}>
                                         {post.link_description}
                                       </p>
                                     )}
