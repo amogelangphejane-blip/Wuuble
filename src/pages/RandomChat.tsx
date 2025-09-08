@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { MessageInput } from '@/components/MessageInput';
+import { SafetyDashboard } from '@/components/SafetyDashboard';
 import { useRandomChat } from '@/hooks/useRandomChat';
 import { 
   Video, 
@@ -30,7 +31,8 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  BarChart3
 } from 'lucide-react';
 
 interface UserPreferences {
@@ -74,6 +76,7 @@ const RandomChat = () => {
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showSafetyDashboard, setShowSafetyDashboard] = useState(false);
   const [onlineUsers] = useState(1247); // Mock for now
   
   // Preferences state
@@ -246,6 +249,15 @@ const RandomChat = () => {
               <Users className="h-3 w-3 mr-1" />
               {onlineUsers} online
             </Badge>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSafetyDashboard(true)}
+              className="text-white hover:bg-white/20"
+            >
+              <BarChart3 className="h-4 w-4" />
+            </Button>
             
             <Button
               variant="ghost"
@@ -441,6 +453,18 @@ const RandomChat = () => {
           )}
         </div>
       </div>
+
+      {/* Safety Dashboard Dialog */}
+      <Dialog open={showSafetyDashboard} onOpenChange={setShowSafetyDashboard}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Safety Dashboard</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[70vh]">
+            <SafetyDashboard onClose={() => setShowSafetyDashboard(false)} />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Preferences Dialog */}
       <Dialog open={showPreferences} onOpenChange={setShowPreferences}>

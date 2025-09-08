@@ -4,6 +4,9 @@ import { useToast } from '@/hooks/use-toast';
 import { SocketIOSignalingService, UserPreferences as SocketPreferences } from '@/services/socketIOSignalingService';
 import { WebRTCService, defaultWebRTCConfig } from '@/services/webRTCService';
 import { randomChatService, RandomChatSession } from '@/services/randomChatService';
+import { rateLimitService } from '@/services/rateLimitService';
+import { connectionRetryService } from '@/services/connectionRetryService';
+import { safetyService } from '@/services/safetyService';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 export type ConnectionQuality = 'excellent' | 'good' | 'fair' | 'poor';
@@ -315,15 +318,54 @@ export const useRandomChat = (): UseRandomChatReturn => {
 
   // Start search for random partner
   const startSearch = useCallback(async (preferences?: UserPreferences) => {
-    if (!signalingServiceRef.current) {
-      await initializeServices();
-    }
+    if (!user?.id) return;
 
     try {
+      // Check if user is eligible to start session
+      const eligibility = await safetyService.canUserStartSession(user.id);
+      if (!eligibility.allowed) {
+        toast({
+          title: "Cannot start session",
+          description: eligibility.reason,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check rate limits
+      const connectionLimit = rateLimitService.canStartConnection(user.id);
+      if (!connectionLimit.allowed) {
+        toast({
+          title: "Rate limit exceeded",
+          description: connectionLimit.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check session cooldown
+      const cooldownCheck = rateLimitService.canStartNewSession(user.id);
+      if (!cooldownCheck.allowed) {
+        toast({
+          title: "Please wait",
+          description: `Please wait ${cooldownCheck.retryAfter} seconds before starting a new session.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!signalingServiceRef.current) {
+        await initializeServices();
+      }
+
       console.log('🔍 Starting search with preferences:', preferences);
       setIsSearching(true);
       setMessages([]);
       setUnreadMessages(0);
+      
+      // Record rate limit actions
+      rateLimitService.recordConnection(user.id);
+      rateLimitService.recordSessionStart(user.id);
       
       // Get user media first
       await getUserMedia();
@@ -335,15 +377,46 @@ export const useRandomChat = (): UseRandomChatReturn => {
         language: preferences?.language !== 'any' ? preferences?.language : undefined
       };
       
-      // Start search through signaling service
-      await signalingServiceRef.current!.findRandomPartner(socketPreferences);
+      // Start search through signaling service with retry mechanism
+      const searchAttempt = async (): Promise<boolean> => {
+        try {
+          await signalingServiceRef.current!.findRandomPartner(socketPreferences);
+          return true;
+        } catch (error) {
+          console.error('Search attempt failed:', error);
+          return false;
+        }
+      };
+
+      // Use retry service for connection attempts
+      connectionRetryService.startRetry(
+        `search-${user.id}`,
+        searchAttempt,
+        () => {
+          console.log('✅ Search successful with retry');
+        },
+        (reason) => {
+          console.error('❌ Search failed after retries:', reason);
+          setIsSearching(false);
+          toast({
+            title: "Connection failed",
+            description: "Unable to find a chat partner. Please try again later.",
+            variant: "destructive",
+          });
+        },
+        {
+          maxAttempts: 3,
+          initialDelay: 2000,
+          maxDelay: 10000
+        }
+      );
       
     } catch (error) {
       console.error('❌ Failed to start search:', error);
       setIsSearching(false);
       throw error;
     }
-  }, [initializeServices, getUserMedia]);
+  }, [user?.id, initializeServices, getUserMedia, toast]);
 
   // End current chat
   const endChat = useCallback(() => {
@@ -390,7 +463,24 @@ export const useRandomChat = (): UseRandomChatReturn => {
 
   // Skip to next partner
   const nextPartner = useCallback(() => {
+    if (!user?.id) return;
+
+    // Check skip rate limit
+    const skipLimit = rateLimitService.canSkipPartner(user.id);
+    if (!skipLimit.allowed) {
+      toast({
+        title: "Rate limit exceeded",
+        description: skipLimit.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
     console.log('⏭️ Skipping to next partner...');
+    
+    // Record skip for rate limiting and safety monitoring
+    rateLimitService.recordSkip(user.id);
+    safetyService.recordSessionBehavior(user.id, { type: 'skip' });
     
     // End current database session
     if (currentSession) {
@@ -405,6 +495,9 @@ export const useRandomChat = (): UseRandomChatReturn => {
       messageSubscriptionRef.current();
       messageSubscriptionRef.current = null;
     }
+    
+    // Stop any active retry processes
+    connectionRetryService.cancelRetry(`search-${user.id}`);
     
     if (signalingServiceRef.current) {
       signalingServiceRef.current.nextPartner();
@@ -421,21 +514,66 @@ export const useRandomChat = (): UseRandomChatReturn => {
     setIsSearching(true);
     setMessages([]);
     setUnreadMessages(0);
-  }, [currentSession]);
+  }, [currentSession, user?.id, toast]);
 
   // Send chat message
   const sendMessage = useCallback(async (text: string) => {
-    if (!signalingServiceRef.current || !currentRoomId || !text.trim()) return;
+    if (!signalingServiceRef.current || !currentRoomId || !text.trim() || !user?.id) return;
+    
+    // Check message rate limit
+    const messageLimit = rateLimitService.canSendMessage(user.id);
+    if (!messageLimit.allowed) {
+      toast({
+        title: "Rate limit exceeded",
+        description: messageLimit.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Filter message content for safety
+    const messageFilter = safetyService.filterMessage(text, user.id);
+    
+    if (!messageFilter.allowed) {
+      toast({
+        title: "Message blocked",
+        description: messageFilter.reason || "Message contains inappropriate content",
+        variant: "destructive",
+      });
+      
+      // Handle severe violations
+      if (messageFilter.action === 'end_session') {
+        endChat();
+        return;
+      } else if (messageFilter.action === 'ban') {
+        // User would be banned by the safety service
+        endChat();
+        toast({
+          title: "Account suspended",
+          description: "Your account has been suspended for violating community guidelines.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      return;
+    }
+
+    // Use filtered message if available
+    const finalMessage = messageFilter.filteredMessage || text.trim();
     
     const message: ChatMessage = {
       id: Date.now().toString(),
-      text: text.trim(),
+      text: finalMessage,
       timestamp: new Date(),
       isOwn: true
     };
     
     // Add to local messages immediately
     setMessages(prev => [...prev, message]);
+    
+    // Record rate limit
+    rateLimitService.recordMessage(user.id);
     
     // Send through signaling service
     signalingServiceRef.current.sendMessage({
@@ -463,8 +601,17 @@ export const useRandomChat = (): UseRandomChatReturn => {
       }
     }
     
-    console.log('📤 Message sent:', text);
-  }, [currentRoomId, currentSession, user?.id]);
+    // Show warning if message was filtered
+    if (messageFilter.filteredMessage && messageFilter.action === 'warn') {
+      toast({
+        title: "Content filtered",
+        description: "Your message was modified to remove inappropriate content.",
+        variant: "default",
+      });
+    }
+    
+    console.log('📤 Message sent:', finalMessage);
+  }, [currentRoomId, currentSession, user?.id, toast, endChat]);
 
   // Toggle video
   const toggleVideo = useCallback(() => {
@@ -501,8 +648,24 @@ export const useRandomChat = (): UseRandomChatReturn => {
 
   // Report user
   const reportUser = useCallback(async (userId: string, reason: string, description?: string) => {
+    if (!user?.id) return;
+
+    // Check report rate limit
+    const reportLimit = rateLimitService.canSubmitReport(user.id);
+    if (!reportLimit.allowed) {
+      toast({
+        title: "Rate limit exceeded",
+        description: reportLimit.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       console.log('🚨 Reporting user:', userId, reason);
+      
+      // Record report for rate limiting
+      rateLimitService.recordReport(user.id);
       
       // Report to signaling server
       if (signalingServiceRef.current) {
@@ -511,6 +674,9 @@ export const useRandomChat = (): UseRandomChatReturn => {
       
       // Report to database
       await randomChatService.reportUser(userId, reason, description, currentSession?.id);
+      
+      // Report to safety service
+      safetyService.reportUser(user.id, userId, reason as any, description);
       
       // End current session due to report
       if (currentSession) {
@@ -524,7 +690,7 @@ export const useRandomChat = (): UseRandomChatReturn => {
       console.error('❌ Failed to report user:', error);
       throw error;
     }
-  }, [endChat, currentSession?.id]);
+  }, [endChat, currentSession?.id, user?.id, toast]);
 
   // Initialize services when component mounts
   useEffect(() => {
