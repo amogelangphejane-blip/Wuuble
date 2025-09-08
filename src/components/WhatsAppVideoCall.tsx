@@ -3,8 +3,7 @@ import '../styles/whatsapp-video-call.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useGroupVideoChat, UseGroupVideoChatOptions } from '@/hooks/useGroupVideoChat';
-import { GroupParticipant } from '@/services/groupWebRTCService';
+import { useVideoChat } from '@/hooks/useVideoChat';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Video, 

@@ -19,6 +19,13 @@ export interface ChatMessage {
   isOwn: boolean;
 }
 
+export interface UserPreferences {
+  enableHD?: boolean;
+  preferredQuality?: 'low' | 'medium' | 'high';
+  enableNoiseReduction?: boolean;
+  enableEchoCancellation?: boolean;
+}
+
 export interface UseVideoChatOptions {
   webRTCConfig?: WebRTCConfig;
   useMockSignaling?: boolean;

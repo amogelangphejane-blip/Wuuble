@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { GroupVideoChat } from '@/components/GroupVideoChat';
+import { VideoChat } from '@/components/VideoChat';
 import { ModernHeader } from '@/components/ModernHeader';
 import { 
   ArrowLeft, 
@@ -189,11 +189,8 @@ const CommunityVideoChat = () => {
           </Button>
         </div>
 
-        {/* Group Video Chat Component */}
-        <GroupVideoChat 
-          communityId={id!}
-          onExit={exitVideoChat}
-        />
+        {/* Video Chat Component */}
+        <VideoChat />
       </div>
     );
   }

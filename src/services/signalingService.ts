@@ -15,21 +15,13 @@ export interface SignalingEvents {
   onDisconnected?: () => void;
 }
 
-export class SignalingService {
-  private ws: WebSocket | null = null;
-  private url: string;
-  private events: SignalingEvents;
-  private userId: string;
-  private roomId: string | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
-
-  constructor(url: string, userId: string, events: SignalingEvents = {}) {
-    this.url = url;
-    this.userId = userId;
-    this.events = events;
-  }
+export abstract class SignalingService {
+  protected abstract connect(): Promise<void>;
+  protected abstract disconnect(): void;
+  protected abstract joinRoom(roomId: string): void;
+  protected abstract leaveRoom(): void;
+  protected abstract sendMessage(message: SignalingMessage): void;
+  protected abstract isConnected(): boolean;
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
