@@ -68,14 +68,6 @@ interface CommunityMember {
   } | null;
 }
 
-interface OngoingCall {
-  id: string;
-  title: string;
-  current_participants: number;
-  max_participants: number;
-  started_at: string;
-  creator_id: string;
-}
 
 const CommunityDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -91,7 +83,6 @@ const CommunityDetail = () => {
   const [joiningLeaving, setJoiningLeaving] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('resources');
-  const [ongoingCall, setOngoingCall] = useState<OngoingCall | null>(null);
 
 
 
@@ -107,40 +98,7 @@ const CommunityDetail = () => {
     }
   }, [id, user]);
 
-  // Poll for ongoing calls every 10 seconds
-  useEffect(() => {
-    if (!id || !user || !isMember) return;
 
-    const interval = setInterval(() => {
-      fetchOngoingCall();
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [id, user, isMember]);
-
-  const fetchOngoingCall = async () => {
-    if (!id || !user) return;
-
-    try {
-      const { data: call, error } = await supabase
-        .from('community_group_calls')
-        .select('id, title, current_participants, max_participants, started_at, creator_id')
-        .eq('community_id', id)
-        .eq('status', 'active')
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching ongoing call:', error);
-        return;
-      }
-
-      setOngoingCall(call);
-    } catch (error) {
-      console.error('Error fetching ongoing call:', error);
-    }
-  };
 
   const fetchCommunityDetails = async () => {
     if (!id || !user) return;
@@ -227,11 +185,6 @@ const CommunityDetail = () => {
         setMembers([]);
       } else {
         setMembers(membersData || []);
-      }
-
-      // Fetch ongoing call if user is a member
-      if (isMember) {
-        await fetchOngoingCall();
       }
 
     } catch (error) {

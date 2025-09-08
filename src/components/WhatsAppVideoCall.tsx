@@ -19,15 +19,13 @@ import {
   Users,
   VolumeX,
   Volume2,
-  Monitor,
-  MonitorOff,
   ArrowLeft,
   UserPlus
 } from 'lucide-react';
 
 type CallState = 'idle' | 'calling' | 'active' | 'minimized' | 'ended';
 
-interface WhatsAppVideoCallProps extends UseGroupVideoChatOptions {
+interface WhatsAppVideoCallProps {
   onClose?: () => void;
   onMinimize?: () => void;
   onMaximize?: () => void;
@@ -37,6 +35,11 @@ interface WhatsAppVideoCallProps extends UseGroupVideoChatOptions {
   contactAvatar?: string;
   communityId: string;
   callId?: string;
+  webRTCConfig?: any;
+  useMockSignaling?: boolean;
+  userPreferences?: any;
+  autoConnect?: boolean;
+  serverUrl?: string;
 }
 
 interface CallParticipant {
@@ -76,61 +79,58 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
   const { toast } = useToast();
 
   const {
-    callStatus,
-    isConnecting,
-    isConnected,
-    cameraPermission,
-    participants,
-    localParticipant,
-    participantStreams,
-    localStream,
+    connectionStatus,
     isVideoEnabled,
     isAudioEnabled,
-    isScreenSharing,
     localVideoRef,
-    startCall,
-    joinCall,
-    endCall,
+    remoteVideoRef,
+    startCall: startVideoChat,
+    endCall: endVideoChat,
     toggleVideo,
     toggleAudio,
-    startScreenShare,
-    stopScreenShare,
-    getParticipantStream,
-  } = useGroupVideoChat({ communityId, callId, ...options });
+    partnerConnected,
+    cameraPermission,
+  } = useVideoChat({ 
+    webRTCConfig: options.webRTCConfig,
+    useMockSignaling: options.useMockSignaling,
+    userPreferences: options.userPreferences,
+    autoConnect: options.autoConnect,
+    serverUrl: options.serverUrl
+  });
 
-  // Convert participants to call participants format
+  // For regular video chat, we only have local and remote participants
   const callParticipants: CallParticipant[] = [
-    ...(localParticipant ? [{
-      id: localParticipant.id,
-      name: localParticipant.displayName,
-      avatar: localParticipant.avatarUrl,
-      isVideoEnabled: localParticipant.isVideoEnabled,
-      isAudioEnabled: localParticipant.isAudioEnabled,
-      stream: localStream,
+    {
+      id: 'local',
+      name: 'You',
+      avatar: '',
+      isVideoEnabled: isVideoEnabled,
+      isAudioEnabled: isAudioEnabled,
+      stream: undefined, // Local stream handled by localVideoRef
       isLocal: true
-    }] : []),
-    ...participants.map(p => ({
-      id: p.id,
-      name: p.displayName,
-      avatar: p.avatarUrl,
-      isVideoEnabled: p.isVideoEnabled,
-      isAudioEnabled: p.isAudioEnabled,
-      stream: getParticipantStream(p.id) || undefined,
+    },
+    ...(partnerConnected ? [{
+      id: 'remote',
+      name: contactName || 'Partner',
+      avatar: contactAvatar || '',
+      isVideoEnabled: true, // Assume partner has video enabled
+      isAudioEnabled: true, // Assume partner has audio enabled
+      stream: undefined, // Remote stream handled by remoteVideoRef
       isLocal: false
-    }))
+    }] : [])
   ];
 
   // Update call state based on connection status
   useEffect(() => {
-    if (isConnecting && callState === 'idle') {
+    if (connectionStatus === 'connecting' && callState === 'idle') {
       setCallState('calling');
-    } else if (isConnected && callState !== 'active') {
+    } else if (connectionStatus === 'connected' && callState !== 'active') {
       setCallState('active');
       setCallStartTime(new Date());
-    } else if (!isConnected && !isConnecting && callState === 'active') {
+    } else if (connectionStatus === 'disconnected' && callState === 'active') {
       setCallState('ended');
     }
-  }, [isConnecting, isConnected, callState]);
+  }, [connectionStatus, callState]);
 
   // Call duration timer
   useEffect(() => {
@@ -174,13 +174,10 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
 
   const handleStartCall = async () => {
     try {
-      if (callId) {
-        await joinCall(callId);
-      } else {
-        await startCall(contactName);
-      }
+      await startVideoChat();
+      setCallState('calling');
     } catch (error) {
-      console.error('Failed to start/join call:', error);
+      console.error('Failed to start call:', error);
       toast({
         title: "Call Failed",
         description: "Unable to start the call. Please try again.",
@@ -190,7 +187,7 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
   };
 
   const handleEndCall = () => {
-    endCall();
+    endVideoChat();
     setCallState('ended');
     setTimeout(() => {
       onClose?.();
@@ -213,18 +210,15 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
       <div className={`whatsapp-minimized-call fixed bottom-4 right-4 w-80 h-48 bg-black rounded-lg overflow-hidden shadow-2xl z-50 whatsapp-fade-in ${className}`}>
         <div className="relative w-full h-full">
           {/* Remote video background */}
-          {primaryParticipant?.stream && primaryParticipant.isVideoEnabled ? (
+          {partnerConnected && (
             <video
+              ref={remoteVideoRef}
               className="w-full h-full object-cover"
               autoPlay
               playsInline
-              ref={(video) => {
-                if (video && primaryParticipant.stream) {
-                  video.srcObject = primaryParticipant.stream;
-                }
-              }}
             />
-          ) : (
+          )}
+          {!partnerConnected && (
             <div className="w-full h-full bg-gray-800 flex items-center justify-center">
               <Avatar className="w-16 h-16">
                 <AvatarImage src={primaryParticipant?.avatar} />
@@ -234,22 +228,20 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
           )}
 
           {/* Local video PiP */}
-          {localParticipantData?.stream && (
-            <div className="absolute top-2 right-2 w-20 h-16 rounded-lg overflow-hidden border border-white/30">
-              <video
-                ref={localVideoRef}
-                className="w-full h-full object-cover"
-                autoPlay
-                playsInline
-                muted
-              />
-              {!isVideoEnabled && (
-                <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                  <VideoOff className="w-4 h-4 text-white" />
-                </div>
-              )}
-            </div>
-          )}
+          <div className="absolute top-2 right-2 w-20 h-16 rounded-lg overflow-hidden border border-white/30">
+            <video
+              ref={localVideoRef}
+              className="w-full h-full object-cover"
+              autoPlay
+              playsInline
+              muted
+            />
+            {!isVideoEnabled && (
+              <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+                <VideoOff className="w-4 h-4 text-white" />
+              </div>
+            )}
+          </div>
 
           {/* Controls */}
           <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2">
@@ -318,11 +310,11 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
           <h2 className="text-2xl font-medium mb-2">{contactName}</h2>
           <p className="text-white/80 mb-8">Community Video Call</p>
           
-          {participants.length > 0 && (
+          {partnerConnected && (
             <div className="bg-white/20 rounded-full px-4 py-2 mb-8">
               <span className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                {participants.length} member{participants.length !== 1 ? 's' : ''} in call
+                2 members in call
               </span>
             </div>
           )}
@@ -424,18 +416,15 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
       >
         {/* Remote video (main) */}
         <div className="absolute inset-0">
-          {primaryParticipant?.stream && primaryParticipant.isVideoEnabled ? (
+          {partnerConnected && (
             <video
+              ref={remoteVideoRef}
               className="w-full h-full object-cover"
               autoPlay
               playsInline
-              ref={(video) => {
-                if (video && primaryParticipant.stream) {
-                  video.srcObject = primaryParticipant.stream;
-                }
-              }}
             />
-          ) : (
+          )}
+          {!partnerConnected && (
             <div className="w-full h-full bg-gray-900 flex flex-col items-center justify-center text-white">
               <Avatar className="w-32 h-32 mb-4">
                 <AvatarImage src={primaryParticipant?.avatar} />
@@ -444,28 +433,26 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
                 </AvatarFallback>
               </Avatar>
               <h3 className="text-xl font-medium">{primaryParticipant?.name || contactName}</h3>
-              <p className="text-white/70 mt-2">Video is off</p>
+              <p className="text-white/70 mt-2">Waiting for partner...</p>
             </div>
           )}
         </div>
 
         {/* Local video (Picture-in-Picture) */}
-        {localParticipantData?.stream && (
-          <div className="absolute top-4 right-4 w-32 h-40 rounded-lg overflow-hidden border-2 border-white/30 shadow-lg">
-            <video
-              ref={localVideoRef}
-              className="w-full h-full object-cover"
-              autoPlay
-              playsInline
-              muted
-            />
-            {!isVideoEnabled && (
-              <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                <VideoOff className="w-6 h-6 text-white" />
-              </div>
-            )}
-          </div>
-        )}
+        <div className="absolute top-4 right-4 w-32 h-40 rounded-lg overflow-hidden border-2 border-white/30 shadow-lg">
+          <video
+            ref={localVideoRef}
+            className="w-full h-full object-cover"
+            autoPlay
+            playsInline
+            muted
+          />
+          {!isVideoEnabled && (
+            <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+              <VideoOff className="w-6 h-6 text-white" />
+            </div>
+          )}
+        </div>
 
         {/* Top bar with controls */}
         <div className={`absolute top-0 left-0 right-0 bg-gradient-to-b from-black/60 to-transparent transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
@@ -480,10 +467,10 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
               </div>
             </div>
             
-            {participants.length > 1 && (
+            {partnerConnected && (
               <div className="flex items-center gap-2 bg-black/40 rounded-full px-3 py-1">
                 <Users className="w-4 h-4" />
-                <span className="text-sm">{participants.length + 1}</span>
+                <span className="text-sm">2</span>
               </div>
             )}
           </div>
@@ -510,16 +497,6 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
               onClick={toggleVideo}
             >
               {isVideoEnabled ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
-            </Button>
-
-            {/* Screen share */}
-            <Button
-              size="lg"
-              variant="ghost"
-              className={`whatsapp-control-button w-14 h-14 rounded-full ${isScreenSharing ? 'bg-blue-500 hover:bg-blue-600' : 'bg-white/20 hover:bg-white/30'} text-white`}
-              onClick={isScreenSharing ? stopScreenShare : startScreenShare}
-            >
-              {isScreenSharing ? <MonitorOff className="w-6 h-6" /> : <Monitor className="w-6 h-6" />}
             </Button>
 
             {/* End call */}
@@ -550,51 +527,6 @@ export const WhatsAppVideoCall: React.FC<WhatsAppVideoCallProps> = ({
             </Button>
           </div>
         </div>
-
-        {/* Multiple participants grid (if more than 2 participants) */}
-        {participants.length > 1 && (
-          <div className="absolute top-20 left-4 right-4 bottom-32">
-            <div className="grid grid-cols-2 gap-2 h-full">
-              {callParticipants.slice(1, 5).map((participant) => (
-                <div key={participant.id} className="relative bg-gray-800 rounded-lg overflow-hidden">
-                  {participant.stream && participant.isVideoEnabled ? (
-                    <video
-                      className="w-full h-full object-cover"
-                      autoPlay
-                      playsInline
-                      muted={participant.isLocal}
-                      ref={(video) => {
-                        if (video && participant.stream) {
-                          video.srcObject = participant.stream;
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-white">
-                      <Avatar className="w-12 h-12 mb-2">
-                        <AvatarImage src={participant.avatar} />
-                        <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{participant.name}</span>
-                    </div>
-                  )}
-                  
-                  {/* Participant name */}
-                  <div className="absolute bottom-2 left-2 bg-black/60 rounded px-2 py-1">
-                    <span className="text-white text-xs">{participant.name}</span>
-                  </div>
-                  
-                  {/* Audio indicator */}
-                  {!participant.isAudioEnabled && (
-                    <div className="absolute top-2 right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                      <MicOff className="w-3 h-3 text-white" />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     );
   }
