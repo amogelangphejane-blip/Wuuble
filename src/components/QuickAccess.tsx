@@ -1,26 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Video, 
-  Users, 
-  MessageCircle, 
-  Calendar,
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
   Zap,
-  Play,
-  Clock,
-  UserPlus,
+  MessageSquare,
+  Calendar,
+  Users,
   Phone,
-  Monitor,
-  Headphones,
+  Video,
   Settings,
-  Star,
+  ArrowRight,
   Activity
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -28,8 +20,6 @@ import { validateAvatarUrl } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { WhatsAppVideoCall } from '@/components/WhatsAppVideoCall';
 import { useWhatsAppVideoCall } from '@/hooks/useWhatsAppVideoCall';
-
-
 
 
 interface QuickAccessProps {
@@ -41,7 +31,7 @@ interface QuickAccessProps {
 
 export const QuickAccess = ({ communityId, communityName, isMember, isCreator }: QuickAccessProps) => {
   const [loading, setLoading] = useState(false);
-  
+
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -51,15 +41,6 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
   
   // Debug logging
   console.log('🎥 QuickAccess - WhatsApp call state:', callState);
-
-  // Start a random video chat
-  const startRandomVideoChat = () => {
-    startCall({
-      communityId,
-      contactName: 'Random Chat',
-      contactAvatar: undefined,
-    });
-  };
 
   // Start a random video chat with WhatsApp-style interface
   const startRandomVideoChat = () => {
@@ -86,117 +67,16 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
 
   return (
     <div className="space-y-6">
-      {/* Quick Actions Header */}
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-primary" />
-            Quick Access
-          </CardTitle>
-          <CardDescription>
-            Instant access to community features and video chat
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
-      {/* Video Chat Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Video className="w-5 h-5" />
-            Community Video Chat
+            <Zap className="w-5 h-5" />
+            Quick Access
           </CardTitle>
-          <CardDescription>
-            Connect with community members through video calls
-          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-            {/* Debug WhatsApp Call Button */}
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="h-16 flex-col gap-2 border-green-500 text-green-600 hover:bg-green-50"
-              onClick={() => startCall({
-                communityId,
-                contactName: `${communityName} Video Call`,
-                contactAvatar: undefined,
-              })}
-            >
-              <Video className="w-6 h-6" />
-              <span>Test WhatsApp Call</span>
-            </Button>
-
-            {/* Random Video Chat */}
-              <DialogTrigger asChild>
-                <Button size="lg" className="h-16 flex-col gap-2 hidden">
-                  <Users className="w-6 h-6" />
-                  <span>Start Group Call (Old)</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create Group Video Call</DialogTitle>
-                  <DialogDescription>
-                    Start a video call for community members to join
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Call Title</label>
-                    <input
-                      type="text"
-                      placeholder="e.g., Study Session, Community Hangout"
-                      value={newCallTitle}
-                      onChange={(e) => setNewCallTitle(e.target.value)}
-                      className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Max Participants</label>
-                    <select
-                      value={newCallMaxParticipants}
-                      onChange={(e) => setNewCallMaxParticipants(Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      <option value={5}>5 participants</option>
-                      <option value={10}>10 participants</option>
-                      <option value={15}>15 participants</option>
-                      <option value={20}>20 participants</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <Button 
-                    onClick={createWhatsAppCall}
-                    disabled={!newCallTitle.trim() || creatingCall}
-                    className="flex-1"
-                  >
-                    {creatingCall ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Video className="w-4 h-4 mr-2" />
-                        Create Call
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    onClick={() => setCreateCallDialogOpen(false)}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
+        <CardContent className="space-y-6">
+          {/* Quick Action Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Random Video Chat */}
             <Button 
               size="lg" 
@@ -208,112 +88,60 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
               <span>Random Video Chat</span>
             </Button>
           </div>
-
-          {/* Ongoing Calls */}
-          {ongoingCalls.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                Active Calls ({ongoingCalls.length})
-              </h4>
-              <div className="space-y-3">
-                {ongoingCalls.map((call) => (
-                  <Card key={call.id} className="border-green-200 bg-green-50/50">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage 
-                                src={validateAvatarUrl(call.creator_profile?.avatar_url)} 
-                                alt={call.creator_profile?.display_name || 'Host'}
-                              />
-                              <AvatarFallback>
-                                {(call.creator_profile?.display_name || 'H').charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                          </div>
-                          <div>
-                            <h5 className="font-semibold">{call.title}</h5>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Users className="w-3 h-3" />
-                                {call.current_participants}/{call.max_participants}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {formatDistanceToNow(new Date(call.started_at), { addSuffix: true })}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            <Activity className="w-3 h-3 mr-1" />
-                            Live
-                          </Badge>
-                          <Button 
-                            size="sm"
-                            onClick={() => joinCall({
-                              communityId,
-                              callId: call.id,
-                              contactName: call.title,
-                              contactAvatar: call.creator_profile?.avatar_url || undefined,
-                            })}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <UserPlus className="w-4 h-4 mr-2" />
-                            Join
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
-
-
 
       {/* Quick Features Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Quick Discussion */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/communities/${communityId}`)}>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => navigate(`/communities/${communityId}#discussion`)}>
           <CardContent className="p-6 text-center">
-            <MessageCircle className="w-12 h-12 text-blue-500 mx-auto mb-3" />
-            <h4 className="font-semibold mb-2">Quick Discussion</h4>
-            <p className="text-sm text-muted-foreground">Jump to community discussions</p>
+            <MessageSquare className="w-12 h-12 text-primary mx-auto mb-4" />
+            <h4 className="font-semibold mb-2">Discussion</h4>
+            <p className="text-sm text-muted-foreground">
+              Join community discussions
+            </p>
           </CardContent>
         </Card>
 
-        {/* Quick Events */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/communities/${communityId}/calendar`)}>
+        {/* Quick Calendar */}
+        <Card className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => navigate(`/communities/${communityId}/calendar`)}>
           <CardContent className="p-6 text-center">
-            <Calendar className="w-12 h-12 text-purple-500 mx-auto mb-3" />
-            <h4 className="font-semibold mb-2">Quick Events</h4>
-            <p className="text-sm text-muted-foreground">View upcoming events</p>
+            <Calendar className="w-12 h-12 text-primary mx-auto mb-4" />
+            <h4 className="font-semibold mb-2">Events</h4>
+            <p className="text-sm text-muted-foreground">
+              View upcoming events
+            </p>
           </CardContent>
         </Card>
 
-
+        {/* Quick Members */}
+        <Card className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => navigate(`/communities/${communityId}/members`)}>
+          <CardContent className="p-6 text-center">
+            <Users className="w-12 h-12 text-primary mx-auto mb-4" />
+            <h4 className="font-semibold mb-2">Members</h4>
+            <p className="text-sm text-muted-foreground">
+              Connect with members
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Help Section */}
-      <Card className="bg-muted/30">
+      {/* Tips Card */}
+      <Card className="border-dashed">
         <CardContent className="p-6">
           <div className="flex items-start gap-3">
             <Settings className="w-5 h-5 text-muted-foreground mt-1" />
             <div>
               <h4 className="font-semibold mb-2">Quick Access Features</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Start group video calls with community members</li>
                 <li>• Join random video chats with other users</li>
                 <li>• Quick navigation to discussions and events</li>
                 <li>• Real-time activity updates</li>
-
+                <li>• Connect with community members</li>
               </ul>
             </div>
           </div>
