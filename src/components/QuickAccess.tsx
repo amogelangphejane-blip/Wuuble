@@ -30,18 +30,7 @@ import { WhatsAppVideoCall } from '@/components/WhatsAppVideoCall';
 import { useWhatsAppVideoCall } from '@/hooks/useWhatsAppVideoCall';
 
 
-interface OngoingCall {
-  id: string;
-  title: string;
-  current_participants: number;
-  max_participants: number;
-  started_at: string;
-  creator_id: string;
-  creator_profile?: {
-    display_name: string | null;
-    avatar_url: string | null;
-  };
-}
+
 
 interface QuickAccessProps {
   communityId: string;
@@ -51,12 +40,7 @@ interface QuickAccessProps {
 }
 
 export const QuickAccess = ({ communityId, communityName, isMember, isCreator }: QuickAccessProps) => {
-  const [ongoingCalls, setOngoingCalls] = useState<OngoingCall[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [createCallDialogOpen, setCreateCallDialogOpen] = useState(false);
-  const [newCallTitle, setNewCallTitle] = useState('');
-  const [newCallMaxParticipants, setNewCallMaxParticipants] = useState(10);
-  const [creatingCall, setCreatingCall] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -68,102 +52,12 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
   // Debug logging
   console.log('🎥 QuickAccess - WhatsApp call state:', callState);
 
-  // Fetch ongoing calls
-  const fetchOngoingCalls = async () => {
-    if (!isMember) return;
-    
-    try {
-      const { data: calls, error } = await supabase
-        .from('community_group_calls')
-        .select(`
-          id,
-          title,
-          current_participants,
-          max_participants,
-          started_at,
-          creator_id,
-          profiles!community_group_calls_creator_id_fkey (
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('community_id', communityId)
-        .eq('status', 'active')
-        .order('started_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching ongoing calls:', error);
-        return;
-      }
-
-      const callsWithProfiles = (calls || []).map(call => ({
-        ...call,
-        creator_profile: call.profiles
-      }));
-
-      setOngoingCalls(callsWithProfiles);
-    } catch (error) {
-      console.error('Error fetching ongoing calls:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Create a new WhatsApp-style group video call
-  const createWhatsAppCall = async () => {
-    if (!user || !newCallTitle.trim()) return;
-
-    setCreatingCall(true);
-    try {
-      const { data: call, error } = await supabase
-        .from('community_group_calls')
-        .insert([{
-          community_id: communityId,
-          creator_id: user.id,
-          title: newCallTitle.trim(),
-          max_participants: newCallMaxParticipants,
-          status: 'active'
-        }])
-        .select('id')
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Success!",
-        description: "Video call created successfully"
-      });
-
-      setCreateCallDialogOpen(false);
-      setNewCallTitle('');
-      setNewCallMaxParticipants(10);
-      
-      // Start WhatsApp-style call
-      startCall({
-        communityId,
-        contactName: newCallTitle.trim(),
-        contactAvatar: undefined, // Could be community avatar
-      });
-      
-    } catch (error: any) {
-      console.error('Error creating group call:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create video call",
-        variant: "destructive"
-      });
-    } finally {
-      setCreatingCall(false);
-    }
-  };
-
-  // Join an existing WhatsApp-style call
-  const joinWhatsAppCall = (call: OngoingCall) => {
-    joinCall({
+  // Start a random video chat
+  const startRandomVideoChat = () => {
+    startCall({
       communityId,
-      callId: call.id,
-      contactName: call.title,
-      contactAvatar: call.creator_profile?.avatar_url || undefined,
+      contactName: 'Random Chat',
+      contactAvatar: undefined,
     });
   };
 
@@ -175,14 +69,6 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
       contactAvatar: undefined,
     });
   };
-
-  useEffect(() => {
-    fetchOngoingCalls();
-
-    // Poll for ongoing calls every 10 seconds
-    const interval = setInterval(fetchOngoingCalls, 10000);
-    return () => clearInterval(interval);
-  }, [communityId, isMember]);
 
   if (!isMember) {
     return (
@@ -242,22 +128,8 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
               <Video className="w-6 h-6" />
               <span>Test WhatsApp Call</span>
             </Button>
-            {/* Create Group Call */}
-            <Button 
-              size="lg" 
-              className="h-16 flex-col gap-2"
-              onClick={() => startCall({
-                communityId,
-                contactName: `${communityName} Group Call`,
-                contactAvatar: undefined,
-              })}
-            >
-              <Users className="w-6 h-6" />
-              <span>Start Group Call</span>
-            </Button>
-            
-            {/* Original Dialog (Hidden) */}
-            <Dialog open={createCallDialogOpen} onOpenChange={setCreateCallDialogOpen}>
+
+            {/* Random Video Chat */}
               <DialogTrigger asChild>
                 <Button size="lg" className="h-16 flex-col gap-2 hidden">
                   <Users className="w-6 h-6" />

@@ -25,9 +25,6 @@ import CommunityMembers from "./pages/CommunityMembers";
 import CommunitySubscriptions from "./pages/CommunitySubscriptions";
 import ProfileSettings from "./pages/ProfileSettings";
 import ConnectVideoCall from "./pages/ConnectVideoCall";
-
-import CommunityGroupCall from "./pages/CommunityGroupCall";
-import TestGroupCall from "./pages/TestGroupCall";
 import NotFound from "./pages/NotFound";
 
 import CommunityLeaderboardPage from "./pages/CommunityLeaderboard";
@@ -82,20 +79,6 @@ const App = () => {
                 <Route path="/communities" element={<Communities />} />
                 <Route path="/communities/:id" element={<CommunityDetail />} />
                 <Route path="/communities/:id/video-chat" element={<CommunityVideoChat />} />
-                <Route 
-                  path="/communities/:id/group-call" 
-                  element={(() => {
-                    console.log('🎯 Group call route (no callId) matched');
-                    return <CommunityGroupCall />;
-                  })()} 
-                />
-                <Route 
-                  path="/communities/:id/group-call/:callId" 
-                  element={(() => {
-                    console.log('🎯 Group call route (with callId) matched');
-                    return <CommunityGroupCall />;
-                  })()} 
-                />
                 {/* Enhanced calendar route - new default */}
                 <Route path="/communities/:id/calendar" element={<EnhancedCommunityCalendar />} />
                 {/* Legacy calendar route for backward compatibility */}
