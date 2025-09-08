@@ -41,11 +41,15 @@ import {
   Laugh,
   Angry,
   Sad,
-  Trash2
+  Trash2,
+  Link,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { validateAvatarUrl } from '@/lib/utils';
 import { PostImageUpload } from '@/components/PostImageUpload';
+import { LinkPreview } from '@/components/LinkPreview';
 
 interface CommunityPostLike {
   id: string;
@@ -84,6 +88,11 @@ interface CommunityPost {
   id: string;
   content: string;
   image_url: string | null;
+  link_url: string | null;
+  link_title: string | null;
+  link_description: string | null;
+  link_image_url: string | null;
+  link_domain: string | null;
   created_at: string;
   user_id: string;
   category?: string | null;
@@ -114,6 +123,7 @@ const POST_CATEGORIES = [
   { value: 'event', label: '📅 Events', color: 'bg-purple-100 text-purple-800' },
   { value: 'resource', label: '📚 Resources', color: 'bg-indigo-100 text-indigo-800' },
   { value: 'showcase', label: '🎨 Showcase', color: 'bg-pink-100 text-pink-800' },
+  { value: 'link', label: '🔗 Links', color: 'bg-cyan-100 text-cyan-800' },
 ];
 
 const REACTION_TYPES = [
@@ -131,6 +141,13 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
   const [newPost, setNewPost] = useState('');
   const [newPostCategory, setNewPostCategory] = useState('general');
   const [newPostImage, setNewPostImage] = useState<string | null>(null);
+  const [newPostLink, setNewPostLink] = useState<{
+    url: string;
+    title: string;
+    description: string;
+    image: string;
+    domain: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -160,6 +177,11 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
           id,
           content,
           image_url,
+          link_url,
+          link_title,
+          link_description,
+          link_image_url,
+          link_domain,
           created_at,
           user_id,
           category,
@@ -315,12 +337,14 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
 
   // Create a new post
   const createPost = async () => {
-    if ((!newPost.trim() && !newPostImage) || !user) return;
+    if ((!newPost.trim() && !newPostImage && !newPostLink) || !user) return;
 
     setPosting(true);
     try {
       // Ensure content is never empty string for database NOT NULL constraint
-      const content = newPost.trim() || (newPostImage ? '[Image]' : '');
+      const content = newPost.trim() || 
+        (newPostImage ? '[Image]' : '') ||
+        (newPostLink ? '[Link]' : '');
       
       const { error } = await supabase
         .from('community_posts')
@@ -330,6 +354,11 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
             user_id: user.id,
             content: content,
             image_url: newPostImage,
+            link_url: newPostLink?.url || null,
+            link_title: newPostLink?.title || null,
+            link_description: newPostLink?.description || null,
+            link_image_url: newPostLink?.image || null,
+            link_domain: newPostLink?.domain || null,
             category: newPostCategory,
           }
         ]);
@@ -347,6 +376,7 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
       setNewPost('');
       setNewPostCategory('general');
       setNewPostImage(null);
+      setNewPostLink(null);
       await fetchPosts(); // Refresh posts
       
       // Scroll to top after posting
@@ -829,10 +859,15 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
                     </SelectContent>
                   </Select>
                   
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
                     <PostImageUpload
                       onImageUploaded={setNewPostImage}
                       currentImageUrl={newPostImage}
+                      disabled={posting}
+                    />
+                    <LinkPreview
+                      onLinkAdded={setNewPostLink}
+                      currentLink={newPostLink}
                       disabled={posting}
                     />
                   </div>
@@ -840,7 +875,7 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
                 
                 <Button
                   onClick={createPost}
-                  disabled={(!newPost.trim() && !newPostImage) || posting}
+                  disabled={(!newPost.trim() && !newPostImage && !newPostLink) || posting}
                   size="lg"
                   className="px-6 py-2 h-10 flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-full shadow-md hover:shadow-lg transition-all duration-200 min-w-[100px]"
                 >
@@ -964,7 +999,7 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
                           </div>
                         </div>
                         
-                        {post.content && post.content !== '[Image]' && (
+                        {post.content && post.content !== '[Image]' && post.content !== '[Link]' && (
                           <div className="text-base whitespace-pre-wrap break-words mb-4 leading-relaxed">
                             {post.content}
                           </div>
@@ -978,6 +1013,69 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
                               className="w-full max-h-96 rounded-xl border border-border object-cover cursor-pointer hover:opacity-95 transition-opacity"
                               onClick={() => window.open(post.image_url!, '_blank')}
                             />
+                          </div>
+                        )}
+
+                        {post.link_url && (
+                          <div className="mb-4">
+                            <div className="bg-background rounded-lg border border-border overflow-hidden hover:border-primary/20 transition-all duration-200 cursor-pointer"
+                                 onClick={() => window.open(post.link_url!, '_blank')}>
+                              {post.link_image_url && (
+                                <div className="aspect-video bg-muted relative overflow-hidden">
+                                  <img
+                                    src={post.link_image_url}
+                                    alt={post.link_title || 'Link preview'}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                    }}
+                                  />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                                </div>
+                              )}
+                              
+                              <div className="p-4">
+                                <div className="flex items-start justify-between gap-3 mb-2">
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold text-foreground text-sm mb-1 leading-tight overflow-hidden"
+                                        style={{
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: 2,
+                                          WebkitBoxOrient: 'vertical',
+                                          maxHeight: '2.8em'
+                                        }}>
+                                      {post.link_title || 'Untitled'}
+                                    </h3>
+                                    {post.link_description && (
+                                      <p className="text-muted-foreground text-xs mt-1 leading-relaxed overflow-hidden"
+                                         style={{
+                                           display: '-webkit-box',
+                                           WebkitLineClamp: 2,
+                                           WebkitBoxOrient: 'vertical',
+                                           maxHeight: '2.4em'
+                                         }}>
+                                        {post.link_description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between mt-3">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="text-xs">
+                                      <Globe className="h-3 w-3 mr-1" />
+                                      {post.link_domain || 'External Link'}
+                                    </Badge>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-1 text-muted-foreground">
+                                    <ExternalLink className="h-3 w-3" />
+                                    <span className="text-xs">Visit</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         )}
 
