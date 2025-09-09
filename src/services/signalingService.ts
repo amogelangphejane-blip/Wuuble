@@ -13,6 +13,8 @@ export interface SignalingEvents {
   onError?: (error: string) => void;
   onConnected?: () => void;
   onDisconnected?: () => void;
+  onReconnecting?: (attempt: number) => void;
+  onQueueStatus?: (data: { position: number; estimatedWaitTime: number }) => void;
 }
 
 export abstract class SignalingService {

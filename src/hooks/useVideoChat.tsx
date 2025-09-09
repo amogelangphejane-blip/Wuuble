@@ -6,6 +6,7 @@ import {
   SignalingMessage,
   SignalingEvents
 } from '@/services/signalingService';
+import { SocketIOSignalingService, createSocketIOSignalingService } from '@/services/socketIOSignalingService';
 import { FilterConfig, VideoFilterService } from '@/services/videoFilterService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -209,8 +210,19 @@ export const useVideoChat = (options: UseVideoChatOptions = {}): UseVideoChatRet
         try {
           await socketIOSignalingRef.current.connect();
           console.log('✅ Socket.IO signaling connected');
+          setConnectionStatus('connected');
         } catch (error) {
-          console.error('❌ Socket.IO connection failed, falling back to mock signaling');
+          console.error('❌ Socket.IO connection failed:', error);
+          setConnectionStatus('disconnected');
+          
+          // Show user-friendly error message
+          toast({
+            title: "Cannot Connect to Chat Service",
+            description: "Failed to connect to the video chat server. Please check your internet connection and try again.",
+            variant: "destructive"
+          });
+          
+          console.log('📡 Falling back to mock signaling for testing...');
           // Fallback to mock signaling if Socket.IO fails
           signalingServiceRef.current = createSignalingService(userId, {
             onMessage: handleSignalingMessage,

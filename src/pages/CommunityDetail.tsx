@@ -27,7 +27,8 @@ import {
   Info,
   Trash2,
   Trophy,
-  BookOpen
+  BookOpen,
+  Link as LinkIcon
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CommunityPosts } from '@/components/CommunityPosts';
@@ -41,6 +42,7 @@ import { CommunityAbout } from '@/components/CommunityAbout';
 import { SimpleCommunityResources } from '@/components/SimpleCommunityResources';
 import { SubscriptionStatusIndicator } from '@/components/SubscriptionStatusBadge';
 import { CommunitySettings } from '@/components/CommunitySettings';
+import { CommunityLinksIcon } from '@/components/CommunityLinksIcon';
 
 import { CommunityLeaderboard } from '@/components/CommunityLeaderboard';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -282,6 +284,7 @@ const CommunityDetail = () => {
     { id: 'resources', label: 'Resources', icon: BookOpen },
     { id: 'members', label: 'Members', icon: Users },
     { id: 'events', label: 'Events', icon: Calendar },
+    { id: 'links', label: 'Links', icon: Link },
     { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
     { id: 'quick-access', label: 'Quick Access', icon: Zap },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
@@ -475,9 +478,9 @@ const CommunityDetail = () => {
       {/* Main Content */}
       <section className="py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={`grid gap-8 ${activeTab === 'discussions' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
+          <div className={`grid gap-8 ${activeTab === 'discussions' || activeTab === 'links' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
             {/* Main Content Area */}
-            <div className={activeTab === 'discussions' ? '' : 'lg:col-span-2'}>
+            <div className={activeTab === 'discussions' || activeTab === 'links' ? '' : 'lg:col-span-2'}>
               {activeTab === 'discussions' && (
                 <div className="space-y-6">
                   {(isMember || isCreator) ? (
@@ -610,6 +613,33 @@ const CommunityDetail = () => {
                 </div>
               )}
 
+              {activeTab === 'links' && (
+                <div className="space-y-6">
+                  {(isMember || isCreator) ? (
+                    <CommunityLinks 
+                      communityId={community.id}
+                      communityName={community.name}
+                      isMember={isMember}
+                      isCreator={isCreator}
+                    />
+                  ) : (
+                    <Card className="text-center py-12">
+                      <CardContent>
+                        <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold mb-2">Join to share links</h3>
+                        <p className="text-muted-foreground mb-6">
+                          Become a member to share and discover useful links with the community.
+                        </p>
+                        <Button onClick={joinCommunity} disabled={joiningLeaving}>
+                          <UserPlus className="mr-2 w-4 h-4" />
+                          Join Community
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
               {activeTab === 'subscriptions' && (
                 <div className="space-y-6">
                   {/* Subscription Status Card */}
@@ -720,8 +750,8 @@ const CommunityDetail = () => {
 
             </div>
 
-            {/* Sidebar - Only show for non-discussions tabs */}
-            {activeTab !== 'discussions' && (
+            {/* Sidebar - Only show for non-discussions and non-links tabs */}
+            {activeTab !== 'discussions' && activeTab !== 'links' && (
               <div className="space-y-6">
                 {/* Sidebar content can be added here for other tabs if needed */}
                 <Card>

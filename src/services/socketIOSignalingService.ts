@@ -67,64 +67,22 @@ export class SocketIOSignalingService {
     console.log(`🔌 Attempting connection to: ${this.serverUrl}`); // ADD THIS LINE
     
     this.socket = io(this.serverUrl, {
-      transports: ['polling', 'websocket'], // Updated from Step 3
-      timeout: 30000, // Updated from Step 3
+      transports: ['polling', 'websocket'],
+      timeout: 30000,
       forceNew: true,
       reconnection: true,
       reconnectionAttempts: this.maxReconnectAttempts,
       reconnectionDelay: this.reconnectDelay,
-      upgrade: true, // Added from Step 3
-      rememberUpgrade: false // Added from Step 3
+      upgrade: true,
+      rememberUpgrade: false
     });
 
-      return new Promise((resolve, reject) => {
-        if (!this.socket) return reject(new Error('Failed to create socket'));
+    return new Promise((resolve, reject) => {
+      if (!this.socket) return reject(new Error('Failed to create socket'));
 
-        // Connection successful
-        this.socket.on('connect', () => {
-          console.log('✅ Connected to Socket.IO signaling server');
-          this.connectionAttempts = 0;
-          this.setupEventHandlers();
-          this.authenticate();
-          resolve();
-        });
-
-        // Connection failed
-        this.socket.on('connect_error', (error) => {
-          console.error('❌ Socket.IO connection failed:', error);
-          this.events.onError?.(`Connection failed: ${error.message}`);
-          reject(error);
-        });
-
-        // Disconnected
-        this.socket.on('disconnect', (reason) => {
-          console.log(`📡 Disconnected from signaling server: ${reason}`);
-          this.isAuthenticated = false;
-          this.events.onDisconnected?.();
-          
-          // Don't auto-reconnect for certain reasons
-          if (reason === 'io server disconnect') {
-            console.log('🛑 Server initiated disconnect - not reconnecting');
-          }
-        });
-
-        // Reconnection attempts
-        this.socket.on('reconnect_attempt', (attemptNumber) => {
-          console.log(`🔄 Reconnection attempt ${attemptNumber}/${this.maxReconnectAttempts}`);
-        });
-
-        // Reconnected successfully
-        this.socket.on('reconnect', (attemptNumber) => {
-          console.log(`✅ Reconnected after ${attemptNumber} attempts`);
-          this.authenticate();
-        });
-
-        // Failed to reconnect
-        this.socket.on('reconnect_failed', () => {
-          console.error('❌ Failed to reconnect to signaling server');
-          this.events.onError?.('Failed to reconnect to server');
-        });
-      });
+      // Set up event handlers with promise callbacks
+      this.setupEventHandlers(resolve, reject);
+    });
 
     } catch (error) {
       console.error('❌ Socket.IO connection error:', error);
@@ -153,8 +111,62 @@ export class SocketIOSignalingService {
   /**
    * Set up Socket.IO event handlers
    */
-  private setupEventHandlers(): void {
+  private setupEventHandlers(resolve?: () => void, reject?: (error: any) => void): void {
     if (!this.socket) return;
+
+    // Connection successful
+    this.socket.on('connect', () => {
+      console.log('✅ Connected to signaling server');
+      this.connected = true;
+      this.reconnecting = false;
+      this.reconnectAttempts = 0;
+      
+      // Set authenticated to true on connection if no explicit auth is implemented
+      this.isAuthenticated = true;
+      this.events.onConnected?.();
+      resolve?.(); // Resolve the connection promise
+    });
+
+    // Connection failed
+    this.socket.on('connect_error', (error) => {
+      console.error('❌ Socket.IO connection failed:', error);
+      this.events.onError?.(`Connection failed: ${error.message}`);
+      reject?.(error); // Reject the connection promise
+    });
+
+    // Disconnected
+    this.socket.on('disconnect', (reason) => {
+      console.log(`📡 Disconnected from signaling server: ${reason}`);
+      this.connected = false;
+      this.isAuthenticated = false;
+      this.events.onDisconnected?.();
+      
+      // Don't auto-reconnect for certain reasons
+      if (reason === 'io server disconnect') {
+        console.log('🛑 Server initiated disconnect - not reconnecting');
+      }
+    });
+
+    // Reconnection attempts
+    this.socket.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`🔄 Reconnection attempt ${attemptNumber}/${this.maxReconnectAttempts}`);
+      this.reconnecting = true;
+    });
+
+    // Reconnected successfully
+    this.socket.on('reconnect', (attemptNumber) => {
+      console.log(`✅ Reconnected after ${attemptNumber} attempts`);
+      this.connected = true;
+      this.reconnecting = false;
+      this.authenticate();
+    });
+
+    // Failed to reconnect
+    this.socket.on('reconnect_failed', () => {
+      console.error('❌ Failed to reconnect to signaling server');
+      this.connected = false;
+      this.events.onError?.('Failed to reconnect to server');
+    });
 
     // Authentication successful
     this.socket.on('authenticated', (data) => {
