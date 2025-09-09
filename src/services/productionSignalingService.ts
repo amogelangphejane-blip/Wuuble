@@ -30,8 +30,8 @@ export class ProductionSignalingService {
     try {
       // Use environment variable or fallback to Socket.IO server
       const serverUrl = signalServerUrl || 
-        import.meta.env.VITE_SIGNALING_SERVER_URL || 
-        'wss://your-signaling-server.herokuapp.com';
+  import.meta.env.VITE_SIGNALING_SERVER_URL || 
+  'https://wuuble.onrender.com';
       
       this.socket = io(serverUrl, {
         transports: ['websocket', 'polling'],
