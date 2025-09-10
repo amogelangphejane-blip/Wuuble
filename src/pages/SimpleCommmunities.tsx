@@ -3,7 +3,6 @@ import React from 'react';
 const SimpleCommunities: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
@@ -15,10 +14,8 @@ const SimpleCommunities: React.FC = () => {
         </div>
       </div>
 
-      {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Sample Community Cards */}
           <div className="bg-white rounded-lg shadow-sm p-6 border">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
               <span className="text-2xl">💬</span>
@@ -74,7 +71,6 @@ const SimpleCommunities: React.FC = () => {
           </div>
         </div>
 
-        {/* Create Community Button */}
         <div className="mt-8 text-center">
           <button className="bg-green-500 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-green-600 transition-colors">
             + Create New Community
