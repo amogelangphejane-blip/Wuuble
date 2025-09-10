@@ -17,6 +17,7 @@ import RandomChat from "./pages/RandomChat";
 import Messages from "./pages/Messages";
 import Auth from "./pages/Auth";
 import Communities from "./pages/Communities";
+import RandomMessagingPage from "./pages/RandomMessagingPage";
 import CommunityDetail from "./pages/CommunityDetail";
 import CommunityVideoChat from "./pages/CommunityVideoChat";
 import CommunityCalendar from "./pages/CommunityCalendar";
@@ -75,6 +76,7 @@ const App = () => {
                 <Route path="/home" element={<Home />} />
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/random-chat" element={<RandomChat />} />
+                <Route path="/random-messaging" element={<RandomMessagingPage />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/connect-video-call" element={<ConnectVideoCall />} />
                 <Route path="/auth" element={<Auth />} />
