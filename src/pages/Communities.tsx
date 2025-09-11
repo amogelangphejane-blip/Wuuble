@@ -69,6 +69,9 @@ const Communities = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Debug logging
+  console.log('🏘️ Communities component rendering - Auth Loading:', authLoading, 'User:', !!user);
+
   const categories = [
     { name: 'All', icon: '🌐', count: 0, color: 'from-blue-500 to-purple-500' },
     { name: 'Business', icon: '💼', count: 0, color: 'from-green-500 to-teal-500' },
@@ -448,8 +451,29 @@ const Communities = () => {
     </div>
   );
 
-  if (authLoading || !user) {
-    return null;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-bg flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Authentication Required</h2>
+          <p className="text-gray-600 mb-6">Please log in to access communities</p>
+          <Button onClick={() => navigate('/auth')} className="bg-purple-600 hover:bg-purple-700">
+            Go to Login
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
