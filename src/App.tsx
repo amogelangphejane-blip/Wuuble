@@ -16,7 +16,7 @@ import Chat from "./pages/Chat";
 import RandomChat from "./pages/RandomChat";
 import Messages from "./pages/Messages";
 import Auth from "./pages/Auth";
-import SimpleCommunities from "./pages/SimpleCommunities";
+import Communities from "./pages/Communities";
 // import RandomMessagingPage from "./pages/RandomMessagingPage";
 import CommunityDetail from "./pages/CommunityDetail";
 import CommunityVideoChat from "./pages/CommunityVideoChat";
@@ -80,7 +80,7 @@ const App = () => {
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/connect-video-call" element={<ConnectVideoCall />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/communities" element={<SimpleCommunities />} />
+                <Route path="/communities" element={<Communities />} />
                 <Route path="/communities/:id" element={<CommunityDetail />} />
                 <Route path="/communities/:id/video-chat" element={<CommunityVideoChat />} />
                 {/* Enhanced calendar route - new default */}
