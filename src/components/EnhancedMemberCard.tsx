@@ -89,9 +89,9 @@ const EnhancedMemberCard: React.FC<EnhancedMemberCardProps> = ({
 
   if (compact) {
     return (
-      <div className="flex items-center gap-3 p-3 border rounded-lg hover:shadow-md transition-shadow">
+      <div className="flex items-start gap-3 p-4 border rounded-lg hover:shadow-md transition-shadow">
         <div className="relative">
-          <Avatar className="w-10 h-10">
+          <Avatar className="w-12 h-12">
             <AvatarImage 
               src={validateAvatarUrl(member.profiles?.avatar_url)} 
               alt={member.profiles?.display_name || 'Member'}
@@ -107,19 +107,32 @@ const EnhancedMemberCard: React.FC<EnhancedMemberCardProps> = ({
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h4 className="font-medium text-sm truncate">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className="font-semibold text-sm truncate">
               {member.profiles?.display_name || 'Anonymous User'}
             </h4>
             {member.role === 'creator' && <Crown className="h-3 w-3 text-yellow-500" />}
             {member.role === 'moderator' && <Shield className="h-3 w-3 text-blue-500" />}
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          
+          {/* Bio in compact view */}
+          {(member.member_bio || member.profiles?.bio) && (
+            <p className="text-xs text-gray-600 line-clamp-2 mb-2 leading-relaxed">
+              {member.member_bio || member.profiles?.bio}
+            </p>
+          )}
+          
+          <div className="flex items-center gap-3 text-xs text-gray-500">
+            <span>Joined {new Date(member.joined_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+            <span>•</span>
             <span>{formatLastActive(member.last_active_at)}</span>
             {member.badges.length > 0 && (
-              <Badge variant="outline" className="text-xs py-0 px-1">
-                {member.badges.length} badges
-              </Badge>
+              <>
+                <span>•</span>
+                <Badge variant="outline" className="text-xs py-0 px-1">
+                  {member.badges.length} badges
+                </Badge>
+              </>
             )}
           </div>
         </div>
@@ -129,7 +142,7 @@ const EnhancedMemberCard: React.FC<EnhancedMemberCardProps> = ({
             <div className={cn("text-sm font-medium", getActivityScoreColor(member.activity_score))}>
               {member.activity_score}%
             </div>
-            <div className="text-xs text-gray-500">activity</div>
+            <div className="text-xs text-gray-500">active</div>
           </div>
           
           {canManage && (
@@ -198,6 +211,144 @@ const EnhancedMemberCard: React.FC<EnhancedMemberCardProps> = ({
                 </AvatarFallback>
               </Avatar>
               <div className={cn(
+                "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white",
+                getStatusColor(member.is_online, member.is_recently_active)
+              )} />
+            </div>
+
+            {/* Member Info */}
+            <div className="flex-1 min-w-0">
+              {/* Name and Role */}
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 truncate">
+                  {member.profiles?.display_name || 'Anonymous User'}
+                </h3>
+                {member.role === 'creator' && (
+                  <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
+                    <Crown className="h-3 w-3 mr-1" />
+                    Creator
+                  </Badge>
+                )}
+                {member.role === 'moderator' && (
+                  <Badge variant="default" className="bg-blue-500 hover:bg-blue-600">
+                    <Shield className="h-3 w-3 mr-1" />
+                    Moderator
+                  </Badge>
+                )}
+              </div>
+
+              {/* Bio Section - Skool Style */}
+              <div className="mb-3">
+                {(member.member_bio || member.profiles?.bio) ? (
+                  <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">
+                    {member.member_bio || member.profiles?.bio}
+                  </p>
+                ) : (
+                  <p className="text-gray-500 text-sm italic">
+                    No bio available
+                  </p>
+                )}
+              </div>
+
+              {/* Member Stats Row - Similar to Skool */}
+              <div className="flex items-center gap-6 text-sm text-gray-600 mb-3">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>Joined {new Date(member.joined_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  <span>{formatLastActive(member.last_active_at)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className={getActivityScoreColor(member.activity_score)}>
+                    {member.activity_score}% active
+                  </span>
+                </div>
+              </div>
+
+              {/* Badges Section */}
+              {member.badges.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {member.badges.slice(0, 3).map((badge, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="outline" 
+                      className="text-xs bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200"
+                    >
+                      <Award className="h-3 w-3 mr-1" />
+                      {badge.name}
+                    </Badge>
+                  ))}
+                  {member.badges.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{member.badges.length - 3} more
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons Row - Skool Style */}
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleAction('message')}
+                  className="flex-1"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Message
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setShowProfile(true)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Profile
+                </Button>
+                
+                {canManage && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="px-2">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {member.role === 'member' && (
+                        <DropdownMenuItem onClick={() => handleAction('promote')}>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Promote to Moderator
+                        </DropdownMenuItem>
+                      )}
+                      {member.role === 'moderator' && isCreator && (
+                        <DropdownMenuItem onClick={() => handleAction('demote')}>
+                          <UserMinus className="h-4 w-4 mr-2" />
+                          Demote to Member
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => handleAction('award_badge')}>
+                        <Award className="h-4 w-4 mr-2" />
+                        Award Badge
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => handleAction('remove')} 
+                        className="text-red-600"
+                      >
+                        <Ban className="h-4 w-4 mr-2" />
+                        Remove Member
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
                 "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white",
                 getStatusColor(member.is_online, member.is_recently_active)
               )} />

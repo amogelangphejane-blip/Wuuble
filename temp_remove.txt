@@ -1,1 +1,0 @@
-This file marks that group video chat files should be removed manually
