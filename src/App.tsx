@@ -7,7 +7,7 @@ import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
 // Pages
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
-import SimpleCommunities from '@/pages/SimpleCommunities';
+import Communities from '@/pages/Communities';
 import CommunityDetail from '@/pages/CommunityDetail';
 import CommunityMembers from '@/pages/CommunityMembers';
 import CommunityCalendar from '@/pages/CommunityCalendar';
@@ -61,12 +61,12 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               
-              {/* Protected routes */}
-              <Route path="/communities" element={
-                <ProtectedRoute>
-                  <SimpleCommunities />
-                </ProtectedRoute>
-              } />
+            {/* Protected routes */}
+            <Route path="/communities" element={
+              <ProtectedRoute>
+                <Communities />
+              </ProtectedRoute>
+            } />
               <Route path="/community/:id" element={
                 <ProtectedRoute>
                   <CommunityDetail />
