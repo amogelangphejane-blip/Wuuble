@@ -260,16 +260,32 @@
                 const name = document.getElementById('community-name').value;
                 const description = document.getElementById('community-description').value;
 
+                // Prepare community data - only include fields that exist in the database
+                const communityData = {
+                    name: name.trim(),
+                    description: description.trim(),
+                    is_private: false,
+                    creator_id: user.id,
+                    member_count: 1
+                };
+
+                // Try to include category field if it exists in the database
+                try {
+                    const { data: testData, error: testError } = await supabase
+                        .from('communities')
+                        .select('category')
+                        .limit(1);
+                    
+                    if (!testError) {
+                        communityData.category = 'test';
+                    }
+                } catch (e) {
+                    console.log('Category field may not exist in database');
+                }
+
                 const { data, error } = await supabase
                     .from('communities')
-                    .insert({
-                        name: name.trim(),
-                        description: description.trim(),
-                        category: 'test',
-                        is_private: false,
-                        creator_id: user.id,
-                        member_count: 1
-                    })
+                    .insert(communityData)
                     .select()
                     .single();
 

@@ -121,38 +121,49 @@ export const CreateCommunityDialog: React.FC<CreateCommunityDialogProps> = ({
     setLoading(true);
 
     try {
-      console.log('Creating community with data:', {
+      // Prepare community data - only include fields that exist in the database
+      const communityData: any = {
         name: name.trim(),
         description: description.trim(),
-        category: category.toLowerCase(),
         is_private: isPrivate,
         creator_id: user.id,
-        avatar_url: avatarUrl || null,
-        tags: tags,
         member_count: 1
-      });
+      };
+
+      // Add optional fields if they have values
+      if (avatarUrl) {
+        communityData.avatar_url = avatarUrl;
+      }
+
+      // Include category and tags if they are provided
+      // These fields might not exist in older database schemas
+      if (category) {
+        communityData.category = category.toLowerCase();
+      }
+      
+      if (tags && tags.length > 0) {
+        communityData.tags = tags;
+      }
+
+      console.log('Creating community with data:', communityData);
 
       const { data, error } = await supabase
         .from('communities')
-        .insert({
-          name: name.trim(),
-          description: description.trim(),
-          category: category.toLowerCase(),
-          is_private: isPrivate,
-          creator_id: user.id,
-          avatar_url: avatarUrl || null,
-          tags: tags,
-          member_count: 1
-        })
+        .insert(communityData)
         .select()
         .single();
 
       console.log('Community creation result:', { data, error });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Community creation error:', error);
+        throw error;
+      }
+
+      console.log('Community created successfully:', data);
 
       // Add owner as first member
-      await supabase
+      const { error: memberError } = await supabase
         .from('community_members')
         .insert({
           community_id: data.id,
@@ -160,10 +171,20 @@ export const CreateCommunityDialog: React.FC<CreateCommunityDialogProps> = ({
           role: 'owner'
         });
 
-      toast({
-        title: "Success!",
-        description: `${name} has been created successfully`,
-      });
+      if (memberError) {
+        console.error('Error adding community member:', memberError);
+        // Community was created but adding member failed - still consider it success
+        toast({
+          title: "Warning",
+          description: `${name} was created but there was an issue adding you as a member. Please join the community manually.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Success!",
+          description: `${name} has been created successfully`,
+        });
+      }
 
       // Reset form
       setName('');
@@ -175,11 +196,26 @@ export const CreateCommunityDialog: React.FC<CreateCommunityDialogProps> = ({
       setStep(1);
       
       onSuccess?.(data.id);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating community:', error);
+      
+      let errorMessage = "Failed to create community. Please try again.";
+      
+      if (error?.message) {
+        errorMessage = `Failed to create community: ${error.message}`;
+      }
+      
+      if (error?.code === '23505') {
+        errorMessage = "A community with this name already exists.";
+      } else if (error?.code === '42501') {
+        errorMessage = "You don't have permission to create communities.";
+      } else if (error?.code === 'PGRST301') {
+        errorMessage = "Database connection error. Please check your internet connection.";
+      }
+
       toast({
         title: "Error",
-        description: "Failed to create community. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
