@@ -69,10 +69,45 @@ export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId 
   const [sortBy, setSortBy] = useState('recent');
 
   useEffect(() => {
+    // Add a test post immediately to show what the profile should look like
+    if (user) {
+      const immediateTestPost: Post = {
+        id: 'immediate-test',
+        author: {
+          name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Test User',
+          avatar: user.user_metadata?.avatar_url,
+          level: 1,
+          badge: null
+        },
+        title: '🧪 Immediate Profile Test',
+        content: 'This post appears immediately to test your profile display. If you see your real name here, the profile system is working!',
+        category: 'General',
+        tags: ['test'],
+        likes: 0,
+        comments: 0,
+        views: 0,
+        isPinned: true,
+        isLiked: false,
+        isBookmarked: false,
+        createdAt: new Date()
+      };
+      setPosts([immediateTestPost]);
+    }
+    
     fetchPosts();
-  }, [communityId, sortBy]);
+  }, [communityId, sortBy, user]);
 
   const fetchPosts = async () => {
+    console.log('🔍 DEBUG: Current user data:', {
+      user: !!user,
+      userId: user?.id,
+      email: user?.email,
+      userMetadata: user?.user_metadata,
+      displayName: user?.user_metadata?.display_name,
+      fullName: user?.user_metadata?.full_name,
+      emailUsername: user?.email?.split('@')[0]
+    });
+    
     try {
       setLoading(true);
       let query = supabase
@@ -134,14 +169,26 @@ export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId 
         let authorName = 'Anonymous';
         let authorAvatar = null;
         
+        console.log('🔍 DEBUG: Processing post:', {
+          postId: post.id,
+          postUserId: post.user_id,
+          currentUserId: user?.id,
+          isCurrentUser: user && post.user_id === user.id,
+          profilesData: post.profiles
+        });
+        
         if (user && post.user_id === user.id) {
           authorName = user.user_metadata?.display_name || 
                       user.user_metadata?.full_name || 
                       user.email?.split('@')[0] || 
                       'You';
+          console.log('🔍 DEBUG: Using auth metadata for current user. Name:', authorName);
         } else if (post.profiles?.display_name) {
           authorName = post.profiles.display_name;
           authorAvatar = post.profiles.avatar_url;
+          console.log('🔍 DEBUG: Using database profile. Name:', authorName);
+        } else {
+          console.log('🔍 DEBUG: No name found, using Anonymous');
         }
         
         return {
@@ -248,6 +295,20 @@ export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId 
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Debug Info */}
+      {user && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+          <h4 className="font-semibold text-blue-800">🔍 Debug Info:</h4>
+          <p className="text-sm text-blue-700">
+            <strong>Email:</strong> {user.email}<br/>
+            <strong>Display Name:</strong> {user.user_metadata?.display_name || 'Not set'}<br/>
+            <strong>Full Name:</strong> {user.user_metadata?.full_name || 'Not set'}<br/>
+            <strong>Email Username:</strong> {user.email?.split('@')[0] || 'Not available'}<br/>
+            <strong>Expected Name:</strong> {user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'You'}
+          </p>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Community</h1>
