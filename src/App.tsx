@@ -13,8 +13,10 @@ import CommunityMembers from '@/pages/CommunityMembers';
 import CommunityCalendar from '@/pages/CommunityCalendar';
 import CommunityClassroom from '@/pages/CommunityClassroom';
 import CommunityLeaderboard from '@/pages/CommunityLeaderboard';
-// import CommunityLinksPage from '@/pages/CommunityLinksPage'; // Empty file
-// import CommunityVideoChat from '@/pages/CommunityVideoChat'; // Empty file
+import CommunityLinksPage from '@/pages/CommunityLinksPage';
+import CommunityVideoChat from '@/pages/CommunityVideoChat';
+import CommunityDiscussions from '@/pages/CommunityDiscussions';
+import CommunityAbout from '@/pages/CommunityAbout';
 import CommunitySubscriptions from '@/pages/CommunitySubscriptions';
 import CommunityPaymentSettings from '@/pages/CommunityPaymentSettings';
 import Messages from '@/pages/Messages';
@@ -92,7 +94,12 @@ function App() {
                   <CommunityLeaderboard />
                 </ProtectedRoute>
               } />
-              {/* <Route path="/community/:id/links" element={
+              <Route path="/community/:id/discussions" element={
+                <ProtectedRoute>
+                  <CommunityDiscussions />
+                </ProtectedRoute>
+              } />
+              <Route path="/community/:id/links" element={
                 <ProtectedRoute>
                   <CommunityLinksPage />
                 </ProtectedRoute>
@@ -101,7 +108,12 @@ function App() {
                 <ProtectedRoute>
                   <CommunityVideoChat />
                 </ProtectedRoute>
-              } /> */}
+              } />
+              <Route path="/community/:id/about" element={
+                <ProtectedRoute>
+                  <CommunityAbout />
+                </ProtectedRoute>
+              } />
               <Route path="/community/:id/subscriptions" element={
                 <ProtectedRoute>
                   <CommunitySubscriptions />
