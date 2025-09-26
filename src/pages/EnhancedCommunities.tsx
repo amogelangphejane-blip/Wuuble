@@ -117,6 +117,8 @@ const EnhancedCommunities: React.FC = () => {
 
       const { data, error } = await query;
 
+      console.log('Communities fetch result:', { data, error, count: data?.length || 0 });
+
       if (error) {
         console.error('Error fetching communities:', error);
         setError('Failed to load communities. Please try again.');

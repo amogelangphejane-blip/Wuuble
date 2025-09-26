@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Access Debug</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .debug-section {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .debug-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        pre {
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            border: 1px solid #ccc;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #2e7d32;
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <h1>Community Access Debug Tool</h1>
+    <p>This tool helps debug community creation and access issues.</p>
+
+    <div class="debug-section">
+        <h3>1. Database Connection Test</h3>
+        <button onclick="testConnection()">Test Connection</button>
+        <pre id="connection-result">Click "Test Connection" to check database connectivity...</pre>
+    </div>
+
+    <div class="debug-section">
+        <h3>2. Authentication Status</h3>
+        <button onclick="checkAuth()">Check Authentication</button>
+        <button onclick="signInAnonymously()" style="background: #28a745;">Sign In (Test)</button>
+        <pre id="auth-result">Click "Check Authentication" to see current user status...</pre>
+    </div>
+
+    <div class="debug-section">
+        <h3>3. List All Communities</h3>
+        <button onclick="listCommunities()">List Communities</button>
+        <button onclick="listCommunitiesWithoutRLS()">List Communities (Admin)</button>
+        <pre id="communities-result">Click "List Communities" to see all available communities...</pre>
+    </div>
+
+    <div class="debug-section">
+        <h3>4. Test Community Creation</h3>
+        <div class="input-group">
+            <label for="community-name">Community Name:</label>
+            <input type="text" id="community-name" value="Test Community" />
+        </div>
+        <div class="input-group">
+            <label for="community-description">Description:</label>
+            <textarea id="community-description">This is a test community created for debugging purposes.</textarea>
+        </div>
+        <button onclick="createTestCommunity()">Create Test Community</button>
+        <pre id="create-result">Click "Create Test Community" to test community creation...</pre>
+    </div>
+
+    <div class="debug-section">
+        <h3>5. Test Community Access</h3>
+        <div class="input-group">
+            <label for="community-id">Community ID:</label>
+            <input type="text" id="community-id" placeholder="Enter community ID to test access" />
+        </div>
+        <button onclick="testCommunityAccess()">Test Access</button>
+        <pre id="access-result">Enter a community ID and click "Test Access"...</pre>
+    </div>
+
+    <div class="debug-section">
+        <h3>6. RLS Policy Test</h3>
+        <button onclick="testRLSPolicies()">Test RLS Policies</button>
+        <pre id="rls-result">Click "Test RLS Policies" to check Row Level Security policies...</pre>
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        const supabaseUrl = 'https://sxwwowbvmbrhiqlpfzfj.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4d3dvd2J2bWJyaGlxbHBmemZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM1Mjc0NTAsImV4cCI6MjA0OTEwMzQ1MH0.gZmRgdNL3Ke8WpCAfr5kTQNcXBxo-_u1TmZOiYkHQ-s'
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+
+        function updateResult(elementId, result) {
+            document.getElementById(elementId).textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function testConnection() {
+            try {
+                const { data, error } = await supabase.from('profiles').select('count').limit(1);
+                if (error) throw error;
+                updateResult('connection-result', { 
+                    status: 'SUCCESS', 
+                    message: 'Database connection working',
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                updateResult('connection-result', { 
+                    status: 'ERROR', 
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        async function checkAuth() {
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                updateResult('auth-result', { 
+                    user: user ? {
+                        id: user.id,
+                        email: user.email,
+                        created_at: user.created_at
+                    } : null,
+                    error,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                updateResult('auth-result', { 
+                    status: 'ERROR', 
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        async function signInAnonymously() {
+            try {
+                const { data, error } = await supabase.auth.signInAnonymously();
+                if (error) throw error;
+                updateResult('auth-result', { 
+                    status: 'SUCCESS',
+                    message: 'Signed in anonymously',
+                    user: {
+                        id: data.user.id,
+                        email: data.user.email,
+                        created_at: data.user.created_at
+                    },
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                updateResult('auth-result', { 
+                    status: 'ERROR', 
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        async function listCommunities() {
+            try {
+                const { data, error, count } = await supabase
+                    .from('communities')
+                    .select('*', { count: 'exact' });
+                
+                updateResult('communities-result', { 
+                    status: error ? 'ERROR' : 'SUCCESS',
+                    communities: data,
+                    count,
+                    error,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                updateResult('communities-result', { 
+                    status: 'ERROR', 
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        async function listCommunitiesWithoutRLS() {
+            try {
+                // This will fail if RLS is properly configured
+                const { data, error, count } = await supabase
+                    .rpc('get_all_communities_admin');
+                
+                updateResult('communities-result', { 
+                    status: error ? 'ERROR' : 'SUCCESS',
+                    communities: data,
+                    count,
+                    error,
+                    note: 'This uses admin function to bypass RLS',
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                updateResult('communities-result', { 
+                    status: 'ERROR', 
+                    error: error.message,
+                    note: 'Admin function not available - this is expected',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        async function createTestCommunity() {
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw new Error('User not authenticated: ' + userError.message);
+                if (!user) throw new Error('No user found');
+
+                const name = document.getElementById('community-name').value;
+                const description = document.getElementById('community-description').value;
+
+                const { data, error } = await supabase
+                    .from('communities')
+                    .insert({
+                        name: name.trim(),
+                        description: description.trim(),
+                        category: 'test',
+                        is_private: false,
+                        creator_id: user.id,
+                        member_count: 1
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                // Add creator as member
+                const { error: memberError } = await supabase
+                    .from('community_members')
+                    .insert({
+                        community_id: data.id,
+                        user_id: user.id,
+                        role: 'owner'
+                    });
+
+                updateResult('create-result', { 
+                    status: 'SUCCESS',
+                    community: data,
+                    memberError,
+                    message: 'Community created successfully!',
+                    timestamp: new Date().toISOString()
+                });
+
+                // Auto-populate the community ID field for testing
+                document.getElementById('community-id').value = data.id;
+            } catch (error) {
+                updateResult('create-result', { 
+                    status: 'ERROR', 
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        async function testCommunityAccess() {
+            try {
+                const communityId = document.getElementById('community-id').value.trim();
+                if (!communityId) {
+                    throw new Error('Please enter a community ID');
+                }
+
+                const { data, error } = await supabase
+                    .from('communities')
+                    .select('*')
+                    .eq('id', communityId)
+                    .single();
+
+                updateResult('access-result', { 
+                    status: error ? 'ERROR' : 'SUCCESS',
+                    community: data,
+                    error,
+                    communityId,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                updateResult('access-result', { 
+                    status: 'ERROR', 
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        async function testRLSPolicies() {
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+
+                const tests = [];
+
+                // Test 1: Can view own communities
+                const { data: ownCommunities, error: ownError } = await supabase
+                    .from('communities')
+                    .select('*')
+                    .eq('creator_id', user?.id || '');
+                
+                tests.push({
+                    test: 'View own communities',
+                    success: !ownError,
+                    error: ownError?.message,
+                    count: ownCommunities?.length || 0
+                });
+
+                // Test 2: Can view public communities
+                const { data: publicCommunities, error: publicError } = await supabase
+                    .from('communities')
+                    .select('*')
+                    .eq('is_private', false);
+                
+                tests.push({
+                    test: 'View public communities',
+                    success: !publicError,
+                    error: publicError?.message,
+                    count: publicCommunities?.length || 0
+                });
+
+                // Test 3: Community members access
+                const { data: memberCommunities, error: memberError } = await supabase
+                    .from('community_members')
+                    .select('community_id, communities(*)')
+                    .eq('user_id', user?.id || '');
+                
+                tests.push({
+                    test: 'View communities as member',
+                    success: !memberError,
+                    error: memberError?.message,
+                    count: memberCommunities?.length || 0
+                });
+
+                updateResult('rls-result', { 
+                    user: user ? user.id : 'Not authenticated',
+                    tests,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                updateResult('rls-result', { 
+                    status: 'ERROR', 
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        // Auto-run some basic tests on page load
+        window.onload = function() {
+            testConnection();
+            checkAuth();
+        };
+    </script>
+</body>
+</html>

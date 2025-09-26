@@ -121,6 +121,17 @@ export const CreateCommunityDialog: React.FC<CreateCommunityDialogProps> = ({
     setLoading(true);
 
     try {
+      console.log('Creating community with data:', {
+        name: name.trim(),
+        description: description.trim(),
+        category: category.toLowerCase(),
+        is_private: isPrivate,
+        creator_id: user.id,
+        avatar_url: avatarUrl || null,
+        tags: tags,
+        member_count: 1
+      });
+
       const { data, error } = await supabase
         .from('communities')
         .insert({
@@ -135,6 +146,8 @@ export const CreateCommunityDialog: React.FC<CreateCommunityDialogProps> = ({
         })
         .select()
         .single();
+
+      console.log('Community creation result:', { data, error });
 
       if (error) throw error;
 

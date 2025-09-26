@@ -148,7 +148,7 @@ const Home = () => {
                         <div
                           key={community.id}
                           className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
-                          onClick={() => navigate(`/communities/${community.id}`)}
+                          onClick={() => navigate(`/community/${community.id}`)}
                         >
                           <Avatar className="h-12 w-12">
                             <AvatarImage 

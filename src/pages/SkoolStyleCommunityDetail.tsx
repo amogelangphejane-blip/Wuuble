@@ -89,6 +89,8 @@ const SkoolStyleCommunityDetail: React.FC = () => {
     try {
       setLoading(true);
       
+      console.log('Attempting to fetch community with ID:', id);
+      
       // Fetch real community data from Supabase
       const { data, error } = await supabase
         .from('communities')
@@ -96,19 +98,29 @@ const SkoolStyleCommunityDetail: React.FC = () => {
         .eq('id', id)
         .single();
 
+      console.log('Community fetch result:', { data, error });
+
       if (error) {
         console.error('Error fetching community:', error);
+        if (error.code === 'PGRST116') {
+          console.log('Community not found - no rows returned');
+        } else if (error.message.includes('row level security')) {
+          console.log('RLS policy blocking access to community');
+        }
         return;
       }
 
       if (data) {
+        console.log('Successfully fetched community data:', data);
         setCommunity({
           ...data,
           activity_score: 85 // Default activity score for now
         });
+      } else {
+        console.log('No community data returned');
       }
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Unexpected error fetching community:', err);
     } finally {
       setLoading(false);
     }
