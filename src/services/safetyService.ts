@@ -491,7 +491,7 @@ export class SafetyService {
   } {
     let filteredMessage = message;
     let highestSeverity: 'low' | 'medium' | 'high' = 'low';
-    let matchedCategories: string[] = [];
+    const matchedCategories: string[] = [];
     let suggestedAction: ContentFilter['action'] = 'warn';
 
     // Test against all content filters
