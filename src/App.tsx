@@ -27,7 +27,7 @@ import { CreatorWallet } from '@/pages/CreatorWallet';
 import NotFound from '@/pages/NotFound';
 
 // Auth wrapper component
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, AuthProvider } from '@/hooks/useAuth';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -52,110 +52,112 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <LoadingProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
+    <AuthProvider>
+      <LoadingProvider>
+        <Router>
+          <div className="min-h-screen bg-gray-50">
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              
+              {/* Protected routes */}
+              <Route path="/communities" element={
+                <ProtectedRoute>
+                  <SimpleCommunities />
+                </ProtectedRoute>
+              } />
+              <Route path="/community/:id" element={
+                <ProtectedRoute>
+                  <CommunityDetail />
+                </ProtectedRoute>
+              } />
+              <Route path="/community/:id/members" element={
+                <ProtectedRoute>
+                  <CommunityMembers />
+                </ProtectedRoute>
+              } />
+              <Route path="/community/:id/calendar" element={
+                <ProtectedRoute>
+                  <CommunityCalendar />
+                </ProtectedRoute>
+              } />
+              <Route path="/community/:id/classroom" element={
+                <ProtectedRoute>
+                  <CommunityClassroom />
+                </ProtectedRoute>
+              } />
+              <Route path="/community/:id/leaderboard" element={
+                <ProtectedRoute>
+                  <CommunityLeaderboard />
+                </ProtectedRoute>
+              } />
+              {/* <Route path="/community/:id/links" element={
+                <ProtectedRoute>
+                  <CommunityLinksPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/community/:id/video-chat" element={
+                <ProtectedRoute>
+                  <CommunityVideoChat />
+                </ProtectedRoute>
+              } /> */}
+              <Route path="/community/:id/subscriptions" element={
+                <ProtectedRoute>
+                  <CommunitySubscriptions />
+                </ProtectedRoute>
+              } />
+              <Route path="/community/:id/payment-settings" element={
+                <ProtectedRoute>
+                  <CommunityPaymentSettings />
+                </ProtectedRoute>
+              } />
+              <Route path="/messages" element={
+                <ProtectedRoute>
+                  <Messages />
+                </ProtectedRoute>
+              } />
+              <Route path="/chat" element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              } />
+              <Route path="/random-chat" element={
+                <ProtectedRoute>
+                  <RandomChat />
+                </ProtectedRoute>
+              } />
+              <Route path="/azar-livestreams" element={
+                <ProtectedRoute>
+                  <AzarLivestreams />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <ProfileSettings />
+                </ProtectedRoute>
+              } />
+              <Route path="/payment-methods" element={
+                <ProtectedRoute>
+                  <PaymentMethods />
+                </ProtectedRoute>
+              } />
+              <Route path="/creator-wallet" element={
+                <ProtectedRoute>
+                  <CreatorWallet />
+                </ProtectedRoute>
+              } />
+              
+              {/* 404 page */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
             
-            {/* Protected routes */}
-            <Route path="/communities" element={
-              <ProtectedRoute>
-                <SimpleCommunities />
-              </ProtectedRoute>
-            } />
-            <Route path="/community/:id" element={
-              <ProtectedRoute>
-                <CommunityDetail />
-              </ProtectedRoute>
-            } />
-            <Route path="/community/:id/members" element={
-              <ProtectedRoute>
-                <CommunityMembers />
-              </ProtectedRoute>
-            } />
-            <Route path="/community/:id/calendar" element={
-              <ProtectedRoute>
-                <CommunityCalendar />
-              </ProtectedRoute>
-            } />
-            <Route path="/community/:id/classroom" element={
-              <ProtectedRoute>
-                <CommunityClassroom />
-              </ProtectedRoute>
-            } />
-            <Route path="/community/:id/leaderboard" element={
-              <ProtectedRoute>
-                <CommunityLeaderboard />
-              </ProtectedRoute>
-            } />
-            {/* <Route path="/community/:id/links" element={
-              <ProtectedRoute>
-                <CommunityLinksPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/community/:id/video-chat" element={
-              <ProtectedRoute>
-                <CommunityVideoChat />
-              </ProtectedRoute>
-            } /> */}
-            <Route path="/community/:id/subscriptions" element={
-              <ProtectedRoute>
-                <CommunitySubscriptions />
-              </ProtectedRoute>
-            } />
-            <Route path="/community/:id/payment-settings" element={
-              <ProtectedRoute>
-                <CommunityPaymentSettings />
-              </ProtectedRoute>
-            } />
-            <Route path="/messages" element={
-              <ProtectedRoute>
-                <Messages />
-              </ProtectedRoute>
-            } />
-            <Route path="/chat" element={
-              <ProtectedRoute>
-                <Chat />
-              </ProtectedRoute>
-            } />
-            <Route path="/random-chat" element={
-              <ProtectedRoute>
-                <RandomChat />
-              </ProtectedRoute>
-            } />
-            <Route path="/azar-livestreams" element={
-              <ProtectedRoute>
-                <AzarLivestreams />
-              </ProtectedRoute>
-            } />
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <ProfileSettings />
-              </ProtectedRoute>
-            } />
-            <Route path="/payment-methods" element={
-              <ProtectedRoute>
-                <PaymentMethods />
-              </ProtectedRoute>
-            } />
-            <Route path="/creator-wallet" element={
-              <ProtectedRoute>
-                <CreatorWallet />
-              </ProtectedRoute>
-            } />
-            
-            {/* 404 page */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          
-          <Toaster />
-          <GlobalLoadingOverlay />
-        </div>
-      </Router>
-    </LoadingProvider>
+            <Toaster />
+            <GlobalLoadingOverlay />
+          </div>
+        </Router>
+      </LoadingProvider>
+    </AuthProvider>
   );
 }
 
