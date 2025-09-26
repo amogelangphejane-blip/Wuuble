@@ -52,10 +52,11 @@ export class MemberService {
         case 'online':
           query = query.eq('is_online', true);
           break;
-        case 'recently_active':
+        case 'recently_active': {
           const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
           query = query.gte('last_active_at', oneDayAgo);
           break;
+        }
       }
     }
 

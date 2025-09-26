@@ -73,7 +73,7 @@ export class PaymentService {
           }
           break;
 
-        case 'paypal':
+        case 'paypal': {
           // Process PayPal payment
           const paypalResult = await PayPalService.createPayment({
             amount,
@@ -96,6 +96,7 @@ export class PaymentService {
           // For PayPal, we need to redirect user to approval URL
           // This would be handled in the UI component
           break;
+        }
 
         case 'bank_transfer':
           // For bank transfers, create a pending payment that requires manual confirmation

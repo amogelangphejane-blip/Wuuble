@@ -602,7 +602,7 @@ export class LeaderboardService {
    * Get or create leaderboard settings for a community
    */
   async getLeaderboardSettings(communityId: string): Promise<LeaderboardSettings> {
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('community_leaderboard_settings')
       .select('*')
       .eq('community_id', communityId)
@@ -637,7 +637,7 @@ export class LeaderboardService {
         throw insertError;
       }
 
-      data = newData;
+      return newData!;
     } else if (error) {
       console.error('Error fetching leaderboard settings:', error);
       throw error;
