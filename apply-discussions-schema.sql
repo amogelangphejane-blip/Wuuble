@@ -104,9 +104,12 @@ CREATE TABLE IF NOT EXISTS community_post_views (
   ip_address INET,
   user_agent TEXT,
   viewed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  duration_seconds INTEGER DEFAULT 0,
-  UNIQUE(post_id, user_id, DATE(viewed_at))
+  duration_seconds INTEGER DEFAULT 0
 );
+
+-- Create unique index for one view per user per post per day
+CREATE UNIQUE INDEX IF NOT EXISTS idx_community_post_views_unique_daily 
+ON community_post_views(post_id, user_id, DATE(viewed_at));
 
 -- ==========================================
 -- ENHANCED COMMENTS WITH REACTIONS
