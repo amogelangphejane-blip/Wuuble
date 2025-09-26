@@ -2,10 +2,9 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { SimpleSkoolDiscussions } from '@/components/SimpleSkoolDiscussions';
+import { QuickFixDiscussions } from '@/components/QuickFixDiscussions';
 import ResponsiveLayout from '@/components/ResponsiveLayout';
 import { ModernHeader } from '@/components/ModernHeader';
-import { DebugProfile } from '@/components/DebugProfile';
 
 const CommunityDiscussions: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,9 +34,7 @@ const CommunityDiscussions: React.FC = () => {
             Back to Community
           </Button>
           
-          <DebugProfile />
-          
-          <SimpleSkoolDiscussions communityId={id} />
+          <QuickFixDiscussions communityId={id} />
         </div>
       </div>
     </ResponsiveLayout>
