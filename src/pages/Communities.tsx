@@ -40,7 +40,7 @@ interface Community {
   is_private: boolean;
   category?: string;
   created_at: string;
-  owner_id: string;
+  creator_id: string;
   tags?: string[];
 }
 

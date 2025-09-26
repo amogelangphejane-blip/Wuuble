@@ -47,7 +47,7 @@ interface Community {
   is_private: boolean;
   category?: string;
   created_at: string;
-  owner_id: string;
+  creator_id: string;
   activity_score?: number;
 }
 
@@ -72,8 +72,9 @@ const SkoolStyleCommunityDetail: React.FC = () => {
   useEffect(() => {
     if (id) {
       fetchCommunity();
+      checkMembership();
     }
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     // Save sidebar preference to localStorage
@@ -87,25 +88,58 @@ const SkoolStyleCommunityDetail: React.FC = () => {
   const fetchCommunity = async () => {
     try {
       setLoading(true);
-      // Mock data
-      const mockCommunity: Community = {
-        id: id!,
-        name: 'Growth Hackers Pro',
-        description: 'Master the art of growth hacking and scale your business to new heights',
-        avatar_url: '',
-        member_count: 2847,
-        is_private: false,
-        category: 'business',
-        created_at: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-        owner_id: 'owner123',
-        activity_score: 92
-      };
-      setCommunity(mockCommunity);
-      setIsMember(true); // Simulate user is a member
+      
+      console.log('Attempting to fetch community with ID:', id);
+      
+      // Fetch real community data from Supabase
+      const { data, error } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      console.log('Community fetch result:', { data, error });
+
+      if (error) {
+        console.error('Error fetching community:', error);
+        if (error.code === 'PGRST116') {
+          console.log('Community not found - no rows returned');
+        } else if (error.message.includes('row level security')) {
+          console.log('RLS policy blocking access to community');
+        }
+        return;
+      }
+
+      if (data) {
+        console.log('Successfully fetched community data:', data);
+        setCommunity({
+          ...data,
+          activity_score: 85 // Default activity score for now
+        });
+      } else {
+        console.log('No community data returned');
+      }
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Unexpected error fetching community:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkMembership = async () => {
+    if (!user || !id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('community_members')
+        .select('*')
+        .eq('community_id', id)
+        .eq('user_id', user.id)
+        .single();
+
+      setIsMember(!!data && !error);
+    } catch (err) {
+      console.error('Error checking membership:', err);
     }
   };
 

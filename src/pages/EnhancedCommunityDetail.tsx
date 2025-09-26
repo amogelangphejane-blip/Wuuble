@@ -51,7 +51,7 @@ interface Community {
   is_premium?: boolean;
   category?: string;
   created_at: string;
-  owner_id: string;
+  creator_id: string;
   tags?: string[];
   subscription_price?: number;
   features?: string[];
@@ -96,44 +96,41 @@ const EnhancedCommunityDetail: React.FC = () => {
     try {
       setLoading(true);
       
-      // Mock community data for demonstration
-      const mockCommunity: Community = {
-        id: id!,
-        name: 'Tech Innovators Hub',
-        description: 'A vibrant community for technology enthusiasts, developers, and innovators. Share ideas, collaborate on projects, and stay updated with the latest tech trends.',
-        avatar_url: '',
-        banner_url: '',
-        member_count: 1234,
-        is_private: false,
-        is_premium: false,
-        category: 'technology',
-        created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-        owner_id: 'owner123',
-        tags: ['tech', 'innovation', 'development', 'ai', 'web3'],
-        subscription_price: 0,
-        features: ['discussions', 'events', 'leaderboard', 'resources'],
-        rules: `1. Be respectful and professional
+      // Fetch real community data from Supabase
+      const { data, error } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching community:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load community details",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (data) {
+        setCommunity({
+          ...data,
+          features: data.features || ['discussions', 'events', 'leaderboard', 'resources'],
+          rules: data.rules || `1. Be respectful and professional
 2. No spam or self-promotion without permission
 3. Share knowledge and help others
-4. Keep discussions relevant to technology
+4. Keep discussions relevant
 5. Report inappropriate content`,
-        location: 'Global',
-        website: 'https://techinnovators.com',
-        social_links: {
-          twitter: 'https://twitter.com/techinnovators',
-          discord: 'https://discord.gg/techinnovators',
-          github: 'https://github.com/techinnovators'
-        },
-        stats: {
-          posts_count: 342,
-          events_count: 28,
-          active_members: 456,
-          growth_rate: 15.5
-        }
-      };
-
-      setCommunity(mockCommunity);
-      setIsOwner(user?.id === mockCommunity.owner_id);
+          stats: {
+            posts_count: 0, // These would come from actual post counts
+            events_count: 0,
+            active_members: data.member_count || 0,
+            growth_rate: 0
+          }
+        });
+        setIsOwner(user?.id === data.creator_id);
+      }
     } catch (err) {
       console.error('Error:', err);
       toast({
