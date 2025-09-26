@@ -298,7 +298,7 @@ USING (
   OR EXISTS (
     SELECT 1 FROM public.communities c
     WHERE c.id = community_id 
-    AND c.owner_id = auth.uid()
+    AND c.creator_id = auth.uid()
   )
 );
 
@@ -409,7 +409,7 @@ GRANT ALL ON public.community_comment_likes TO service_role;
 INSERT INTO public.community_posts (community_id, user_id, title, content, category, tags, is_pinned)
 SELECT 
   c.id,
-  c.owner_id,
+  c.creator_id,
   'Welcome to ' || c.name || '!',
   'This is the first post in our community. Feel free to introduce yourself and share what brings you here! 
 
@@ -435,7 +435,7 @@ LIMIT 5;
 INSERT INTO public.community_posts (community_id, user_id, title, content, category, tags)
 SELECT 
   c.id,
-  c.owner_id,
+  c.creator_id,
   'Best practices for community engagement',
   'Let''s discuss the best ways to keep our community engaged and active. What strategies have worked for you?',
   'Discussion',
@@ -451,7 +451,7 @@ LIMIT 3;
 INSERT INTO public.community_posts (community_id, user_id, title, content, category, tags)
 SELECT 
   c.id,
-  c.owner_id,
+  c.creator_id,
   'How do you stay motivated?',
   'I''m curious about everyone''s motivation strategies. What keeps you going when things get tough?',
   'Question',
