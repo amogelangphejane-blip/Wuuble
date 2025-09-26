@@ -59,7 +59,7 @@ interface Community {
   is_premium?: boolean;
   category?: string;
   created_at: string;
-  owner_id: string;
+  creator_id: string;
   tags?: string[];
   subscription_price?: number;
   features?: string[];
@@ -123,16 +123,7 @@ const EnhancedCommunities: React.FC = () => {
         return;
       }
 
-      // Add mock data for demonstration
-      const enhancedData = (data || []).map(community => ({
-        ...community,
-        is_premium: Math.random() > 0.7,
-        subscription_price: Math.random() > 0.7 ? Math.floor(Math.random() * 20) + 5 : 0,
-        activity_level: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)] as 'high' | 'medium' | 'low',
-        features: ['discussions', 'events', 'leaderboard']
-      }));
-
-      setCommunities(enhancedData);
+      setCommunities(data || []);
     } catch (err) {
       console.error('Unexpected error:', err);
       setError('An unexpected error occurred.');
@@ -312,11 +303,11 @@ const EnhancedCommunities: React.FC = () => {
               </div>
               <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                 <MessageSquare className="w-4 h-4" />
-                <span className="font-medium">{Math.floor(Math.random() * 100)}</span>
+                <span className="font-medium">0</span>
               </div>
               <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                 <Calendar className="w-4 h-4" />
-                <span className="font-medium">{Math.floor(Math.random() * 10)}</span>
+                <span className="font-medium">0</span>
               </div>
             </div>
           </div>
@@ -671,7 +662,7 @@ const EnhancedCommunities: React.FC = () => {
                               </span>
                               <span className="flex items-center gap-1">
                                 <TrendingUp className="w-3 h-3 text-green-500" />
-                                +{Math.floor(Math.random() * 100)}% this week
+                                Growing
                               </span>
                             </div>
                           </div>

@@ -32,7 +32,7 @@ interface Community {
   is_private: boolean;
   category?: string;
   created_at: string;
-  owner_id: string;
+  creator_id: string;
   tags?: string[];
 }
 
@@ -67,7 +67,7 @@ const CommunityDetail: React.FC = () => {
       }
 
       setCommunity(data);
-      setIsOwner(data.owner_id === user?.id);
+      setIsOwner(data.creator_id === user?.id);
     } catch (err) {
       console.error('Error:', err);
     } finally {

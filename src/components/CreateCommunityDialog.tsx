@@ -128,7 +128,7 @@ export const CreateCommunityDialog: React.FC<CreateCommunityDialogProps> = ({
           description: description.trim(),
           category: category.toLowerCase(),
           is_private: isPrivate,
-          owner_id: user.id,
+          creator_id: user.id,
           avatar_url: avatarUrl || null,
           tags: tags,
           member_count: 1
