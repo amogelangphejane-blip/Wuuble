@@ -104,12 +104,10 @@ CREATE TABLE IF NOT EXISTS community_post_views (
   ip_address INET,
   user_agent TEXT,
   viewed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  duration_seconds INTEGER DEFAULT 0
+  view_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  duration_seconds INTEGER DEFAULT 0,
+  UNIQUE(post_id, user_id, view_date)
 );
-
--- Create unique index for one view per user per post per day
-CREATE UNIQUE INDEX IF NOT EXISTS idx_community_post_views_unique_daily 
-ON community_post_views(post_id, user_id, DATE(viewed_at));
 
 -- ==========================================
 -- ENHANCED COMMENTS WITH REACTIONS
@@ -282,17 +280,29 @@ CREATE TRIGGER trigger_update_comment_like_count
 -- Function to increment view count
 CREATE OR REPLACE FUNCTION increment_post_view(post_uuid UUID, user_uuid UUID DEFAULT NULL)
 RETURNS VOID AS $$
+DECLARE
+  view_exists BOOLEAN := FALSE;
 BEGIN
-  -- Insert view record
-  INSERT INTO community_post_views (post_id, user_id, viewed_at)
-  VALUES (post_uuid, user_uuid, now())
-  ON CONFLICT (post_id, user_id, DATE(viewed_at)) 
+  -- Check if view already exists for today
+  SELECT EXISTS(
+    SELECT 1 FROM community_post_views 
+    WHERE post_id = post_uuid 
+    AND user_id = user_uuid 
+    AND view_date = CURRENT_DATE
+  ) INTO view_exists;
+  
+  -- Insert or update view record
+  INSERT INTO community_post_views (post_id, user_id, viewed_at, view_date)
+  VALUES (post_uuid, user_uuid, now(), CURRENT_DATE)
+  ON CONFLICT (post_id, user_id, view_date) 
   DO UPDATE SET viewed_at = now();
   
-  -- Update post view count
-  UPDATE community_posts 
-  SET view_count = COALESCE(view_count, 0) + 1
-  WHERE id = post_uuid;
+  -- Update post view count only for new views
+  IF NOT view_exists THEN
+    UPDATE community_posts 
+    SET view_count = COALESCE(view_count, 0) + 1
+    WHERE id = post_uuid;
+  END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -627,7 +637,7 @@ CREATE INDEX IF NOT EXISTS idx_community_post_bookmarks_user
 ON community_post_bookmarks(user_id, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_community_post_views_post_date 
-ON community_post_views(post_id, DATE(viewed_at));
+ON community_post_views(post_id, view_date);
 
 CREATE INDEX IF NOT EXISTS idx_community_post_reactions_post 
 ON community_post_reactions(post_id, reaction_type);
