@@ -7,6 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,10 +34,21 @@ import {
   Reply,
   TrendingUp,
   Clock,
-  Filter
+  Filter,
+  Search,
+  Tag,
+  Globe,
+  ExternalLink,
+  Bookmark,
+  Copy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ReactionPicker, ReactionCounts, ReactionType } from '@/components/ReactionPicker';
+import { RichTextEditor } from '@/components/RichTextEditor';
+import { PostImageUpload } from '@/components/PostImageUpload';
+import { LinkPreview } from '@/components/LinkPreview';
+import { EnhancedFileUpload } from '@/components/EnhancedFileUpload';
 
 interface Post {
   id: string;
@@ -43,6 +57,13 @@ interface Post {
   title?: string;
   content: string;
   image_url?: string;
+  link_url?: string;
+  link_title?: string;
+  link_description?: string;
+  link_image_url?: string;
+  link_domain?: string;
+  category?: string;
+  tags?: string[];
   likes_count: number;
   comments_count: number;
   is_pinned: boolean;
@@ -56,6 +77,9 @@ interface Post {
   };
   comments?: Comment[];
   liked_by_user?: boolean;
+  reaction_counts?: ReactionCounts;
+  user_reaction?: ReactionType | null;
+  file_urls?: string[];
 }
 
 interface Comment {
@@ -78,6 +102,16 @@ interface CommunityDiscussionProps {
   isModerator?: boolean;
 }
 
+const POST_CATEGORIES = [
+  { value: 'general', label: '💬 General Discussion', color: 'bg-blue-100 text-blue-800' },
+  { value: 'question', label: '❓ Questions', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'announcement', label: '📢 Announcements', color: 'bg-green-100 text-green-800' },
+  { value: 'event', label: '📅 Events', color: 'bg-purple-100 text-purple-800' },
+  { value: 'resource', label: '📚 Resources', color: 'bg-indigo-100 text-indigo-800' },
+  { value: 'showcase', label: '🎨 Showcase', color: 'bg-pink-100 text-pink-800' },
+  { value: 'link', label: '🔗 Links', color: 'bg-cyan-100 text-cyan-800' },
+];
+
 export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
   communityId,
   isOwner,
@@ -86,82 +120,209 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostTitle, setNewPostTitle] = useState('');
+  const [newPostCategory, setNewPostCategory] = useState('general');
+  const [newPostImage, setNewPostImage] = useState<string | null>(null);
+  const [newPostLink, setNewPostLink] = useState<{
+    url: string;
+    title: string;
+    description: string;
+    image: string;
+    domain: string;
+  } | null>(null);
+  const [newPostFiles, setNewPostFiles] = useState<string[]>([]);
   const [isPosting, setIsPosting] = useState(false);
   const [showNewPost, setShowNewPost] = useState(false);
+  const [postMode, setPostMode] = useState<'simple' | 'rich' | 'files'>('simple');
   const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'trending'>('recent');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'all' | 'my-posts' | 'bookmarked'>('all');
+  const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
+
+  // Filter and search posts
+  const filterPosts = () => {
+    let filtered = [...posts];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(post => 
+        post.content.toLowerCase().includes(query) ||
+        post.title?.toLowerCase().includes(query) ||
+        post.user.display_name?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(post => post.category === selectedCategory);
+    }
+
+    // Apply tab filter
+    if (activeTab === 'bookmarked') {
+      filtered = filtered.filter(post => bookmarkedPosts.has(post.id));
+    } else if (activeTab === 'my-posts') {
+      filtered = filtered.filter(post => post.user_id === user?.id);
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'popular':
+        filtered.sort((a, b) => b.likes_count - a.likes_count);
+        break;
+      case 'trending':
+        filtered.sort((a, b) => {
+          const ageA = (Date.now() - new Date(a.created_at).getTime()) / (1000 * 60 * 60);
+          const ageB = (Date.now() - new Date(b.created_at).getTime()) / (1000 * 60 * 60);
+          const aScore = (a.likes_count * 2 + a.comments_count) / Math.max(1, ageA);
+          const bScore = (b.likes_count * 2 + b.comments_count) / Math.max(1, ageB);
+          return bScore - aScore;
+        });
+        break;
+      default: // recent
+        filtered.sort((a, b) => {
+          if (a.is_pinned && !b.is_pinned) return -1;
+          if (!a.is_pinned && b.is_pinned) return 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+    }
+
+    setFilteredPosts(filtered);
+  };
+
+  // Toggle bookmark
+  const toggleBookmark = (postId: string) => {
+    setBookmarkedPosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+        toast({ title: "Removed from bookmarks" });
+      } else {
+        newSet.add(postId);
+        toast({ title: "Added to bookmarks" });
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     fetchPosts();
   }, [communityId, sortBy]);
 
+  useEffect(() => {
+    filterPosts();
+  }, [posts, searchQuery, selectedCategory, sortBy, activeTab, bookmarkedPosts, user]);
+
   const fetchPosts = async () => {
     try {
       setLoading(true);
       
-      // For demo purposes, create mock posts
-      const mockPosts: Post[] = [
-        {
-          id: '1',
-          community_id: communityId,
-          user_id: 'user1',
-          title: 'Welcome to our community! 🎉',
-          content: 'Hey everyone! So excited to be part of this amazing community. Looking forward to connecting with all of you and sharing our experiences.',
-          likes_count: 24,
-          comments_count: 8,
-          is_pinned: true,
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-          updated_at: new Date(Date.now() - 3600000).toISOString(),
-          user: {
-            id: 'user1',
-            email: 'admin@example.com',
-            display_name: 'Community Admin',
-            avatar_url: ''
-          },
-          liked_by_user: false,
-          comments: [
-            {
-              id: 'c1',
-              post_id: '1',
-              user_id: 'user2',
-              content: 'Welcome! Great to have you here!',
-              created_at: new Date(Date.now() - 1800000).toISOString(),
+      // Fetch posts from database
+      const { data: postsData, error: postsError } = await supabase
+        .from('community_posts')
+        .select(`
+          id,
+          community_id,
+          user_id,
+          content,
+          image_url,
+          link_url,
+          link_title,
+          link_description,
+          link_image_url,
+          link_domain,
+          category,
+          is_pinned,
+          created_at,
+          updated_at,
+          profiles!community_posts_user_id_fkey (
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('community_id', communityId)
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (postsError) {
+        throw postsError;
+      }
+
+      // Fetch reactions and comments for each post
+      const enhancedPosts: Post[] = await Promise.all(
+        (postsData || []).map(async (post) => {
+          // Fetch reaction counts
+          const { data: reactionCounts } = await supabase
+            .rpc('get_post_reaction_counts', { post_uuid: post.id });
+
+          // Fetch user's reaction if logged in
+          let userReaction: ReactionType | null = null;
+          if (user) {
+            const { data: userReactionData } = await supabase
+              .rpc('get_user_post_reaction', { 
+                post_uuid: post.id, 
+                user_uuid: user.id 
+              });
+            userReaction = userReactionData;
+          }
+
+          // Fetch comments
+          const { data: comments } = await supabase
+            .from('community_post_comments')
+            .select(`
+              id,
+              content,
+              created_at,
+              user_id,
+              profiles!community_post_comments_user_id_fkey (
+                display_name,
+                avatar_url
+              )
+            `)
+            .eq('post_id', post.id)
+            .is('parent_comment_id', null)
+            .order('created_at', { ascending: true });
+
+          return {
+            ...post,
+            title: post.content.split('\n')[0].slice(0, 100) || undefined,
+            user: {
+              id: post.user_id,
+              email: '',
+              display_name: post.profiles?.display_name || 'Anonymous',
+              avatar_url: post.profiles?.avatar_url || undefined
+            },
+            comments: comments?.map(comment => ({
+              id: comment.id,
+              post_id: post.id,
+              user_id: comment.user_id,
+              content: comment.content,
+              created_at: comment.created_at,
               user: {
-                id: 'user2',
-                email: 'member@example.com',
-                display_name: 'Sarah Chen',
-                avatar_url: ''
+                id: comment.user_id,
+                email: '',
+                display_name: comment.profiles?.display_name || 'Anonymous',
+                avatar_url: comment.profiles?.avatar_url || undefined
               }
-            }
-          ]
-        },
-        {
-          id: '2',
-          community_id: communityId,
-          user_id: 'user3',
-          title: 'Best practices for community engagement',
-          content: 'I\'ve been thinking about ways we can increase engagement in our community. Here are some ideas:\n\n1. Regular weekly discussions\n2. Member spotlights\n3. Collaborative projects\n\nWhat do you all think?',
-          likes_count: 18,
-          comments_count: 5,
-          is_pinned: false,
-          created_at: new Date(Date.now() - 7200000).toISOString(),
-          updated_at: new Date(Date.now() - 7200000).toISOString(),
-          user: {
-            id: 'user3',
-            email: 'member2@example.com',
-            display_name: 'Alex Johnson',
-            avatar_url: ''
-          },
-          liked_by_user: true
-        }
-      ];
+            })) || [],
+            likes_count: Object.values(reactionCounts || {}).reduce((sum: number, count: number) => sum + count, 0),
+            comments_count: comments?.length || 0,
+            liked_by_user: userReaction === 'like',
+            reaction_counts: reactionCounts || {},
+            user_reaction: userReaction,
+            file_urls: []
+          };
+        })
+      );
 
       // Sort posts based on selected option
-      const sortedPosts = [...mockPosts].sort((a, b) => {
+      const sortedPosts = [...enhancedPosts].sort((a, b) => {
         switch (sortBy) {
           case 'popular':
             return b.likes_count - a.likes_count;
@@ -173,6 +334,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
       });
 
       setPosts(sortedPosts);
+      setFilteredPosts(sortedPosts);
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast({
@@ -186,35 +348,44 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
   };
 
   const handleCreatePost = async () => {
-    if (!user || !newPostContent.trim()) return;
+    if (!user || (!newPostContent.trim() && !newPostImage && !newPostLink && newPostFiles.length === 0)) return;
 
     setIsPosting(true);
     try {
-      // Mock creating a post
-      const newPost: Post = {
-        id: Date.now().toString(),
-        community_id: communityId,
-        user_id: user.id,
-        title: newPostTitle,
-        content: newPostContent,
-        likes_count: 0,
-        comments_count: 0,
-        is_pinned: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        user: {
-          id: user.id,
-          email: user.email || '',
-          display_name: user.user_metadata?.display_name || 'Anonymous',
-          avatar_url: user.user_metadata?.avatar_url
-        },
-        comments: []
-      };
+      // Create the post in database
+      const { data, error } = await supabase
+        .from('community_posts')
+        .insert([
+          {
+            community_id: communityId,
+            user_id: user.id,
+            content: newPostContent || '[Media Post]',
+            image_url: newPostImage,
+            link_url: newPostLink?.url || null,
+            link_title: newPostLink?.title || null,
+            link_description: newPostLink?.description || null,
+            link_image_url: newPostLink?.image || null,
+            link_domain: newPostLink?.domain || null,
+            category: newPostCategory,
+            is_pinned: false
+          }
+        ])
+        .select()
+        .single();
 
-      setPosts([newPost, ...posts]);
+      if (error) throw error;
+
+      // Clear form
       setNewPostContent('');
       setNewPostTitle('');
+      setNewPostCategory('general');
+      setNewPostImage(null);
+      setNewPostLink(null);
+      setNewPostFiles([]);
       setShowNewPost(false);
+      
+      // Refresh posts
+      await fetchPosts();
       
       toast({
         title: "Posted!",
@@ -232,26 +403,50 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
     }
   };
 
-  const handleLikePost = async (postId: string) => {
-    if (!user) {
+  const handleReactionChange = (postId: string, reaction: ReactionType | null, counts: ReactionCounts) => {
+    setPosts(prevPosts => 
+      prevPosts.map(post => 
+        post.id === postId 
+          ? { 
+              ...post, 
+              reaction_counts: counts,
+              user_reaction: reaction,
+              likes_count: Object.values(counts).reduce((sum, count) => sum + count, 0)
+            }
+          : post
+      )
+    );
+    
+    // Update filtered posts as well
+    setFilteredPosts(prevFiltered => 
+      prevFiltered.map(post => 
+        post.id === postId 
+          ? { 
+              ...post, 
+              reaction_counts: counts,
+              user_reaction: reaction,
+              likes_count: Object.values(counts).reduce((sum, count) => sum + count, 0)
+            }
+          : post
+      )
+    );
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
       toast({
-        title: "Sign in required",
-        description: "Please sign in to like posts",
+        title: "Copied!",
+        description: "Link copied to clipboard"
+      });
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy link",
         variant: "destructive"
       });
-      return;
     }
-
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          liked_by_user: !post.liked_by_user,
-          likes_count: post.liked_by_user ? post.likes_count - 1 : post.likes_count + 1
-        };
-      }
-      return post;
-    }));
   };
 
   const handleComment = async (postId: string) => {
@@ -317,116 +512,194 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
     >
-      <Card className={cn(
-        "overflow-hidden hover:shadow-lg transition-shadow",
-        post.is_pinned && "border-yellow-400 dark:border-yellow-600"
-      )}>
-        {post.is_pinned && (
-          <div className="bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 flex items-center gap-2">
-            <Pin className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-            <span className="text-xs font-medium text-yellow-700 dark:text-yellow-400">Pinned</span>
-          </div>
-        )}
-        
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              <Avatar className="w-10 h-10">
-                <AvatarImage src={post.user.avatar_url} />
-                <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                  {post.user.display_name?.substring(0, 2).toUpperCase() || 'AN'}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold">{post.user.display_name || 'Anonymous'}</p>
-                  <span className="text-xs text-gray-500">
+      <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200">
+        <CardContent className="p-6">
+          {/* Post Header */}
+          <div className="flex gap-4 mb-4">
+            <Avatar className="h-12 w-12 ring-2 ring-primary/10">
+              <AvatarImage src={post.user.avatar_url} />
+              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
+                {post.user.display_name?.substring(0, 2).toUpperCase() || 'AN'}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="font-semibold text-base">
+                    {post.user.display_name || 'Anonymous'}
+                  </span>
+                  {post.is_pinned && (
+                    <Badge variant="secondary" className="text-xs">
+                      <Pin className="h-3 w-3 mr-1" />
+                      Pinned
+                    </Badge>
+                  )}
+                  {post.category && (
+                    <Badge 
+                      variant="secondary" 
+                      className={`text-xs ${POST_CATEGORIES.find(cat => cat.value === post.category)?.color || 'bg-muted text-muted-foreground'}`}
+                    >
+                      {POST_CATEGORIES.find(cat => cat.value === post.category)?.label || post.category}
+                    </Badge>
+                  )}
+                  <span className="text-sm text-muted-foreground">
                     {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                   </span>
                 </div>
-                {post.title && (
-                  <h3 className="text-lg font-semibold mt-1">{post.title}</h3>
-                )}
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleBookmark(post.id)}
+                    className={`h-8 w-8 p-0 ${bookmarkedPosts.has(post.id) ? 'text-primary' : 'text-muted-foreground'}`}
+                  >
+                    <Bookmark className={`h-4 w-4 ${bookmarkedPosts.has(post.id) ? 'fill-current' : ''}`} />
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => copyToClipboard(window.location.href + '#post-' + post.id)}>
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Copy Link
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => toggleBookmark(post.id)}>
+                        <Bookmark className="h-4 w-4 mr-2" />
+                        {bookmarkedPosts.has(post.id) ? 'Remove Bookmark' : 'Bookmark'}
+                      </DropdownMenuItem>
+                      {(isOwner || isModerator || post.user_id === user?.id) && (
+                        <DropdownMenuItem className="text-red-600">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Post
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+              
+              {/* Post Content */}
+              {post.content && post.content !== '[Media Post]' && (
+                <div className="text-base whitespace-pre-wrap break-words mb-4 leading-relaxed">
+                  {post.content}
+                </div>
+              )}
+              
+              {/* Post Image */}
+              {post.image_url && (
+                <div className="mb-4">
+                  <img
+                    src={post.image_url}
+                    alt="Post image"
+                    className="w-full max-h-96 rounded-xl border border-border object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                    onClick={() => window.open(post.image_url!, '_blank')}
+                  />
+                </div>
+              )}
+
+              {/* Link Preview */}
+              {post.link_url && (
+                <div className="mb-4">
+                  <div 
+                    className="bg-background rounded-lg border border-border overflow-hidden hover:border-primary/20 transition-all duration-200 cursor-pointer"
+                    onClick={() => window.open(post.link_url!, '_blank')}
+                  >
+                    {post.link_image_url && (
+                      <div className="aspect-video bg-muted relative overflow-hidden">
+                        <img
+                          src={post.link_image_url}
+                          alt={post.link_title || 'Link preview'}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                      </div>
+                    )}
+                    
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-foreground text-sm mb-1 leading-tight line-clamp-2">
+                            {post.link_title || 'Untitled'}
+                          </h3>
+                          {post.link_description && (
+                            <p className="text-muted-foreground text-xs mt-1 leading-relaxed line-clamp-2">
+                              {post.link_description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            <Globe className="h-3 w-3 mr-1" />
+                            {post.link_domain || 'External Link'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <ExternalLink className="h-3 w-3" />
+                          <span className="text-xs">Visit</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Enhanced Post Actions with Reactions */}
+              <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                <div className="flex items-center gap-2">
+                  <ReactionPicker
+                    postId={post.id}
+                    currentUserReaction={post.user_reaction}
+                    reactionCounts={post.reaction_counts || {}}
+                    onReactionChange={handleReactionChange}
+                  />
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 px-3 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
+                    onClick={() => {
+                      const newExpanded = new Set(expandedComments);
+                      if (newExpanded.has(post.id)) {
+                        newExpanded.delete(post.id);
+                      } else {
+                        newExpanded.add(post.id);
+                      }
+                      setExpandedComments(newExpanded);
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    {post.comments_count > 0 ? `${post.comments_count} Comments` : 'Comment'}
+                  </Button>
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 px-3 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
+                    onClick={() => copyToClipboard(window.location.href + '#post-' + post.id)}
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                </div>
               </div>
             </div>
-            
-            {(isOwner || isModerator || post.user_id === user?.id) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {(isOwner || isModerator) && !post.is_pinned && (
-                    <DropdownMenuItem>
-                      <Pin className="w-4 h-4 mr-2" />
-                      Pin Post
-                    </DropdownMenuItem>
-                  )}
-                  {post.user_id === user?.id && (
-                    <DropdownMenuItem>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem className="text-red-600">
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
           </div>
-        </CardHeader>
-        
-        <CardContent>
-          <p className="whitespace-pre-wrap mb-4">{post.content}</p>
-          
-          {post.image_url && (
-            <img 
-              src={post.image_url} 
-              alt="Post attachment" 
-              className="rounded-lg w-full max-h-96 object-cover mb-4"
-            />
-          )}
-          
-          {/* Actions */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "gap-2",
-                  post.liked_by_user && "text-red-500"
-                )}
-                onClick={() => handleLikePost(post.id)}
-              >
-                <Heart className={cn(
-                  "w-4 h-4",
-                  post.liked_by_user && "fill-current"
-                )} />
-                <span className="text-sm">{post.likes_count}</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-2"
-                onClick={() => toggleComments(post.id)}
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span className="text-sm">{post.comments_count}</span>
-              </Button>
-              
-              <Button variant="ghost" size="sm">
-                <Share2 className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-          
+
           {/* Comments Section */}
           <AnimatePresence>
             {expandedComments.has(post.id) && (
@@ -445,11 +718,11 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
+                      <div className="bg-muted/50 rounded-lg p-3">
                         <p className="font-medium text-sm">{comment.user.display_name || 'Anonymous'}</p>
                         <p className="text-sm mt-1">{comment.content}</p>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                       </p>
                     </div>
@@ -458,6 +731,12 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
                 
                 {user && (
                   <div className="flex gap-2 mt-3">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={user.user_metadata?.avatar_url} />
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                        {user.user_metadata?.display_name?.substring(0, 2).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
                     <Input
                       placeholder="Write a comment..."
                       value={commentInputs[post.id] || ''}
@@ -471,12 +750,13 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
                           handleComment(post.id);
                         }
                       }}
-                      className="flex-1"
+                      className="flex-1 rounded-full"
                     />
                     <Button
                       size="sm"
                       onClick={() => handleComment(post.id)}
                       disabled={!commentInputs[post.id]?.trim()}
+                      className="rounded-full"
                     >
                       <Send className="w-4 h-4" />
                     </Button>
@@ -492,52 +772,102 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Discussions</h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Share ideas and connect with community members
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Filter className="w-4 h-4 mr-2" />
-                {sortBy === 'recent' ? 'Recent' : sortBy === 'popular' ? 'Popular' : 'Trending'}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setSortBy('recent')}>
-                <Clock className="w-4 h-4 mr-2" />
-                Recent
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy('popular')}>
-                <ThumbsUp className="w-4 h-4 mr-2" />
-                Popular
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy('trending')}>
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Trending
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+      {/* Enhanced Header with Search and Filters */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <MessageSquare className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Community Discussions</h2>
+                <p className="text-sm text-muted-foreground">
+                  {filteredPosts.length} {filteredPosts.length === 1 ? 'post' : 'posts'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Search and Sort Controls */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search discussions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-40">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {POST_CATEGORIES.map(cat => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Recent
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="popular">
+                    <div className="flex items-center gap-2">
+                      <ThumbsUp className="h-4 w-4" />
+                      Popular
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="trending">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Trending
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {user && (
+                <Button
+                  onClick={() => setShowNewPost(true)}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  New Discussion
+                </Button>
+              )}
+            </div>
+          </div>
           
-          {user && (
-            <Button
-              onClick={() => setShowNewPost(true)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              New Discussion
-            </Button>
-          )}
-        </div>
-      </div>
+          {/* Navigation Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab as any} className="mt-4">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="all">All Posts</TabsTrigger>
+              <TabsTrigger value="my-posts">My Posts</TabsTrigger>
+              <TabsTrigger value="bookmarked">
+                <Bookmark className="h-4 w-4 mr-2" />
+                Bookmarked
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </CardHeader>
+      </Card>
 
-      {/* New Post Form */}
+      {/* Enhanced Post Creation Form */}
       <AnimatePresence>
         {showNewPost && (
           <motion.div
@@ -545,50 +875,161 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <Card>
+            <Card className="border-0 shadow-sm">
               <CardHeader>
-                <CardTitle>Start a Discussion</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Input
-                  placeholder="Title (optional)"
-                  value={newPostTitle}
-                  onChange={(e) => setNewPostTitle(e.target.value)}
-                />
-                <Textarea
-                  placeholder="What's on your mind?"
-                  value={newPostContent}
-                  onChange={(e) => setNewPostContent(e.target.value)}
-                  rows={4}
-                />
                 <div className="flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Image className="w-4 h-4 mr-2" />
-                      Image
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Paperclip className="w-4 h-4 mr-2" />
-                      Attach
-                    </Button>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Start a Discussion
+                  </CardTitle>
+                  <Tabs value={postMode} onValueChange={setPostMode as any}>
+                    <TabsList>
+                      <TabsTrigger value="simple">Simple</TabsTrigger>
+                      <TabsTrigger value="rich">Rich Text</TabsTrigger>
+                      <TabsTrigger value="files">Files</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Post Mode Content */}
+                <TabsContent value={postMode} className="mt-0">
+                  {postMode === 'simple' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={user?.user_metadata?.avatar_url} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {user?.user_metadata?.display_name?.substring(0, 2).toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <Textarea
+                            placeholder="What would you like to discuss? Share your thoughts..."
+                            value={newPostContent}
+                            onChange={(e) => setNewPostContent(e.target.value)}
+                            className="min-h-[120px] resize-none border-0 shadow-none text-base focus-visible:ring-0 bg-muted/30 rounded-xl"
+                            disabled={isPosting}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <PostImageUpload
+                          onImageUploaded={setNewPostImage}
+                          currentImageUrl={newPostImage}
+                          disabled={isPosting}
+                        />
+                        <LinkPreview
+                          onLinkAdded={setNewPostLink}
+                          currentLink={newPostLink}
+                          disabled={isPosting}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {postMode === 'rich' && (
+                    <div className="space-y-4">
+                      <RichTextEditor
+                        value={newPostContent}
+                        onChange={setNewPostContent}
+                        placeholder="Create a rich text post with formatting, emojis, and more..."
+                        disabled={isPosting}
+                        enableMentions={true}
+                        enableHashtags={true}
+                        enableEmojis={true}
+                      />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <PostImageUpload
+                          onImageUploaded={setNewPostImage}
+                          currentImageUrl={newPostImage}
+                          disabled={isPosting}
+                        />
+                        <LinkPreview
+                          onLinkAdded={setNewPostLink}
+                          currentLink={newPostLink}
+                          disabled={isPosting}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {postMode === 'files' && (
+                    <div className="space-y-4">
+                      <Textarea
+                        placeholder="Add a description for your files..."
+                        value={newPostContent}
+                        onChange={(e) => setNewPostContent(e.target.value)}
+                        rows={3}
+                        disabled={isPosting}
+                      />
+                      
+                      <EnhancedFileUpload
+                        onFilesUploaded={setNewPostFiles}
+                        maxFiles={10}
+                        maxFileSize={25}
+                        allowMultiple={true}
+                        disabled={isPosting}
+                        acceptedFileTypes={['image/*', 'video/*', 'audio/*', 'application/pdf', 'text/*']}
+                      />
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Post Settings */}
+                <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      <Select value={newPostCategory} onValueChange={setNewPostCategory}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {POST_CATEGORIES.map(cat => (
+                            <SelectItem key={cat.value} value={cat.value}>
+                              {cat.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                  
+                  <div className="flex items-center gap-3">
                     <Button
                       variant="outline"
                       onClick={() => {
                         setShowNewPost(false);
                         setNewPostContent('');
                         setNewPostTitle('');
+                        setNewPostCategory('general');
+                        setNewPostImage(null);
+                        setNewPostLink(null);
+                        setNewPostFiles([]);
                       }}
+                      disabled={isPosting}
                     >
                       Cancel
                     </Button>
                     <Button
                       onClick={handleCreatePost}
-                      disabled={!newPostContent.trim() || isPosting}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      disabled={(!newPostContent.trim() && !newPostImage && !newPostLink && newPostFiles.length === 0) || isPosting}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 min-w-[100px]"
                     >
-                      {isPosting ? 'Posting...' : 'Post'}
+                      {isPosting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Posting...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Post
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -623,19 +1064,25 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
             </Card>
           ))}
         </div>
-      ) : posts.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No discussions yet</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Be the first to start a conversation!
+      ) : filteredPosts.length === 0 ? (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="text-center py-16">
+            <div className="p-4 bg-muted/30 rounded-full w-fit mx-auto mb-4">
+              <MessageSquare className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">No posts found</h3>
+            <p className="text-muted-foreground mb-6">
+              {searchQuery || selectedCategory !== 'all' 
+                ? 'Try adjusting your search or filters' 
+                : 'Be the first to start a discussion!'
+              }
             </p>
-            {user && (
+            {(!searchQuery && selectedCategory === 'all') && user && (
               <Button
                 onClick={() => setShowNewPost(true)}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
+                <MessageSquare className="h-4 w-4 mr-2" />
                 Start Discussion
               </Button>
             )}
@@ -644,7 +1091,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
       ) : (
         <AnimatePresence mode="popLayout">
           <div className="space-y-4">
-            {posts.map((post) => (
+            {filteredPosts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
