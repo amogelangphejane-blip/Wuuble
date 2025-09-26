@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { SkoolDiscussions } from '@/components/SkoolDiscussions';
+import SimplifiedSkoolDiscussions from '@/components/SimplifiedSkoolDiscussions';
 import { SkoolMembers } from '@/components/SkoolMembers';
 import { SkoolClassroom } from '@/components/SkoolClassroom';
 import { SkoolCalendar } from '@/components/SkoolCalendar';
@@ -59,7 +59,7 @@ const SkoolStyleCommunityDetail: React.FC = () => {
   const [community, setCommunity] = useState<Community | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMember, setIsMember] = useState(false);
-  const [activeSection, setActiveSection] = useState('community');
+  const [activeSection, setActiveSection] = useState('discussions');
   const [userLevel, setUserLevel] = useState(3);
   const [userPoints, setUserPoints] = useState(450);
   const [notifications, setNotifications] = useState(true);
@@ -134,9 +134,9 @@ const SkoolStyleCommunityDetail: React.FC = () => {
   };
 
   const navigationItems = [
-    { id: 'community', label: 'Community', icon: Home, badge: null },
-    { id: 'classroom', label: 'Classroom', icon: BookOpen, badge: '3 new' },
-    { id: 'calendar', label: 'Calendar', icon: Calendar, badge: '2' },
+    { id: 'discussions', label: 'Discussions', icon: MessageSquare, badge: null },
+    { id: 'classroom', label: 'Classroom', icon: BookOpen, badge: null },
+    { id: 'calendar', label: 'Calendar', icon: Calendar, badge: null },
     { id: 'members', label: 'Members', icon: Users, badge: community?.member_count },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, badge: null },
     { id: 'about', label: 'About', icon: Settings, badge: null },
@@ -227,7 +227,7 @@ const SkoolStyleCommunityDetail: React.FC = () => {
             
             <Button 
               className="w-full bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 dark:text-black text-white"
-              onClick={() => setActiveSection('community')}
+              onClick={() => setActiveSection('discussions')}
             >
               <Plus className="w-4 h-4 mr-2" />
               New Post
@@ -372,8 +372,8 @@ const SkoolStyleCommunityDetail: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="p-6"
             >
-              {activeSection === 'community' && (
-                <SkoolDiscussions communityId={community.id} />
+              {activeSection === 'discussions' && (
+                <SimplifiedSkoolDiscussions communityId={community.id} />
               )}
               {activeSection === 'classroom' && (
                 <SkoolClassroom communityId={community.id} />
