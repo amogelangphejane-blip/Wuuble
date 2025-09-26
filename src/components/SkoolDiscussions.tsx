@@ -1,0 +1,415 @@
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  MessageSquare,
+  Heart,
+  Eye,
+  MoreHorizontal,
+  Image,
+  Link,
+  Hash,
+  Pin,
+  TrendingUp,
+  Clock,
+  Filter,
+  ChevronDown,
+  ThumbsUp,
+  Bookmark,
+  Share2
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+
+interface Post {
+  id: string;
+  author: {
+    name: string;
+    avatar?: string;
+    level: number;
+    badge?: string;
+  };
+  title: string;
+  content: string;
+  category: string;
+  tags: string[];
+  likes: number;
+  comments: number;
+  views: number;
+  isPinned: boolean;
+  isLiked: boolean;
+  isBookmarked: boolean;
+  createdAt: Date;
+}
+
+interface SkoolDiscussionsProps {
+  communityId: string;
+}
+
+export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId }) => {
+  const [posts, setPosts] = useState<Post[]>([
+    {
+      id: '1',
+      author: {
+        name: 'Alex Thompson',
+        avatar: '',
+        level: 7,
+        badge: 'moderator'
+      },
+      title: '🚀 How I Scaled My SaaS to $10k MRR in 6 Months',
+      content: 'Hey everyone! I wanted to share my journey of scaling my SaaS from 0 to $10k MRR. Here are the key strategies that worked...',
+      category: 'Case Studies',
+      tags: ['saas', 'growth', 'marketing'],
+      likes: 234,
+      comments: 45,
+      views: 1842,
+      isPinned: true,
+      isLiked: false,
+      isBookmarked: false,
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
+    },
+    {
+      id: '2',
+      author: {
+        name: 'Sarah Chen',
+        avatar: '',
+        level: 5,
+        badge: 'contributor'
+      },
+      title: 'Weekly Growth Hack: The LinkedIn Strategy That 10x My Leads',
+      content: 'I discovered this LinkedIn outreach strategy that completely changed my lead generation game. Let me break it down step by step...',
+      category: 'Growth Hacks',
+      tags: ['linkedin', 'leads', 'outreach'],
+      likes: 156,
+      comments: 28,
+      views: 923,
+      isPinned: false,
+      isLiked: true,
+      isBookmarked: true,
+      createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000)
+    },
+    {
+      id: '3',
+      author: {
+        name: 'Mike Johnson',
+        avatar: '',
+        level: 3,
+        badge: null
+      },
+      title: 'Need Feedback: Landing Page for New Product',
+      content: "Just launched my landing page and would love to get the community's feedback. What do you think about the messaging and design?",
+      category: 'Feedback',
+      tags: ['landing-page', 'feedback', 'design'],
+      likes: 42,
+      comments: 18,
+      views: 387,
+      isPinned: false,
+      isLiked: false,
+      isBookmarked: false,
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+    }
+  ]);
+
+  const [showNewPost, setShowNewPost] = useState(false);
+  const [newPostTitle, setNewPostTitle] = useState('');
+  const [newPostContent, setNewPostContent] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('General');
+  const [sortBy, setSortBy] = useState('recent');
+
+  const categories = [
+    { name: 'All Posts', count: 156 },
+    { name: 'Introductions', count: 23 },
+    { name: 'General', count: 45 },
+    { name: 'Case Studies', count: 12 },
+    { name: 'Growth Hacks', count: 34 },
+    { name: 'Feedback', count: 28 },
+    { name: 'Resources', count: 14 }
+  ];
+
+  const handleLike = (postId: string) => {
+    setPosts(posts.map(post => 
+      post.id === postId 
+        ? { ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 }
+        : post
+    ));
+  };
+
+  const handleBookmark = (postId: string) => {
+    setPosts(posts.map(post => 
+      post.id === postId 
+        ? { ...post, isBookmarked: !post.isBookmarked }
+        : post
+    ));
+  };
+
+  const getBadgeColor = (badge: string | null) => {
+    switch (badge) {
+      case 'moderator':
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300';
+      case 'contributor':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
+      default:
+        return '';
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Community</h1>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="w-4 h-4 mr-2" />
+                {sortBy === 'recent' ? 'Recent' : sortBy === 'popular' ? 'Popular' : 'Top'}
+                <ChevronDown className="w-4 h-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setSortBy('recent')}>
+                <Clock className="w-4 h-4 mr-2" />
+                Most Recent
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy('popular')}>
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Most Popular
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy('top')}>
+                <ThumbsUp className="w-4 h-4 mr-2" />
+                Top Rated
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Categories */}
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+        {categories.map((category) => (
+          <Button
+            key={category.name}
+            variant={selectedCategory === category.name ? "default" : "outline"}
+            size="sm"
+            className={cn(
+              "whitespace-nowrap",
+              selectedCategory === category.name 
+                ? "bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 dark:text-black text-white"
+                : ""
+            )}
+            onClick={() => setSelectedCategory(category.name)}
+          >
+            {category.name}
+            <Badge variant="secondary" className="ml-2 text-xs">
+              {category.count}
+            </Badge>
+          </Button>
+        ))}
+      </div>
+
+      {/* New Post Form */}
+      {showNewPost && (
+        <Card className="mb-6 p-6 border-2 border-gray-200 dark:border-gray-700">
+          <div className="space-y-4">
+            <Input
+              placeholder="Post title..."
+              value={newPostTitle}
+              onChange={(e) => setNewPostTitle(e.target.value)}
+              className="text-lg font-semibold"
+            />
+            <Textarea
+              placeholder="Share your thoughts with the community..."
+              value={newPostContent}
+              onChange={(e) => setNewPostContent(e.target.value)}
+              rows={6}
+              className="resize-none"
+            />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm">
+                  <Image className="w-4 h-4 mr-2" />
+                  Image
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Link className="w-4 h-4 mr-2" />
+                  Link
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Hash className="w-4 h-4 mr-2" />
+                  Tags
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowNewPost(false);
+                    setNewPostTitle('');
+                    setNewPostContent('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button className="bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 dark:text-black text-white">
+                  Post
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Create Post Button */}
+      {!showNewPost && (
+        <Card 
+          className="mb-6 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          onClick={() => setShowNewPost(true)}
+        >
+          <div className="flex items-center gap-3">
+            <Avatar className="w-10 h-10">
+              <AvatarFallback className="bg-gray-200 dark:bg-gray-700">U</AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <p className="text-gray-500">Create a post...</p>
+            </div>
+            <Button size="sm" className="bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 dark:text-black text-white">
+              New Post
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Posts List */}
+      <div className="space-y-4">
+        {posts.map((post) => (
+          <Card 
+            key={post.id} 
+            className={cn(
+              "hover:shadow-lg transition-all cursor-pointer",
+              post.isPinned && "border-2 border-yellow-400 dark:border-yellow-600"
+            )}
+          >
+            {post.isPinned && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 px-4 py-2 border-b flex items-center gap-2">
+                <Pin className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Pinned</span>
+              </div>
+            )}
+            
+            <div className="p-6">
+              {/* Author Info */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src={post.author.avatar} />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                      {post.author.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{post.author.name}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        Level {post.author.level}
+                      </Badge>
+                      {post.author.badge && (
+                        <Badge className={cn("text-xs", getBadgeColor(post.author.badge))}>
+                          {post.author.badge}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {formatDistanceToNow(post.createdAt, { addSuffix: true })}
+                    </p>
+                  </div>
+                </div>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>Report</DropdownMenuItem>
+                    <DropdownMenuItem>Hide</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Post Content */}
+              <h2 className="text-lg font-semibold mb-2 hover:text-blue-600 dark:hover:text-blue-400">
+                {post.title}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
+                {post.content}
+              </p>
+
+              {/* Tags */}
+              <div className="flex items-center gap-2 mb-4">
+                <Badge variant="outline" className="text-xs">
+                  {post.category}
+                </Badge>
+                {post.tags.map((tag) => (
+                  <span key={tag} className="text-xs text-gray-500">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-4 border-t">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleLike(post.id)}
+                    className={cn(post.isLiked && "text-red-500")}
+                  >
+                    <Heart className={cn("w-4 h-4 mr-1", post.isLiked && "fill-current")} />
+                    {post.likes}
+                  </Button>
+                  
+                  <Button variant="ghost" size="sm">
+                    <MessageSquare className="w-4 h-4 mr-1" />
+                    {post.comments}
+                  </Button>
+                  
+                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <Eye className="w-4 h-4" />
+                    {post.views}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleBookmark(post.id)}
+                    className={cn("h-8 w-8", post.isBookmarked && "text-blue-500")}
+                  >
+                    <Bookmark className={cn("w-4 h-4", post.isBookmarked && "fill-current")} />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Share2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
