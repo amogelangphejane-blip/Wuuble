@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Profiles Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+        }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        pre { background: #f1f3f4; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Supabase Profiles Table Test</h1>
+        
+        <div>
+            <button onclick="testConnection()">Test Connection</button>
+            <button onclick="checkProfilesTable()">Check Profiles Table</button>
+            <button onclick="checkCommunityPosts()">Check Community Posts</button>
+            <button onclick="testJoinQuery()">Test Join Query</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://tgmflbglhmnrliredlbn.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        function addResult(title, content, isError = false) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${isError ? 'error' : 'success'}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${content}</pre>
+            `;
+            results.appendChild(div);
+        }
+
+        async function testConnection() {
+            try {
+                const { data, error } = await supabase
+                    .from('communities')
+                    .select('id, name')
+                    .limit(1);
+                
+                if (error) {
+                    addResult('Connection Test', `Error: ${error.message}`, true);
+                } else {
+                    addResult('Connection Test', `Success! Found ${data.length} communities`);
+                }
+            } catch (err) {
+                addResult('Connection Test', `Exception: ${err.message}`, true);
+            }
+        }
+
+        async function checkProfilesTable() {
+            try {
+                // First, check if table exists
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('id, user_id, display_name, avatar_url, created_at')
+                    .limit(5);
+                
+                if (error) {
+                    addResult('Profiles Table Check', 
+                        `Error: ${error.message}\nCode: ${error.code}\nDetails: ${error.details}`, true);
+                } else {
+                    addResult('Profiles Table Check', 
+                        `Success! Found ${data.length} profiles:\n` + 
+                        JSON.stringify(data, null, 2));
+                }
+            } catch (err) {
+                addResult('Profiles Table Check', `Exception: ${err.message}`, true);
+            }
+        }
+
+        async function checkCommunityPosts() {
+            try {
+                const { data, error } = await supabase
+                    .from('community_posts')
+                    .select('id, user_id, title, content, created_at')
+                    .limit(5);
+                
+                if (error) {
+                    addResult('Community Posts Check', 
+                        `Error: ${error.message}\nCode: ${error.code}`, true);
+                } else {
+                    addResult('Community Posts Check', 
+                        `Success! Found ${data.length} posts:\n` + 
+                        JSON.stringify(data, null, 2));
+                }
+            } catch (err) {
+                addResult('Community Posts Check', `Exception: ${err.message}`, true);
+            }
+        }
+
+        async function testJoinQuery() {
+            try {
+                const { data, error } = await supabase
+                    .from('community_posts')
+                    .select(`
+                        id, title, user_id,
+                        profiles!community_posts_user_id_fkey (
+                            id,
+                            display_name,
+                            avatar_url
+                        )
+                    `)
+                    .limit(5);
+                
+                if (error) {
+                    addResult('Join Query Test', 
+                        `Error: ${error.message}\nCode: ${error.code}\nDetails: ${error.details}`, true);
+                } else {
+                    addResult('Join Query Test', 
+                        `Success! Query returned ${data.length} posts with profiles:\n` + 
+                        JSON.stringify(data, null, 2));
+                }
+            } catch (err) {
+                addResult('Join Query Test', `Exception: ${err.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>
