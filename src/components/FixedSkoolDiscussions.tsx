@@ -176,7 +176,7 @@ export const FixedSkoolDiscussions: React.FC<FixedSkoolDiscussionsProps> = ({ co
       const transformedPosts: Post[] = (postsData || []).map(post => {
         const profile = profiles[post.user_id];
         const authUser = users[post.user_id];
-        const userName = profile?.username || profile?.email?.split('@')[0] || authUser?.email?.split('@')[0] || 'Anonymous';
+        const userName = profile?.username || profile?.display_name || profile?.email?.split('@')[0] || authUser?.email?.split('@')[0] || 'User';
         
         return {
           id: post.id,

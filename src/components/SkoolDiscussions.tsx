@@ -105,7 +105,7 @@ export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId 
       const transformedPosts: Post[] = (data || []).map(post => ({
         id: post.id,
         author: {
-          name: post.profiles?.username || 'Anonymous',
+          name: post.profiles?.username || post.profiles?.display_name || post.profiles?.email?.split('@')[0] || 'User',
           avatar: post.profiles?.avatar_url,
           level: Math.floor(Math.random() * 10) + 1, // Mock level for now
           badge: null

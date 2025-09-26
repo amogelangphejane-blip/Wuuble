@@ -37,6 +37,7 @@ interface SimplifiedPost {
   updated_at: string;
   community_id: string;
   user?: {
+    display_name?: string;
     email?: string;
     avatar_url?: string;
   };
@@ -69,6 +70,7 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
         .select(`
           *,
           user:profiles!community_posts_user_id_fkey (
+            display_name,
             email,
             avatar_url
           )
@@ -88,6 +90,7 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
             updated_at: new Date(Date.now() - 86400000).toISOString(),
             community_id: communityId,
             user: {
+              display_name: 'John Doe',
               email: 'john.doe@example.com',
               avatar_url: undefined
             }
@@ -100,6 +103,7 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
             updated_at: new Date(Date.now() - 172800000).toISOString(),
             community_id: communityId,
             user: {
+              display_name: 'Jane Smith',
               email: 'jane.smith@example.com',
               avatar_url: undefined
             }
@@ -112,6 +116,7 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
             updated_at: new Date(Date.now() - 259200000).toISOString(),
             community_id: communityId,
             user: {
+              display_name: 'Alex Johnson',
               email: 'alex.johnson@example.com',
               avatar_url: undefined
             }
@@ -150,6 +155,14 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
 
     try {
       setSubmitting(true);
+      
+      // Get user's profile information
+      let { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_url, email')
+        .eq('user_id', user.id)
+        .single();
+
       const { data, error } = await supabase
         .from('community_posts')
         .insert({
@@ -171,8 +184,9 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
           updated_at: new Date().toISOString(),
           community_id: communityId,
           user: {
-            email: user.email,
-            avatar_url: user.user_metadata?.avatar_url
+            display_name: profile?.display_name,
+            email: profile?.email || user.email,
+            avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url
           }
         };
         setPosts([mockPost, ...posts]);
@@ -181,7 +195,16 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
           description: 'Your post has been created (demo mode)'
         });
       } else {
-        setPosts([data, ...posts]);
+        // Add profile data to the created post
+        const postWithProfile: SimplifiedPost = {
+          ...data,
+          user: {
+            display_name: profile?.display_name,
+            email: profile?.email || user.email,
+            avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url
+          }
+        };
+        setPosts([postWithProfile, ...posts]);
         toast({
           title: 'Success',
           description: 'Your post has been created'
@@ -203,10 +226,14 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
   };
 
   const getUserName = (post: SimplifiedPost) => {
+    // Try display_name first, then fallback to email username, then 'User'
+    if (post.user?.display_name) {
+      return post.user.display_name;
+    }
     if (post.user?.email) {
       return post.user.email.split('@')[0];
     }
-    return 'Anonymous';
+    return 'User';
   };
 
   const getUserInitials = (post: SimplifiedPost) => {

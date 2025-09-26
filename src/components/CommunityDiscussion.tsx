@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getUserDisplayName, ensureUserProfile } from '@/utils/profileUtils';
 
 interface Post {
   id: string;
@@ -103,7 +104,49 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
     try {
       setLoading(true);
       
-      // For demo purposes, create mock posts
+      // First try to fetch real posts from the database
+      let { data: realPosts, error } = await supabase
+        .from('community_posts')
+        .select(`
+          *,
+          profiles:user_id (
+            display_name,
+            avatar_url,
+            email
+          )
+        `)
+        .eq('community_id', communityId)
+        .order('created_at', { ascending: false });
+
+      if (!error && realPosts && realPosts.length > 0) {
+        // Transform real posts to match our interface
+        const transformedPosts: Post[] = realPosts.map(post => ({
+          id: post.id,
+          community_id: post.community_id,
+          user_id: post.user_id,
+          title: post.title,
+          content: post.content,
+          image_url: post.image_url,
+          likes_count: post.likes_count || 0,
+          comments_count: post.comments_count || 0,
+          is_pinned: post.is_pinned || false,
+          created_at: post.created_at,
+          updated_at: post.updated_at,
+          user: {
+            id: post.user_id,
+            email: post.profiles?.email || '',
+            display_name: post.profiles?.display_name || post.profiles?.email?.split('@')[0] || 'User',
+            avatar_url: post.profiles?.avatar_url
+          },
+          comments: [],
+          liked_by_user: false
+        }));
+
+        setPosts(transformedPosts);
+        return;
+      }
+      
+      // For demo purposes, create mock posts if no real data
       const mockPosts: Post[] = [
         {
           id: '1',
@@ -190,28 +233,79 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
 
     setIsPosting(true);
     try {
-      // Mock creating a post
-      const newPost: Post = {
-        id: Date.now().toString(),
-        community_id: communityId,
-        user_id: user.id,
-        title: newPostTitle,
-        content: newPostContent,
-        likes_count: 0,
-        comments_count: 0,
-        is_pinned: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        user: {
-          id: user.id,
-          email: user.email || '',
-          display_name: user.user_metadata?.display_name || 'Anonymous',
-          avatar_url: user.user_metadata?.avatar_url
-        },
-        comments: []
-      };
+      // Ensure user profile exists and get profile information
+      let profile = await ensureUserProfile(user.id, user.email, user.user_metadata?.display_name);
+      
+      if (!profile) {
+        // Fallback: try to get existing profile
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('display_name, avatar_url, email')
+          .eq('user_id', user.id)
+          .single();
+        profile = existingProfile;
+      }
 
-      setPosts([newPost, ...posts]);
+      // Try to create the post in the database
+      const { data: createdPost, error } = await supabase
+        .from('community_posts')
+        .insert({
+          community_id: communityId,
+          user_id: user.id,
+          title: newPostTitle || null,
+          content: newPostContent,
+        })
+        .select()
+        .single();
+
+      if (!error && createdPost) {
+        // Successfully created in database, create local post with proper user data
+        const newPost: Post = {
+          id: createdPost.id,
+          community_id: createdPost.community_id,
+          user_id: createdPost.user_id,
+          title: createdPost.title,
+          content: createdPost.content,
+          likes_count: 0,
+          comments_count: 0,
+          is_pinned: false,
+          created_at: createdPost.created_at,
+          updated_at: createdPost.updated_at,
+          user: {
+            id: user.id,
+            email: profile?.email || user.email || '',
+            display_name: getUserDisplayName(user, profile),
+            avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url
+          },
+          comments: []
+        };
+
+        setPosts([newPost, ...posts]);
+      } else {
+        // Fallback to mock post if database insert fails
+        const newPost: Post = {
+          id: Date.now().toString(),
+          community_id: communityId,
+          user_id: user.id,
+          title: newPostTitle,
+          content: newPostContent,
+          likes_count: 0,
+          comments_count: 0,
+          is_pinned: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          user: {
+            id: user.id,
+            email: profile?.email || user.email || '',
+            display_name: getUserDisplayName(user, profile),
+            avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url
+          },
+          comments: []
+        };
+
+        setPosts([newPost, ...posts]);
+      }
+
       setNewPostContent('');
       setNewPostTitle('');
       setShowNewPost(false);
@@ -259,6 +353,13 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
     if (!user || !content?.trim()) return;
 
     try {
+      // Get user's profile information
+      let { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_url, email')
+        .eq('user_id', user.id)
+        .single();
+
       const newComment: Comment = {
         id: Date.now().toString(),
         post_id: postId,
@@ -267,9 +368,9 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
         created_at: new Date().toISOString(),
         user: {
           id: user.id,
-          email: user.email || '',
-          display_name: user.user_metadata?.display_name || 'Anonymous',
-          avatar_url: user.user_metadata?.avatar_url
+          email: profile?.email || user.email || '',
+          display_name: getUserDisplayName(user, profile),
+          avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url
         }
       };
 
@@ -334,13 +435,13 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
               <Avatar className="w-10 h-10">
                 <AvatarImage src={post.user.avatar_url} />
                 <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                  {post.user.display_name?.substring(0, 2).toUpperCase() || 'AN'}
+                  {(getUserDisplayName(null, post.user)).substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold">{post.user.display_name || 'Anonymous'}</p>
+                  <p className="font-semibold">{getUserDisplayName(null, post.user)}</p>
                   <span className="text-xs text-gray-500">
                     {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                   </span>
@@ -441,12 +542,12 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={comment.user.avatar_url} />
                       <AvatarFallback className="text-xs">
-                        {comment.user.display_name?.substring(0, 2).toUpperCase() || 'AN'}
+                        {(getUserDisplayName(null, comment.user)).substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
-                        <p className="font-medium text-sm">{comment.user.display_name || 'Anonymous'}</p>
+                        <p className="font-medium text-sm">{getUserDisplayName(null, comment.user)}</p>
                         <p className="text-sm mt-1">{comment.content}</p>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
