@@ -29,7 +29,11 @@ import {
   Globe,
   Star,
   Zap,
-  ArrowUp
+  ArrowUp,
+  Menu,
+  X,
+  PanelLeftClose,
+  PanelLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -59,12 +63,26 @@ const SkoolStyleCommunityDetail: React.FC = () => {
   const [userLevel, setUserLevel] = useState(3);
   const [userPoints, setUserPoints] = useState(450);
   const [notifications, setNotifications] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    // Get saved preference from localStorage
+    const saved = localStorage.getItem('sidebarOpen');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
 
   useEffect(() => {
     if (id) {
       fetchCommunity();
     }
   }, [id]);
+
+  useEffect(() => {
+    // Save sidebar preference to localStorage
+    localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   const fetchCommunity = async () => {
     try {
@@ -127,7 +145,17 @@ const SkoolStyleCommunityDetail: React.FC = () => {
       <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-0 z-40">
         <div className="flex items-center justify-between h-16 px-4">
           {/* Left Section */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="hover:bg-gray-100 dark:hover:bg-gray-800"
+              title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+            >
+              {sidebarOpen ? <PanelLeftClose className="w-5 h-5" /> : <PanelLeft className="w-5 h-5" />}
+            </Button>
+            
             <Button
               variant="ghost"
               size="sm"
@@ -213,7 +241,15 @@ const SkoolStyleCommunityDetail: React.FC = () => {
 
       <div className="flex h-[calc(100vh-5rem)]">
         {/* Left Sidebar - Skool Style */}
-        <div className="w-64 border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+        <AnimatePresence initial={false}>
+          {sidebarOpen && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 256, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 overflow-hidden"
+            >
           <div className="p-4">
             <Button 
               className="w-full bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 dark:text-black text-white"
@@ -276,10 +312,30 @@ const SkoolStyleCommunityDetail: React.FC = () => {
               <Progress value={community.activity_score} className="h-1 mt-2" />
             </div>
           </div>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-950">
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-950 relative">
+          {/* Floating Sidebar Toggle for Mobile/Tablet */}
+          {!sidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="lg:hidden fixed bottom-4 left-4 z-50"
+            >
+              <Button
+                onClick={toggleSidebar}
+                size="icon"
+                className="w-12 h-12 rounded-full shadow-lg bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 dark:text-black text-white"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+            </motion.div>
+          )}
+          
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSection}
@@ -312,7 +368,15 @@ const SkoolStyleCommunityDetail: React.FC = () => {
         </div>
 
         {/* Right Sidebar - Quick Stats */}
-        <div className="w-80 border-l border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-4 hidden xl:block">
+        <AnimatePresence>
+          {sidebarOpen && (
+            <motion.div 
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 320, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="border-l border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-4 hidden xl:block overflow-hidden"
+            >
           {/* Upcoming Events */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
             <h3 className="font-semibold text-sm mb-3">Upcoming Events</h3>
@@ -378,7 +442,9 @@ const SkoolStyleCommunityDetail: React.FC = () => {
               </Button>
             </div>
           </div>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
