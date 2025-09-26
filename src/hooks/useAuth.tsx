@@ -33,7 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Ensure user profile exists when user signs in
         if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
           try {
-            await ensureUserProfile(session.user);
+            console.log('🔍 Auth state changed, ensuring profile for user:', session.user.email);
+            const profile = await ensureUserProfile(session.user);
+            console.log('🔍 Profile ensured in auth hook:', profile);
           } catch (error) {
             console.error('Error ensuring user profile:', error);
           }

@@ -12,6 +12,7 @@ export interface UserProfile {
  * @returns Promise containing the user's profile information
  */
 export const ensureUserProfile = async (user: User): Promise<UserProfile> => {
+  console.log('🔍 ensureUserProfile called for user:', user.id, user.email);
   try {
     // First, try to get the existing profile
     let { data: profile, error } = await supabase
@@ -19,6 +20,8 @@ export const ensureUserProfile = async (user: User): Promise<UserProfile> => {
       .select('display_name, avatar_url')
       .eq('user_id', user.id)
       .single();
+
+    console.log('🔍 Profile query result:', { profile, error: error?.message, code: error?.code });
 
     if (error && error.code === 'PGRST116') {
       // Profile doesn't exist, create it
@@ -31,6 +34,8 @@ export const ensureUserProfile = async (user: User): Promise<UserProfile> => {
                         user.user_metadata?.picture || 
                         null;
 
+      console.log('🔍 Creating new profile:', { displayName, avatarUrl });
+
       const { data: newProfile, error: createError } = await supabase
         .from('profiles')
         .insert({
@@ -40,6 +45,8 @@ export const ensureUserProfile = async (user: User): Promise<UserProfile> => {
         })
         .select('display_name, avatar_url')
         .single();
+
+      console.log('🔍 Profile creation result:', { newProfile, error: createError?.message });
 
       if (createError) {
         console.error('Error creating profile:', createError);
