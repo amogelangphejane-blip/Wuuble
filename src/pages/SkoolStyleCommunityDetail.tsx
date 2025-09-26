@@ -141,105 +141,46 @@ const SkoolStyleCommunityDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
-      {/* Top Header Bar - Skool Style */}
+      {/* Top Header Bar - Clean and Simple */}
       <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-0 z-40">
-        <div className="flex items-center justify-between h-16 px-4">
-          {/* Left Section */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="hover:bg-gray-100 dark:hover:bg-gray-800"
-              title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-            >
-              {sidebarOpen ? <PanelLeftClose className="w-5 h-5" /> : <PanelLeft className="w-5 h-5" />}
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/communities')}
-              className="hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Back
-            </Button>
-            
-            <div className="flex items-center gap-3">
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={community.avatar_url} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs">
-                  {community.name.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="font-semibold text-sm">{community.name}</h1>
-                <div className="flex items-center gap-2">
-                  {community.is_private ? (
-                    <Lock className="w-3 h-3 text-gray-500" />
-                  ) : (
-                    <Globe className="w-3 h-3 text-gray-500" />
-                  )}
-                  <span className="text-xs text-gray-500">
-                    {community.member_count.toLocaleString()} members
-                  </span>
-                </div>
+        <div className="flex items-center h-14 px-4">
+          {/* Sidebar Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="hover:bg-gray-100 dark:hover:bg-gray-800 mr-4"
+            title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          >
+            {sidebarOpen ? <PanelLeftClose className="w-5 h-5" /> : <PanelLeft className="w-5 h-5" />}
+          </Button>
+          
+          {/* Community Info */}
+          <div className="flex items-center gap-3">
+            <Avatar className="w-9 h-9">
+              <AvatarImage src={community.avatar_url} />
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-semibold">
+                {community.name.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="font-semibold text-base">{community.name}</h1>
+              <div className="flex items-center gap-2">
+                {community.is_private ? (
+                  <Lock className="w-3 h-3 text-gray-500" />
+                ) : (
+                  <Globe className="w-3 h-3 text-gray-500" />
+                )}
+                <span className="text-xs text-gray-500">
+                  {community.member_count.toLocaleString()} members
+                </span>
               </div>
             </div>
           </div>
-
-          {/* Center Section - Search */}
-          <div className="hidden md:block flex-1 max-w-md mx-8">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search community..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Right Section */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setNotifications(!notifications)}
-              className="hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <Bell className={cn("w-4 h-4", notifications && "text-blue-600")} />
-            </Button>
-            
-            {/* User Level Badge */}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <Zap className="w-4 h-4 text-yellow-500" />
-              <span className="text-sm font-medium">Level {userLevel}</span>
-            </div>
-
-            {/* User Avatar */}
-            <Avatar className="w-8 h-8 cursor-pointer">
-              <AvatarImage src={user?.user_metadata?.avatar_url} />
-              <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-xs">
-                {user?.email?.substring(0, 2).toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="px-4 pb-2">
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-            <span>Level {userLevel}</span>
-            <span>{userPoints} / 1000 points</span>
-            <span>Level {userLevel + 1}</span>
-          </div>
-          <Progress value={(userPoints / 1000) * 100} className="h-1" />
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-5rem)]">
+      <div className="flex h-[calc(100vh-3.5rem)]">
         {/* Left Sidebar - Skool Style */}
         <AnimatePresence initial={false}>
           {sidebarOpen && (
@@ -250,7 +191,16 @@ const SkoolStyleCommunityDetail: React.FC = () => {
               transition={{ duration: 0.3, ease: "easeInOut" }}
               className="border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 overflow-hidden"
             >
-          <div className="p-4">
+          <div className="p-4 space-y-3">
+            <Button 
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => navigate('/communities')}
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Back to Communities
+            </Button>
+            
             <Button 
               className="w-full bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 dark:text-black text-white"
               onClick={() => setActiveSection('community')}
@@ -298,18 +248,71 @@ const SkoolStyleCommunityDetail: React.FC = () => {
             })}
           </nav>
 
-          {/* Activity Score */}
-          <div className="p-4 mt-auto border-t border-gray-200 dark:border-gray-800">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-gray-500">Activity Score</span>
-                <ArrowUp className="w-3 h-3 text-green-500" />
+          {/* User Info & Activity Score */}
+          <div className="mt-auto border-t border-gray-200 dark:border-gray-800">
+            {/* Activity Score */}
+            <div className="p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-500">Activity Score</span>
+                  <ArrowUp className="w-3 h-3 text-green-500" />
+                </div>
+                <div className="flex items-end gap-2">
+                  <span className="text-2xl font-bold">{community.activity_score}</span>
+                  <span className="text-xs text-green-500 mb-1">+12%</span>
+                </div>
+                <Progress value={community.activity_score} className="h-1 mt-2" />
               </div>
-              <div className="flex items-end gap-2">
-                <span className="text-2xl font-bold">{community.activity_score}</span>
-                <span className="text-xs text-green-500 mb-1">+12%</span>
+            </div>
+            
+            {/* User Profile Section */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+              <div className="flex items-center gap-3 mb-3">
+                <Avatar className="w-10 h-10">
+                  <AvatarImage src={user?.user_metadata?.avatar_url} />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-sm">
+                    {user?.email?.substring(0, 2).toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{user?.email?.split('@')[0] || 'User'}</p>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      <Zap className="w-3 h-3 mr-1" />
+                      Level {userLevel}
+                    </Badge>
+                  </div>
+                </div>
               </div>
-              <Progress value={community.activity_score} className="h-1 mt-2" />
+              
+              {/* Progress Bar */}
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                  <span>{userPoints} points</span>
+                  <span>{1000 - userPoints} to next level</span>
+                </div>
+                <Progress value={(userPoints / 1000) * 100} className="h-1.5" />
+              </div>
+              
+              {/* Quick Actions */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setNotifications(!notifications)}
+                >
+                  <Bell className={cn("w-4 h-4", notifications && "text-blue-600")} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => navigate('/profile')}
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
             </motion.div>
