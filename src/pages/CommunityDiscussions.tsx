@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { QuickFixDiscussions } from '@/components/QuickFixDiscussions';
+import { SkoolDiscussions } from '@/components/SkoolDiscussions';
 import ResponsiveLayout from '@/components/ResponsiveLayout';
 import { ModernHeader } from '@/components/ModernHeader';
 
@@ -34,7 +34,7 @@ const CommunityDiscussions: React.FC = () => {
             Back to Community
           </Button>
           
-          <QuickFixDiscussions communityId={id} />
+          <SkoolDiscussions communityId={id} />
         </div>
       </div>
     </ResponsiveLayout>

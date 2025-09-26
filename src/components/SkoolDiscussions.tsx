@@ -32,7 +32,6 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { ensureUserProfile } from '@/utils/profileUtils';
 
 interface Post {
   id: string;
@@ -102,24 +101,18 @@ export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId 
         return;
       }
 
-      // Debug logging
-      console.log('🔍 Posts data from database:', data);
-      if (data && data.length > 0) {
-        console.log('🔍 First post profile data:', data[0].profiles);
-        console.log('🔍 First post user_id:', data[0].user_id);
-      }
-
       // Transform the data to match our Post interface
-      const transformedPosts: Post[] = (data || []).map(post => {
-        console.log('🔍 Processing post:', post.id, 'Profile:', post.profiles);
-        return {
-          id: post.id,
-          author: {
-            name: post.profiles?.display_name || 'Anonymous',
-            avatar: post.profiles?.avatar_url,
-            level: Math.floor(Math.random() * 10) + 1, // Mock level for now
-            badge: null
-          },
+      const transformedPosts: Post[] = (data || []).map(post => ({
+        id: post.id,
+        author: {
+          name: post.profiles?.display_name || 'Anonymous',
+          avatar: post.profiles?.avatar_url,
+          level: Math.floor(Math.random() * 10) + 1, // Mock level for now
+          badge: null
+        },
+        title: post.title || 'Untitled',
+        content: post.content,
+        category: post.category || 'General',
         title: post.title || 'Untitled',
         content: post.content,
         category: post.category || 'General',
@@ -145,9 +138,6 @@ export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId 
     if (!newPostTitle || !newPostContent || !user) return;
 
     try {
-      // Ensure user profile exists before creating post
-      await ensureUserProfile(user);
-
       const { data, error } = await supabase
         .from('community_posts')
         .insert({
