@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Communities</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .error {
+            color: red;
+            padding: 10px;
+            background: #ffebee;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .community-list {
+            margin-top: 20px;
+        }
+        .community-card {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .community-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .community-card p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Communities Test & Setup</h1>
+        
+        <div>
+            <button onclick="checkCommunities()">Check Existing Communities</button>
+            <button onclick="createSampleCommunities()">Create Sample Communities</button>
+            <button onclick="clearCommunities()">Clear All Communities</button>
+        </div>
+        
+        <div id="output"></div>
+        <div id="community-list" class="community-list"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://rqddrxqnvnvqxvjwgzlv.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxZGRyeHFudm52cXh2andnemx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUzODA5MzAsImV4cCI6MjA1MDk1NjkzMH0.kU-J5g_61-Wqw4ipPnOGMPx0sNXAU0FrpkQ0zQHLrqA';
+        
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            output.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+        }
+        
+        async function checkCommunities() {
+            try {
+                log('Checking existing communities...');
+                
+                const { data, error } = await supabaseClient
+                    .from('communities')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    log(`Error fetching communities: ${JSON.stringify(error)}`, 'error');
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    log(`Found ${data.length} communities`, 'success');
+                    displayCommunities(data);
+                } else {
+                    log('No communities found in the database', 'info');
+                    document.getElementById('community-list').innerHTML = '<p>No communities exist yet. Click "Create Sample Communities" to add some.</p>';
+                }
+            } catch (err) {
+                log(`Unexpected error: ${err.message}`, 'error');
+            }
+        }
+        
+        function displayCommunities(communities) {
+            const listDiv = document.getElementById('community-list');
+            listDiv.innerHTML = '<h2>Existing Communities:</h2>';
+            
+            communities.forEach(community => {
+                const card = document.createElement('div');
+                card.className = 'community-card';
+                card.innerHTML = `
+                    <h3>${community.name}</h3>
+                    <p><strong>ID:</strong> ${community.id}</p>
+                    <p><strong>Description:</strong> ${community.description || 'No description'}</p>
+                    <p><strong>Members:</strong> ${community.member_count || 0}</p>
+                    <p><strong>Category:</strong> <span class="badge">${community.category || 'uncategorized'}</span></p>
+                    <p><strong>Private:</strong> ${community.is_private ? 'Yes' : 'No'}</p>
+                    ${community.tags ? `<p><strong>Tags:</strong> ${community.tags.map(tag => `<span class="badge">${tag}</span>`).join('')}</p>` : ''}
+                `;
+                listDiv.appendChild(card);
+            });
+        }
+        
+        async function createSampleCommunities() {
+            try {
+                log('Creating sample communities...');
+                
+                const sampleCommunities = [
+                    {
+                        name: 'Web Development Hub',
+                        description: 'A community for web developers to share knowledge, discuss the latest technologies, and collaborate on projects.',
+                        is_private: false,
+                        category: 'technology',
+                        member_count: 150,
+                        tags: ['javascript', 'react', 'nodejs', 'web']
+                    },
+                    {
+                        name: 'Digital Marketing Masters',
+                        description: 'Learn and share digital marketing strategies, SEO tips, social media tactics, and growth hacking techniques.',
+                        is_private: false,
+                        category: 'business',
+                        member_count: 89,
+                        tags: ['marketing', 'seo', 'social-media', 'growth']
+                    },
+                    {
+                        name: 'Fitness & Wellness',
+                        description: 'Join our community to share fitness tips, healthy recipes, workout routines, and wellness advice.',
+                        is_private: false,
+                        category: 'health',
+                        member_count: 234,
+                        tags: ['fitness', 'nutrition', 'wellness', 'exercise']
+                    },
+                    {
+                        name: 'Game Development Studio',
+                        description: 'Connect with game developers, share your projects, get feedback, and learn game development together.',
+                        is_private: false,
+                        category: 'gaming',
+                        member_count: 67,
+                        tags: ['gamedev', 'unity', 'unreal', 'indie']
+                    },
+                    {
+                        name: 'Creative Arts Collective',
+                        description: 'A space for artists, designers, and creative minds to showcase their work and inspire each other.',
+                        is_private: false,
+                        category: 'art',
+                        member_count: 112,
+                        tags: ['art', 'design', 'illustration', 'creative']
+                    },
+                    {
+                        name: 'Music Production Lab',
+                        description: 'Collaborate with musicians, producers, and audio engineers. Share your tracks and get feedback.',
+                        is_private: false,
+                        category: 'music',
+                        member_count: 78,
+                        tags: ['music', 'production', 'audio', 'mixing']
+                    },
+                    {
+                        name: 'Startup Founders Network',
+                        description: 'Connect with entrepreneurs, share startup experiences, and find co-founders or investors.',
+                        is_private: true,
+                        category: 'business',
+                        member_count: 45,
+                        tags: ['startup', 'entrepreneurship', 'funding', 'innovation']
+                    },
+                    {
+                        name: 'Data Science & AI',
+                        description: 'Explore machine learning, data analysis, and artificial intelligence with fellow data enthusiasts.',
+                        is_private: false,
+                        category: 'technology',
+                        member_count: 203,
+                        tags: ['data-science', 'machine-learning', 'ai', 'python']
+                    }
+                ];
+                
+                const { data, error } = await supabaseClient
+                    .from('communities')
+                    .insert(sampleCommunities)
+                    .select();
+                
+                if (error) {
+                    log(`Error creating communities: ${JSON.stringify(error)}`, 'error');
+                    return;
+                }
+                
+                log(`Successfully created ${data.length} sample communities!`, 'success');
+                displayCommunities(data);
+            } catch (err) {
+                log(`Unexpected error: ${err.message}`, 'error');
+            }
+        }
+        
+        async function clearCommunities() {
+            if (!confirm('Are you sure you want to delete all communities? This cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                log('Clearing all communities...');
+                
+                const { error } = await supabaseClient
+                    .from('communities')
+                    .delete()
+                    .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all (using impossible ID)
+                
+                if (error) {
+                    log(`Error clearing communities: ${JSON.stringify(error)}`, 'error');
+                    return;
+                }
+                
+                log('All communities cleared successfully', 'success');
+                document.getElementById('community-list').innerHTML = '';
+            } catch (err) {
+                log(`Unexpected error: ${err.message}`, 'error');
+            }
+        }
+        
+        // Check communities on page load
+        window.onload = () => {
+            checkCommunities();
+        };
+    </script>
+</body>
+</html>
