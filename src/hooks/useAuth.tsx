@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+import { ensureUserProfile } from '@/utils/profileUtils';
 
 interface AuthContextType {
   user: User | null;
@@ -25,17 +26,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Ensure user profile exists when user signs in
+        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          try {
+            await ensureUserProfile(session.user);
+          } catch (error) {
+            console.error('Error ensuring user profile:', error);
+          }
+        }
+        
         setLoading(false);
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Ensure user profile exists for existing session
+      if (session?.user) {
+        try {
+          await ensureUserProfile(session.user);
+        } catch (error) {
+          console.error('Error ensuring user profile:', error);
+        }
+      }
+      
       setLoading(false);
     });
 

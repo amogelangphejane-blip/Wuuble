@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .profile-display {
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #007bff, #6f42c1);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Discussion Profile Fix Test</h1>
+        <p>This test verifies that user profiles display correctly in discussions.</p>
+        
+        <div id="authSection">
+            <h3>Authentication</h3>
+            <button onclick="signUp()">Sign Up Test User</button>
+            <button onclick="signIn()">Sign In Test User</button>
+            <button onclick="signOut()">Sign Out</button>
+        </div>
+
+        <div id="results"></div>
+
+        <div id="profileSection" style="display: none;">
+            <h3>Current Profile</h3>
+            <div id="profileDisplay"></div>
+            <button onclick="testProfileRetrieval()">Test Profile Retrieval</button>
+            <button onclick="createTestProfile()">Create/Update Test Profile</button>
+            <button onclick="testDiscussionPost()">Test Discussion Post</button>
+        </div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://tgmflbglhmnrliredlbn.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        let currentUser = null;
+
+        // Listen for auth changes
+        supabase.auth.onAuthStateChange((event, session) => {
+            currentUser = session?.user || null;
+            updateAuthUI();
+        });
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function updateAuthUI() {
+            const profileSection = document.getElementById('profileSection');
+            const profileDisplay = document.getElementById('profileDisplay');
+            
+            if (currentUser) {
+                profileSection.style.display = 'block';
+                profileDisplay.innerHTML = `
+                    <div style="display: flex; align-items: center;">
+                        <div class="avatar">${(currentUser.email || 'U').substring(0, 2).toUpperCase()}</div>
+                        <div>
+                            <strong>User:</strong> ${currentUser.email}<br>
+                            <strong>ID:</strong> ${currentUser.id}<br>
+                            <strong>Display Name:</strong> ${currentUser.user_metadata?.display_name || 'Not set'}
+                        </div>
+                    </div>
+                `;
+                addResult(`Signed in as: ${currentUser.email}`, 'success');
+            } else {
+                profileSection.style.display = 'none';
+                addResult('Signed out', 'info');
+            }
+        }
+
+        async function signUp() {
+            const email = `testuser${Math.floor(Math.random() * 1000)}@example.com`;
+            const password = 'testpassword123';
+            const displayName = `Test User ${Math.floor(Math.random() * 1000)}`;
+
+            addResult(`Attempting to sign up: ${email}`, 'info');
+
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        display_name: displayName
+                    }
+                }
+            });
+
+            if (error) {
+                addResult(`Sign up error: ${error.message}`, 'error');
+            } else {
+                addResult(`Sign up successful! Check email for confirmation.`, 'success');
+                addResult(`Display name set to: ${displayName}`, 'info');
+            }
+        }
+
+        async function signIn() {
+            const email = prompt('Enter email to sign in:');
+            const password = prompt('Enter password:');
+            
+            if (!email || !password) return;
+
+            addResult(`Attempting to sign in: ${email}`, 'info');
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) {
+                addResult(`Sign in error: ${error.message}`, 'error');
+            } else {
+                addResult(`Sign in successful!`, 'success');
+            }
+        }
+
+        async function signOut() {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                addResult(`Sign out error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testProfileRetrieval() {
+            if (!currentUser) {
+                addResult('Please sign in first', 'error');
+                return;
+            }
+
+            addResult('Testing profile retrieval...', 'info');
+
+            try {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .single();
+
+                if (error && error.code === 'PGRST116') {
+                    addResult('No profile found in database', 'info');
+                } else if (error) {
+                    addResult(`Profile retrieval error: ${error.message}`, 'error');
+                } else {
+                    addResult(`Profile found: Display Name = "${profile.display_name}", Avatar = ${profile.avatar_url || 'None'}`, 'success');
+                }
+            } catch (err) {
+                addResult(`Unexpected error: ${err.message}`, 'error');
+            }
+        }
+
+        async function createTestProfile() {
+            if (!currentUser) {
+                addResult('Please sign in first', 'error');
+                return;
+            }
+
+            const displayName = currentUser.user_metadata?.display_name || 
+                               currentUser.email?.split('@')[0] || 
+                               'Test User';
+
+            addResult('Creating/updating profile...', 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        user_id: currentUser.id,
+                        display_name: displayName,
+                        avatar_url: null,
+                        updated_at: new Date().toISOString()
+                    })
+                    .select()
+                    .single();
+
+                if (error) {
+                    addResult(`Profile upsert error: ${error.message}`, 'error');
+                } else {
+                    addResult(`Profile created/updated successfully: "${data.display_name}"`, 'success');
+                }
+            } catch (err) {
+                addResult(`Unexpected error: ${err.message}`, 'error');
+            }
+        }
+
+        async function testDiscussionPost() {
+            if (!currentUser) {
+                addResult('Please sign in first', 'error');
+                return;
+            }
+
+            addResult('Testing discussion post creation...', 'info');
+
+            // First get or create profile
+            try {
+                let { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('display_name, avatar_url')
+                    .eq('user_id', currentUser.id)
+                    .single();
+
+                if (profileError && profileError.code === 'PGRST116') {
+                    // Create profile
+                    const displayName = currentUser.user_metadata?.display_name || 
+                                       currentUser.email?.split('@')[0] || 
+                                       'Anonymous';
+
+                    const { data: newProfile, error: createError } = await supabase
+                        .from('profiles')
+                        .insert({
+                            user_id: currentUser.id,
+                            display_name: displayName,
+                            avatar_url: null
+                        })
+                        .select('display_name, avatar_url')
+                        .single();
+
+                    if (createError) {
+                        addResult(`Profile creation error: ${createError.message}`, 'error');
+                        return;
+                    }
+                    profile = newProfile;
+                } else if (profileError) {
+                    addResult(`Profile retrieval error: ${profileError.message}`, 'error');
+                    return;
+                }
+
+                // Simulate how the discussion component would display the user
+                addResult(`Discussion would show: "${profile.display_name}" with ${profile.avatar_url ? 'avatar' : 'no avatar'}`, 'success');
+
+                // Show a mock discussion post display
+                const mockPostDisplay = document.createElement('div');
+                mockPostDisplay.className = 'profile-display';
+                mockPostDisplay.innerHTML = `
+                    <h4>Mock Discussion Post</h4>
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <div class="avatar">${(profile.display_name || 'U').substring(0, 2).toUpperCase()}</div>
+                        <div>
+                            <strong>${profile.display_name || 'Anonymous'}</strong><br>
+                            <small style="color: #666;">just now</small>
+                        </div>
+                    </div>
+                    <p>This is a test discussion post to show how the profile name and avatar would appear!</p>
+                `;
+                document.getElementById('results').appendChild(mockPostDisplay);
+
+            } catch (err) {
+                addResult(`Unexpected error: ${err.message}`, 'error');
+            }
+        }
+
+        // Initialize
+        addResult('Profile fix test loaded. Please sign up or sign in to test.', 'info');
+    </script>
+</body>
+</html>

@@ -28,6 +28,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { ensureUserProfile } from '@/utils/profileUtils';
 
 interface SimplifiedPost {
   id: string;
@@ -37,7 +38,7 @@ interface SimplifiedPost {
   updated_at: string;
   community_id: string;
   user?: {
-    email?: string;
+    display_name?: string;
     avatar_url?: string;
   };
 }
@@ -69,7 +70,7 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
         .select(`
           *,
           user:profiles!community_posts_user_id_fkey (
-            email,
+            display_name,
             avatar_url
           )
         `)
@@ -88,7 +89,7 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
             updated_at: new Date(Date.now() - 86400000).toISOString(),
             community_id: communityId,
             user: {
-              email: 'john.doe@example.com',
+              display_name: 'John Doe',
               avatar_url: undefined
             }
           },
@@ -100,7 +101,7 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
             updated_at: new Date(Date.now() - 172800000).toISOString(),
             community_id: communityId,
             user: {
-              email: 'jane.smith@example.com',
+              display_name: 'Jane Smith',
               avatar_url: undefined
             }
           },
@@ -112,7 +113,7 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
             updated_at: new Date(Date.now() - 259200000).toISOString(),
             community_id: communityId,
             user: {
-              email: 'alex.johnson@example.com',
+              display_name: 'Alex Johnson',
               avatar_url: undefined
             }
           }
@@ -163,6 +164,9 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
       if (error) {
         console.error('Error creating post:', error);
         // Add mock post for demonstration
+        // Ensure user profile exists and get profile information
+        const profile = await ensureUserProfile(user);
+
         const mockPost: SimplifiedPost = {
           id: Date.now().toString(),
           user_id: user.id,
@@ -171,8 +175,8 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
           updated_at: new Date().toISOString(),
           community_id: communityId,
           user: {
-            email: user.email,
-            avatar_url: user.user_metadata?.avatar_url
+            display_name: profile.display_name || 'Anonymous',
+            avatar_url: profile.avatar_url
           }
         };
         setPosts([mockPost, ...posts]);
@@ -203,8 +207,8 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
   };
 
   const getUserName = (post: SimplifiedPost) => {
-    if (post.user?.email) {
-      return post.user.email.split('@')[0];
+    if (post.user?.display_name) {
+      return post.user.display_name;
     }
     return 'Anonymous';
   };

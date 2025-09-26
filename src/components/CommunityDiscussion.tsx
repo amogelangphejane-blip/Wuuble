@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ensureUserProfile } from '@/utils/profileUtils';
 
 interface Post {
   id: string;
@@ -190,6 +191,9 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
 
     setIsPosting(true);
     try {
+      // Ensure user profile exists and get profile information
+      const profile = await ensureUserProfile(user);
+
       // Mock creating a post
       const newPost: Post = {
         id: Date.now().toString(),
@@ -205,8 +209,8 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
         user: {
           id: user.id,
           email: user.email || '',
-          display_name: user.user_metadata?.display_name || 'Anonymous',
-          avatar_url: user.user_metadata?.avatar_url
+          display_name: profile.display_name || 'Anonymous',
+          avatar_url: profile.avatar_url
         },
         comments: []
       };
@@ -259,6 +263,9 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
     if (!user || !content?.trim()) return;
 
     try {
+      // Ensure user profile exists and get profile information
+      const profile = await ensureUserProfile(user);
+
       const newComment: Comment = {
         id: Date.now().toString(),
         post_id: postId,
@@ -268,8 +275,8 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
         user: {
           id: user.id,
           email: user.email || '',
-          display_name: user.user_metadata?.display_name || 'Anonymous',
-          avatar_url: user.user_metadata?.avatar_url
+          display_name: profile.display_name || 'Anonymous',
+          avatar_url: profile.avatar_url
         }
       };
 
