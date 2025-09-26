@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS community_moderation_logs (
 CREATE OR REPLACE VIEW community_posts_enhanced AS
 SELECT 
   p.*,
-  pr.username as author_username,
+  pr.display_name as author_username,
   pr.avatar_url as author_avatar,
   COALESCE(p.like_count, 0) as total_likes,
   COALESCE(p.comment_count, 0) as total_comments,
