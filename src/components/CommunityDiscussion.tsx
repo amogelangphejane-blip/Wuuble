@@ -161,7 +161,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
             user: {
               id: post.user_id,
               email: profile?.email || '',
-              display_name: getUserDisplayName(null, profile),
+              display_name: profile?.display_name || null, // Don't use fallback here
               avatar_url: getUserAvatar(null, profile)
             },
             comments: [],
@@ -305,7 +305,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
           user: {
             id: user.id,
             email: profile?.email || user.email || '',
-            display_name: getUserDisplayName(user, profile),
+            display_name: profile?.display_name || null, // Don't use fallback here
             avatar_url: getUserAvatar(user, profile)
           },
           comments: []
@@ -328,7 +328,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
           user: {
             id: user.id,
             email: profile?.email || user.email || '',
-            display_name: getUserDisplayName(user, profile),
+            display_name: profile?.display_name || null, // Don't use fallback here
             avatar_url: getUserAvatar(user, profile)
           },
           comments: []
@@ -396,8 +396,8 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
         user: {
           id: user.id,
           email: profile?.email || user.email || '',
-          display_name: getUserDisplayName(user, profile),
-          avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url
+          display_name: profile?.display_name || null, // Don't use fallback here
+          avatar_url: getUserAvatar(user, profile)
         }
       };
 
@@ -438,6 +438,25 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
     setExpandedComments(newExpanded);
   };
 
+  const getPostUserDisplayName = (postUser: { id: string; email: string; display_name?: string | null; avatar_url?: string }) => {
+    // Priority: display_name > email username > 'User'
+    if (postUser.display_name && postUser.display_name.trim() !== '') {
+      return postUser.display_name.trim();
+    }
+    if (postUser.email && postUser.email.trim() !== '') {
+      const emailUsername = postUser.email.split('@')[0];
+      if (emailUsername && emailUsername.trim() !== '') {
+        return emailUsername.trim();
+      }
+    }
+    return 'User';
+  };
+
+  const getPostUserInitials = (postUser: { id: string; email: string; display_name?: string; avatar_url?: string }) => {
+    const displayName = getPostUserDisplayName(postUser);
+    return displayName.substring(0, 2).toUpperCase();
+  };
+
   const PostCard = ({ post }: { post: Post }) => (
     <motion.div
       layout
@@ -462,13 +481,13 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
               <Avatar className="w-10 h-10">
                 <AvatarImage src={validateAvatarUrl(post.user.avatar_url)} />
                 <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                  {getUserInitials(getUserDisplayName(null, post.user))}
+                  {getPostUserInitials(post.user)}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold">{getUserDisplayName(null, post.user)}</p>
+                  <p className="font-semibold">{getPostUserDisplayName(post.user)}</p>
                   <span className="text-xs text-gray-500">
                     {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                   </span>
@@ -569,12 +588,12 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={validateAvatarUrl(comment.user.avatar_url)} />
                       <AvatarFallback className="text-xs">
-                        {getUserInitials(getUserDisplayName(null, comment.user))}
+                        {getPostUserInitials(comment.user)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
-                        <p className="font-medium text-sm">{getUserDisplayName(null, comment.user)}</p>
+                        <p className="font-medium text-sm">{getPostUserDisplayName(comment.user)}</p>
                         <p className="text-sm mt-1">{comment.content}</p>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
