@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 
 interface SimplifiedPost {
@@ -48,6 +49,7 @@ interface SimplifiedSkoolDiscussionsProps {
 
 export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProps> = ({ communityId }) => {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const { toast } = useToast();
   const [posts, setPosts] = useState<SimplifiedPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,7 +174,7 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
           community_id: communityId,
           user: {
             email: user.email,
-            avatar_url: user.user_metadata?.avatar_url
+            avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url
           }
         };
         setPosts([mockPost, ...posts]);

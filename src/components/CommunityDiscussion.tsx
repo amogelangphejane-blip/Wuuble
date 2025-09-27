@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,6 +85,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
   isModerator = false
 }) => {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const { toast } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -190,7 +192,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
 
     setIsPosting(true);
     try {
-      // Mock creating a post
+      // Mock creating a post - Use profile data for display
       const newPost: Post = {
         id: Date.now().toString(),
         community_id: communityId,
@@ -205,8 +207,8 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
         user: {
           id: user.id,
           email: user.email || '',
-          display_name: user.user_metadata?.display_name || 'Anonymous',
-          avatar_url: user.user_metadata?.avatar_url
+          display_name: profile?.display_name || user.user_metadata?.display_name || user.email?.split('@')[0] || 'Anonymous',
+          avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || null
         },
         comments: []
       };
@@ -268,8 +270,8 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
         user: {
           id: user.id,
           email: user.email || '',
-          display_name: user.user_metadata?.display_name || 'Anonymous',
-          avatar_url: user.user_metadata?.avatar_url
+          display_name: profile?.display_name || user.user_metadata?.display_name || user.email?.split('@')[0] || 'Anonymous',
+          avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || null
         }
       };
 

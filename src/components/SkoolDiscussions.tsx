@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 interface Post {
   id: string;
@@ -60,6 +61,7 @@ interface SkoolDiscussionsProps {
 
 export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId }) => {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewPost, setShowNewPost] = useState(false);
@@ -81,7 +83,7 @@ export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId 
           *,
           profiles:user_id (
             id,
-            username,
+            display_name,
             avatar_url
           )
         `)
@@ -105,7 +107,7 @@ export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId 
       const transformedPosts: Post[] = (data || []).map(post => ({
         id: post.id,
         author: {
-          name: post.profiles?.username || 'Anonymous',
+          name: post.profiles?.display_name || 'Anonymous',
           avatar: post.profiles?.avatar_url,
           level: Math.floor(Math.random() * 10) + 1, // Mock level for now
           badge: null
@@ -322,7 +324,10 @@ export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId 
         >
           <div className="flex items-center gap-3">
             <Avatar className="w-10 h-10">
-              <AvatarFallback className="bg-gray-200 dark:bg-gray-700">U</AvatarFallback>
+              <AvatarImage src={profile?.avatar_url || undefined} />
+              <AvatarFallback className="bg-gray-200 dark:bg-gray-700">
+                {profile?.display_name?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || 'U'}
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <p className="text-gray-500">Create a post...</p>
