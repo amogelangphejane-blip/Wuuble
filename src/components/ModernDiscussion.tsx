@@ -49,6 +49,12 @@ interface User {
   display_name?: string;
   avatar_url?: string;
   username?: string;
+  user_metadata?: {
+    display_name?: string;
+    avatar_url?: string;
+    full_name?: string;
+    picture?: string;
+  };
 }
 
 interface Post {
@@ -86,6 +92,32 @@ interface ModernDiscussionProps {
   isOwner: boolean;
   isModerator?: boolean;
 }
+
+// Helper functions to extract user display information
+const getUserDisplayName = (user: User): string => {
+  // Priority: user_metadata.display_name > user_metadata.full_name > display_name > email prefix > 'Anonymous'
+  return user.user_metadata?.display_name ||
+         user.user_metadata?.full_name ||
+         user.display_name ||
+         user.email?.split('@')[0] ||
+         'Anonymous';
+};
+
+const getUserAvatarUrl = (user: User): string | undefined => {
+  // Priority: user_metadata.avatar_url > user_metadata.picture > avatar_url
+  return user.user_metadata?.avatar_url ||
+         user.user_metadata?.picture ||
+         user.avatar_url;
+};
+
+const getUserInitials = (user: User): string => {
+  const displayName = getUserDisplayName(user);
+  const words = displayName.split(' ');
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  return displayName.substring(0, 2).toUpperCase();
+};
 
 const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
   communityId,
@@ -142,8 +174,11 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
           user: {
             id: 'user1',
             email: 'admin@example.com',
-            display_name: 'Alexandra Chen',
-            avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+            user_metadata: {
+              display_name: 'Alexandra Chen',
+              avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+              full_name: 'Alexandra Chen'
+            },
             username: 'alexandra_chen'
           },
           liked_by_user: false,
@@ -158,8 +193,11 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
               user: {
                 id: 'user2',
                 email: 'member@example.com',
-                display_name: 'Sarah Johnson',
-                avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+                user_metadata: {
+                  display_name: 'Sarah Johnson',
+                  avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+                  full_name: 'Sarah Johnson'
+                },
                 username: 'sarah_j'
               }
             },
@@ -172,8 +210,11 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
               user: {
                 id: 'user3',
                 email: 'member3@example.com',
-                display_name: 'Mike Rodriguez',
-                avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+                user_metadata: {
+                  display_name: 'Mike Rodriguez',
+                  avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+                  full_name: 'Mike Rodriguez'
+                },
                 username: 'mike_r'
               }
             }
@@ -196,8 +237,11 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
           user: {
             id: 'user2',
             email: 'member@example.com',
-            display_name: 'Sarah Johnson',
-            avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+            user_metadata: {
+              display_name: 'Sarah Johnson',
+              avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+              full_name: 'Sarah Johnson'
+            },
             username: 'sarah_j'
           },
           liked_by_user: true,
@@ -216,8 +260,11 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
           user: {
             id: 'user4',
             email: 'member4@example.com',
-            display_name: 'Jordan Kim',
-            avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+            user_metadata: {
+              display_name: 'Jordan Kim',
+              avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+              full_name: 'Jordan Kim'
+            },
             username: 'jordan_k'
           },
           liked_by_user: false,
@@ -373,8 +420,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         user: {
           id: user.id,
           email: user.email || '',
-          display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || 'Anonymous',
-          avatar_url: user.user_metadata?.avatar_url,
+          user_metadata: user.user_metadata,
           username: user.user_metadata?.username || user.email?.split('@')[0]
         },
         comments: [],
@@ -471,8 +517,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         user: {
           id: user.id,
           email: user.email || '',
-          display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || 'Anonymous',
-          avatar_url: user.user_metadata?.avatar_url,
+          user_metadata: user.user_metadata,
           username: user.user_metadata?.username || user.email?.split('@')[0]
         }
       };
@@ -564,16 +609,16 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
               <Avatar className="w-12 h-12 ring-2 ring-gray-100 dark:ring-gray-800">
-                <AvatarImage src={post.user.avatar_url} />
+                <AvatarImage src={getUserAvatarUrl(post.user)} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold">
-                  {post.user.display_name?.substring(0, 2).toUpperCase() || 'AN'}
+                  {getUserInitials(post.user)}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                    {post.user.display_name || 'Anonymous'}
+                    {getUserDisplayName(post.user)}
                   </h4>
                   {post.user.username && (
                     <span className="text-sm text-gray-500">@{post.user.username}</span>
@@ -749,15 +794,15 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 {post.comments?.map((comment) => (
                   <div key={comment.id} className="flex gap-3">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={comment.user.avatar_url} />
+                      <AvatarImage src={getUserAvatarUrl(comment.user)} />
                       <AvatarFallback className="text-xs bg-gray-100 dark:bg-gray-800">
-                        {comment.user.display_name?.substring(0, 2).toUpperCase() || 'AN'}
+                        {getUserInitials(comment.user)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl px-4 py-3">
                         <p className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                          {comment.user.display_name || 'Anonymous'}
+                          {getUserDisplayName(comment.user)}
                         </p>
                         <p className="text-sm text-gray-800 dark:text-gray-200 mt-1">
                           {comment.content}
@@ -773,9 +818,9 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 {user && (
                   <div className="flex gap-3 mt-4">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={user.user_metadata?.avatar_url} />
+                      <AvatarImage src={getUserAvatarUrl(user)} />
                       <AvatarFallback className="text-xs bg-gray-100 dark:bg-gray-800">
-                        {user.user_metadata?.display_name?.substring(0, 2).toUpperCase() || 'ME'}
+                        {getUserInitials(user)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 flex gap-2">
@@ -873,14 +918,14 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src={user?.user_metadata?.avatar_url} />
+                      <AvatarImage src={getUserAvatarUrl(user)} />
                       <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                        {user?.user_metadata?.display_name?.substring(0, 2).toUpperCase() || 'ME'}
+                        {getUserInitials(user)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-medium text-gray-900 dark:text-gray-100">
-                        {user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'You'}
+                        {getUserDisplayName(user)}
                       </p>
                       <p className="text-sm text-gray-500">Share with the community</p>
                     </div>
