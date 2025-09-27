@@ -9,6 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, User, Camera } from 'lucide-react';
 import { ProfilePictureUpload } from '@/components/ProfilePictureUpload';
+import { clearProfileCache } from '@/utils/profileUtils';
+import { fixUserDisplayName } from '@/utils/fixProfileDisplayNames';
 
 interface UserProfile {
   user_id: string;
@@ -56,6 +58,14 @@ const ProfileSettings = () => {
       }
 
       if (data) {
+        // If display_name is null or empty, try to fix it
+        if (!data.display_name || data.display_name.trim() === '') {
+          const fixResult = await fixUserDisplayName(user.id, user.email || undefined);
+          if (fixResult.success && fixResult.updated) {
+            data.display_name = fixResult.displayName || data.display_name;
+          }
+        }
+        
         setProfile(data);
         setDisplayName(data.display_name || '');
         setBio(data.bio || '');
@@ -118,6 +128,9 @@ const ProfileSettings = () => {
         bio: bio.trim() || null,
         updated_at: new Date().toISOString()
       });
+
+      // Clear profile cache to ensure fresh data is used in discussions
+      clearProfileCache(user.id);
 
       toast({
         title: "Success",

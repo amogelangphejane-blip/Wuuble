@@ -28,7 +28,7 @@ import {
   Bookmark,
   Share2
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, validateAvatarUrl } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -176,7 +176,7 @@ export const FixedSkoolDiscussions: React.FC<FixedSkoolDiscussionsProps> = ({ co
       const transformedPosts: Post[] = (postsData || []).map(post => {
         const profile = profiles[post.user_id];
         const authUser = users[post.user_id];
-        const userName = profile?.username || profile?.email?.split('@')[0] || authUser?.email?.split('@')[0] || 'Anonymous';
+        const userName = profile?.username || profile?.display_name || profile?.email?.split('@')[0] || authUser?.email?.split('@')[0] || 'User';
         
         return {
           id: post.id,
@@ -456,7 +456,7 @@ export const FixedSkoolDiscussions: React.FC<FixedSkoolDiscussionsProps> = ({ co
               
               <div className="flex gap-4">
                 <Avatar className="w-10 h-10">
-                  <AvatarImage src={post.author.avatar} />
+                  <AvatarImage src={validateAvatarUrl(post.author.avatar)} />
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                     {post.author.name.substring(0, 2).toUpperCase()}
                   </AvatarFallback>

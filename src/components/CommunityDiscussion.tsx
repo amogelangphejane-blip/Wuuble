@@ -33,8 +33,18 @@ import {
   Clock,
   Filter
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, validateAvatarUrl } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  getUserDisplayName, 
+  getUserAvatar, 
+  getUserInitials,
+  getUserProfile,
+  clearProfileCache,
+  ensureUserProfile,
+  type UserProfile 
+} from '@/utils/profileUtils';
+import { fixUserDisplayName } from '@/utils/fixProfileDisplayNames';
 
 interface Post {
   id: string;
@@ -103,7 +113,67 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
     try {
       setLoading(true);
       
-      // For demo purposes, create mock posts
+      // First try to fetch real posts from the database
+      let { data: realPosts, error } = await supabase
+        .from('community_posts')
+        .select('*')
+        .eq('community_id', communityId)
+        .order('created_at', { ascending: false });
+
+      if (!error && realPosts && realPosts.length > 0) {
+        // Get unique user IDs and fetch their profiles
+        const userIds = [...new Set(realPosts.map(post => post.user_id))];
+        const userProfiles = new Map<string, UserProfile>();
+        
+        for (const userId of userIds) {
+          let profile = await getUserProfile(userId);
+          
+          // If no profile or profile has no display_name, try to fix it
+          if (!profile) {
+            profile = await ensureUserProfile(userId);
+          }
+          
+          if (profile && (!profile.display_name || profile.display_name.trim() === '')) {
+            // For now, set a placeholder - we'll fix this with SQL or server-side function
+            console.warn(`Profile ${userId} has empty display_name, needs manual fix`);
+          }
+          
+          if (profile) {
+            userProfiles.set(userId, profile);
+          }
+        }
+
+        // Transform real posts to match our interface
+        const transformedPosts: Post[] = realPosts.map(post => {
+          const profile = userProfiles.get(post.user_id);
+          return {
+            id: post.id,
+            community_id: post.community_id,
+            user_id: post.user_id,
+            title: post.title,
+            content: post.content,
+            image_url: post.image_url,
+            likes_count: post.likes_count || 0,
+            comments_count: post.comments_count || 0,
+            is_pinned: post.is_pinned || false,
+            created_at: post.created_at,
+            updated_at: post.updated_at,
+            user: {
+              id: post.user_id,
+              email: profile?.email || '',
+              display_name: profile?.display_name || null, // Don't use fallback here
+              avatar_url: getUserAvatar(null, profile)
+            },
+            comments: [],
+            liked_by_user: false
+          };
+        });
+
+        setPosts(transformedPosts);
+        return;
+      }
+      
+      // For demo purposes, create mock posts if no real data
       const mockPosts: Post[] = [
         {
           id: '1',
@@ -190,28 +260,83 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
 
     setIsPosting(true);
     try {
-      // Mock creating a post
-      const newPost: Post = {
-        id: Date.now().toString(),
-        community_id: communityId,
-        user_id: user.id,
-        title: newPostTitle,
-        content: newPostContent,
-        likes_count: 0,
-        comments_count: 0,
-        is_pinned: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        user: {
-          id: user.id,
-          email: user.email || '',
-          display_name: user.user_metadata?.display_name || 'Anonymous',
-          avatar_url: user.user_metadata?.avatar_url
-        },
-        comments: []
-      };
+      // Get user profile (this will use cache if available)
+      let profile = await getUserProfile(user.id);
+      
+      if (!profile) {
+        // Create profile if it doesn't exist
+        profile = await ensureUserProfile(user.id, user.email, user.user_metadata?.display_name);
+      }
+      
+      // If profile exists but has no display name, fix it
+      if (profile && (!profile.display_name || profile.display_name.trim() === '')) {
+        const fixResult = await fixUserDisplayName(user.id, user.email || undefined);
+        if (fixResult.success && fixResult.updated) {
+          profile.display_name = fixResult.displayName || profile.display_name;
+          clearProfileCache(user.id); // Clear cache to reflect changes
+        }
+      }
 
-      setPosts([newPost, ...posts]);
+      // Try to create the post in the database
+      const { data: createdPost, error } = await supabase
+        .from('community_posts')
+        .insert({
+          community_id: communityId,
+          user_id: user.id,
+          title: newPostTitle || null,
+          content: newPostContent,
+        })
+        .select()
+        .single();
+
+      if (!error && createdPost) {
+        // Successfully created in database, create local post with proper user data
+        const newPost: Post = {
+          id: createdPost.id,
+          community_id: createdPost.community_id,
+          user_id: createdPost.user_id,
+          title: createdPost.title,
+          content: createdPost.content,
+          likes_count: 0,
+          comments_count: 0,
+          is_pinned: false,
+          created_at: createdPost.created_at,
+          updated_at: createdPost.updated_at,
+          user: {
+            id: user.id,
+            email: profile?.email || user.email || '',
+            display_name: profile?.display_name || null, // Don't use fallback here
+            avatar_url: getUserAvatar(user, profile)
+          },
+          comments: []
+        };
+
+        setPosts([newPost, ...posts]);
+      } else {
+        // Fallback to mock post if database insert fails
+        const newPost: Post = {
+          id: Date.now().toString(),
+          community_id: communityId,
+          user_id: user.id,
+          title: newPostTitle,
+          content: newPostContent,
+          likes_count: 0,
+          comments_count: 0,
+          is_pinned: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          user: {
+            id: user.id,
+            email: profile?.email || user.email || '',
+            display_name: profile?.display_name || null, // Don't use fallback here
+            avatar_url: getUserAvatar(user, profile)
+          },
+          comments: []
+        };
+
+        setPosts([newPost, ...posts]);
+      }
+
       setNewPostContent('');
       setNewPostTitle('');
       setShowNewPost(false);
@@ -259,6 +384,9 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
     if (!user || !content?.trim()) return;
 
     try {
+      // Get user's profile information
+      const profile = await getUserProfile(user.id);
+
       const newComment: Comment = {
         id: Date.now().toString(),
         post_id: postId,
@@ -267,9 +395,9 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
         created_at: new Date().toISOString(),
         user: {
           id: user.id,
-          email: user.email || '',
-          display_name: user.user_metadata?.display_name || 'Anonymous',
-          avatar_url: user.user_metadata?.avatar_url
+          email: profile?.email || user.email || '',
+          display_name: profile?.display_name || null, // Don't use fallback here
+          avatar_url: getUserAvatar(user, profile)
         }
       };
 
@@ -310,6 +438,25 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
     setExpandedComments(newExpanded);
   };
 
+  const getPostUserDisplayName = (postUser: { id: string; email: string; display_name?: string | null; avatar_url?: string }) => {
+    // Priority: display_name > email username > 'User'
+    if (postUser.display_name && postUser.display_name.trim() !== '') {
+      return postUser.display_name.trim();
+    }
+    if (postUser.email && postUser.email.trim() !== '') {
+      const emailUsername = postUser.email.split('@')[0];
+      if (emailUsername && emailUsername.trim() !== '') {
+        return emailUsername.trim();
+      }
+    }
+    return 'User';
+  };
+
+  const getPostUserInitials = (postUser: { id: string; email: string; display_name?: string; avatar_url?: string }) => {
+    const displayName = getPostUserDisplayName(postUser);
+    return displayName.substring(0, 2).toUpperCase();
+  };
+
   const PostCard = ({ post }: { post: Post }) => (
     <motion.div
       layout
@@ -332,15 +479,15 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
               <Avatar className="w-10 h-10">
-                <AvatarImage src={post.user.avatar_url} />
+                <AvatarImage src={validateAvatarUrl(post.user.avatar_url)} />
                 <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                  {post.user.display_name?.substring(0, 2).toUpperCase() || 'AN'}
+                  {getPostUserInitials(post.user)}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold">{post.user.display_name || 'Anonymous'}</p>
+                  <p className="font-semibold">{getPostUserDisplayName(post.user)}</p>
                   <span className="text-xs text-gray-500">
                     {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                   </span>
@@ -439,14 +586,14 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
                 {post.comments?.map((comment) => (
                   <div key={comment.id} className="flex gap-3">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={comment.user.avatar_url} />
+                      <AvatarImage src={validateAvatarUrl(comment.user.avatar_url)} />
                       <AvatarFallback className="text-xs">
-                        {comment.user.display_name?.substring(0, 2).toUpperCase() || 'AN'}
+                        {getPostUserInitials(comment.user)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
-                        <p className="font-medium text-sm">{comment.user.display_name || 'Anonymous'}</p>
+                        <p className="font-medium text-sm">{getPostUserDisplayName(comment.user)}</p>
                         <p className="text-sm mt-1">{comment.content}</p>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">

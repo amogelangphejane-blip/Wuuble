@@ -18,25 +18,26 @@ export function validateAvatarUrl(url: string | null | undefined): string | unde
   
   // Check if it's a valid URL format
   try {
-    new URL(trimmedUrl);
+    const urlObj = new URL(trimmedUrl);
+    
+    // Allow common protocols
+    if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+      return trimmedUrl;
+    }
+    
+    // Log but don't reject other protocols
+    console.info('Unusual avatar URL protocol:', urlObj.protocol, trimmedUrl);
+    return trimmedUrl;
   } catch {
+    // If it's not a valid URL but looks like it might be a path, try to make it work
+    if (trimmedUrl.startsWith('/') || trimmedUrl.includes('/')) {
+      console.info('Avatar URL might be a relative path:', trimmedUrl);
+      return trimmedUrl; // Let the browser handle it
+    }
+    
     console.warn('Invalid avatar URL format:', trimmedUrl);
     return undefined;
   }
-
-  // Check if it's a Supabase storage URL (common case)
-  if (trimmedUrl.includes('supabase.co/storage/v1/object/public/')) {
-    return trimmedUrl;
-  }
-
-  // Check if it's another valid image URL format
-  if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
-    return trimmedUrl;
-  }
-
-  // If we can't validate it, return undefined to trigger fallback
-  console.warn('Unrecognized avatar URL format:', trimmedUrl);
-  return undefined;
 }
 
 /**

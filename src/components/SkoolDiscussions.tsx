@@ -28,7 +28,7 @@ import {
   Bookmark,
   Share2
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, validateAvatarUrl } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -105,7 +105,7 @@ export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId 
       const transformedPosts: Post[] = (data || []).map(post => ({
         id: post.id,
         author: {
-          name: post.profiles?.username || 'Anonymous',
+          name: post.profiles?.username || post.profiles?.display_name || post.profiles?.email?.split('@')[0] || 'User',
           avatar: post.profiles?.avatar_url,
           level: Math.floor(Math.random() * 10) + 1, // Mock level for now
           badge: null
@@ -368,7 +368,7 @@ export const SkoolDiscussions: React.FC<SkoolDiscussionsProps> = ({ communityId 
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src={post.author.avatar} />
+                      <AvatarImage src={validateAvatarUrl(post.author.avatar)} />
                       <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                         {post.author.name.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
