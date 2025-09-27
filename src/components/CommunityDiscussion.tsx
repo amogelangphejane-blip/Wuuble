@@ -41,8 +41,10 @@ import {
   getUserInitials,
   getUserProfile,
   clearProfileCache,
+  ensureUserProfile,
   type UserProfile 
 } from '@/utils/profileUtils';
+import { fixUserDisplayName } from '@/utils/fixProfileDisplayNames';
 
 interface Post {
   id: string;
@@ -253,6 +255,15 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
       if (!profile) {
         // Create profile if it doesn't exist
         profile = await ensureUserProfile(user.id, user.email, user.user_metadata?.display_name);
+      }
+      
+      // If profile exists but has no display name, fix it
+      if (profile && (!profile.display_name || profile.display_name.trim() === '')) {
+        const fixResult = await fixUserDisplayName(user.id, user.email || undefined);
+        if (fixResult.success && fixResult.updated) {
+          profile.display_name = fixResult.displayName || profile.display_name;
+          clearProfileCache(user.id); // Clear cache to reflect changes
+        }
       }
 
       // Try to create the post in the database

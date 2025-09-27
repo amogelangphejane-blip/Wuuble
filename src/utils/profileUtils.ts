@@ -56,11 +56,12 @@ export async function ensureUserProfile(userId: string, email?: string, displayN
     
     if (!profile) {
       // Profile doesn't exist, create one
+      const fallbackDisplayName = displayName || email?.split('@')[0] || 'User';
       const { data, error } = await supabase
         .from('profiles')
         .insert({
           user_id: userId,
-          display_name: displayName || email?.split('@')[0] || null,
+          display_name: fallbackDisplayName,
           bio: null,
           avatar_url: null
         })

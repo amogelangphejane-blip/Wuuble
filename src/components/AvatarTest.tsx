@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
-import { getUserProfile, getUserDisplayName, getUserAvatar, getUserInitials } from '@/utils/profileUtils';
+import { getUserProfile, getUserDisplayName, getUserAvatar, getUserInitials, clearProfileCache } from '@/utils/profileUtils';
 import { validateAvatarUrl } from '@/lib/utils';
+import { fixUserDisplayName } from '@/utils/fixProfileDisplayNames';
 
 export const AvatarTest: React.FC = () => {
   const { user } = useAuth();
@@ -96,9 +97,34 @@ export const AvatarTest: React.FC = () => {
           </div>
         </div>
 
-        <Button onClick={testProfile} disabled={loading} className="w-full">
-          {loading ? 'Refreshing...' : 'Refresh Profile Data'}
-        </Button>
+        <div className="space-y-2">
+          <Button onClick={testProfile} disabled={loading} className="w-full">
+            {loading ? 'Refreshing...' : 'Refresh Profile Data'}
+          </Button>
+          
+          <Button 
+            onClick={async () => {
+              if (!user) return;
+              setLoading(true);
+              try {
+                const fixResult = await fixUserDisplayName(user.id, user.email || undefined);
+                if (fixResult.success) {
+                  clearProfileCache(user.id);
+                  await testProfile(); // Refresh the display
+                }
+              } catch (error) {
+                console.error('Fix failed:', error);
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading} 
+            variant="outline" 
+            className="w-full"
+          >
+            {loading ? 'Fixing...' : 'Fix Display Name'}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
