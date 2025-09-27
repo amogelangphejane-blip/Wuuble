@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Calendar, Plus, Clock, MapPin, Users, AlertTriangle, CheckCircle } from 'lucide-react';
 import { EventForm } from '@/components/EventForm';
 import { EventCreationFix } from '@/components/EventCreationFix';
+import { SimpleEventButton } from '@/components/SimpleEventButton';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -275,6 +276,15 @@ export const CalendarFeatureFix = () => {
               </button>
             </div>
             <div className="flex items-center gap-3">
+              {/* Simple button for immediate testing */}
+              <SimpleEventButton 
+                communityId={id || ''}
+                onSuccess={() => {
+                  console.log('Simple button success callback');
+                }}
+              />
+              
+              {/* Advanced event creation */}
               <EventCreationFix 
                 communityId={id || ''}
                 onEventCreated={() => {
