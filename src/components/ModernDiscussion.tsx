@@ -103,20 +103,33 @@ const getUserDisplayName = (user: User): string => {
          'Anonymous';
 };
 
-const getUserAvatarUrl = (user: User): string | undefined => {
-  // Priority: user_metadata.avatar_url > user_metadata.picture > avatar_url
+const getUserAvatarUrl = (user: User): string => {
+  // Priority: user_metadata.avatar_url > user_metadata.picture > avatar_url > default
   return user.user_metadata?.avatar_url ||
          user.user_metadata?.picture ||
-         user.avatar_url;
+         user.avatar_url ||
+         getDefaultAvatarUrl(user.id);
 };
 
-const getUserInitials = (user: User): string => {
-  const displayName = getUserDisplayName(user);
-  const words = displayName.split(' ');
-  if (words.length >= 2) {
-    return (words[0][0] + words[1][0]).toUpperCase();
+const getDefaultAvatarUrl = (userId?: string): string => {
+  // Array of default profile pictures for variety
+  const defaultAvatars = [
+    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
+    'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
+    'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face&auto=format&q=80'
+  ];
+  
+  // Use userId to consistently assign the same default avatar to the same user
+  if (userId) {
+    const index = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % defaultAvatars.length;
+    return defaultAvatars[index];
   }
-  return displayName.substring(0, 2).toUpperCase();
+  
+  // Random default avatar if no userId
+  return defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
 };
 
 const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
@@ -262,10 +275,33 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
             email: 'member4@example.com',
             user_metadata: {
               display_name: 'Jordan Kim',
-              avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+              // No avatar_url to demonstrate default avatar functionality
               full_name: 'Jordan Kim'
             },
             username: 'jordan_k'
+          },
+          liked_by_user: false,
+          bookmarked_by_user: false
+        },
+        {
+          id: '4',
+          community_id: communityId,
+          user_id: 'user5',
+          content: 'Just finished reading a great article on React performance optimization. The key takeaways were using React.memo for expensive components and optimizing re-renders with useMemo and useCallback. Anyone else have tips for React performance?',
+          likes_count: 8,
+          comments_count: 3,
+          is_pinned: false,
+          created_at: new Date(Date.now() - 14400000).toISOString(),
+          updated_at: new Date(Date.now() - 14400000).toISOString(),
+          user: {
+            id: 'user5',
+            email: 'developer@example.com',
+            user_metadata: {
+              display_name: 'Emily Rodriguez',
+              avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face',
+              full_name: 'Emily Rodriguez'
+            },
+            username: 'emily_dev'
           },
           liked_by_user: false,
           bookmarked_by_user: false
@@ -609,10 +645,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
               <Avatar className="w-12 h-12 ring-2 ring-gray-100 dark:ring-gray-800">
-                <AvatarImage src={getUserAvatarUrl(post.user)} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold">
-                  {getUserInitials(post.user)}
-                </AvatarFallback>
+                <AvatarImage src={getUserAvatarUrl(post.user)} className="object-cover" />
               </Avatar>
               
               <div className="flex-1">
@@ -794,10 +827,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 {post.comments?.map((comment) => (
                   <div key={comment.id} className="flex gap-3">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={getUserAvatarUrl(comment.user)} />
-                      <AvatarFallback className="text-xs bg-gray-100 dark:bg-gray-800">
-                        {getUserInitials(comment.user)}
-                      </AvatarFallback>
+                      <AvatarImage src={getUserAvatarUrl(comment.user)} className="object-cover" />
                     </Avatar>
                     <div className="flex-1">
                       <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl px-4 py-3">
@@ -818,10 +848,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 {user && (
                   <div className="flex gap-3 mt-4">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={getUserAvatarUrl(user)} />
-                      <AvatarFallback className="text-xs bg-gray-100 dark:bg-gray-800">
-                        {getUserInitials(user)}
-                      </AvatarFallback>
+                      <AvatarImage src={getUserAvatarUrl(user)} className="object-cover" />
                     </Avatar>
                     <div className="flex-1 flex gap-2">
                       <Input
@@ -918,10 +945,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src={getUserAvatarUrl(user)} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                        {getUserInitials(user)}
-                      </AvatarFallback>
+                      <AvatarImage src={getUserAvatarUrl(user)} className="object-cover" />
                     </Avatar>
                     <div>
                       <p className="font-medium text-gray-900 dark:text-gray-100">
