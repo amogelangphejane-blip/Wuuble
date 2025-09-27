@@ -19,4 +19,23 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-tabs', '@radix-ui/react-select'],
+          lucide: ['lucide-react'],
+          supabase: ['@supabase/supabase-js'],
+          utils: ['date-fns', 'zod', 'clsx', 'tailwind-merge'],
+        },
+      },
+    },
+    sourcemap: mode === 'development',
+    minify: mode === 'production' ? 'esbuild' : false,
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'lucide-react', '@supabase/supabase-js'],
+  },
 }));

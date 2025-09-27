@@ -8,9 +8,12 @@ import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import EnhancedCommunities from '@/pages/EnhancedCommunities';
+import { CommunitiesFeatureFix } from '@/components/CommunitiesFeatureFix';
 import SkoolStyleCommunityDetail from '@/pages/SkoolStyleCommunityDetail';
 import CommunityMembers from '@/pages/CommunityMembers';
 import CommunityCalendar from '@/pages/CommunityCalendar';
+import { CalendarFeatureFix } from '@/components/CalendarFeatureFix';
+import { CalendarFeatureDebug } from '@/components/CalendarFeatureDebug';
 import CommunityClassroom from '@/pages/CommunityClassroom';
 import CommunityLeaderboard from '@/pages/CommunityLeaderboard';
 import CommunityLinksPage from '@/pages/CommunityLinksPage';
@@ -66,7 +69,7 @@ function App() {
             {/* Protected routes */}
             <Route path="/communities" element={
               <ProtectedRoute>
-                <EnhancedCommunities />
+                <CommunitiesFeatureFix />
               </ProtectedRoute>
             } />
             <Route path="/community/:id" element={
@@ -81,7 +84,7 @@ function App() {
               } />
               <Route path="/community/:id/calendar" element={
                 <ProtectedRoute>
-                  <CommunityCalendar />
+                  <CalendarFeatureFix />
                 </ProtectedRoute>
               } />
               <Route path="/community/:id/classroom" element={

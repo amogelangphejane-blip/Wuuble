@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Emergency Event Creation Debug</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .critical-debug {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            color: white;
+            padding: 15px;
+            z-index: 10000;
+            font-weight: bold;
+            text-align: center;
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+        }
+        .success { border-color: #10b981; background: #f0fdf4; }
+        .error { border-color: #dc2626; background: #fef2f2; }
+        .warning { border-color: #f59e0b; background: #fffbeb; }
+        .info { border-color: #3b82f6; background: #eff6ff; }
+    </style>
+</head>
+<body class="bg-gray-100 pt-20">
+    <div class="critical-debug">
+        🚨 EMERGENCY DEBUG MODE - Event Creation Not Working
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-3xl font-bold text-red-600 mb-6">🚨 Emergency Event Creation Debug</h1>
+        
+        <div class="debug-section info">
+            <h2 class="text-xl font-bold mb-4">🎯 Step-by-Step Diagnosis</h2>
+            <p class="mb-4">We'll test each component of the event creation process to find exactly where it's failing.</p>
+            <button onclick="runEmergencyDiagnostics()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold">
+                🚨 START EMERGENCY DIAGNOSTICS
+            </button>
+        </div>
+
+        <div id="diagnosticsResults" class="space-y-4">
+            <!-- Results will appear here -->
+        </div>
+
+        <!-- Manual Tests -->
+        <div class="debug-section warning">
+            <h3 class="text-lg font-bold mb-4">🧪 Manual Tests</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button onclick="testBasicClick()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded">
+                    1. Test Basic Click
+                </button>
+                <button onclick="testStateChange()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded">
+                    2. Test State Change
+                </button>
+                <button onclick="testDialogSystem()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded">
+                    3. Test Dialog System
+                </button>
+                <button onclick="testSupabaseConnection()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded">
+                    4. Test Database Connection
+                </button>
+            </div>
+        </div>
+
+        <!-- Live Event Creation Test -->
+        <div class="debug-section success">
+            <h3 class="text-lg font-bold mb-4">🎯 LIVE EVENT CREATION TEST</h3>
+            <p class="mb-4">This form simulates the exact process that should happen in your app:</p>
+            
+            <div class="bg-white p-6 rounded-lg border-2 border-blue-500">
+                <h4 class="font-bold mb-4">Create Event (Emergency Test)</h4>
+                <form id="emergencyEventForm" onsubmit="createEventDirectly(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-medium mb-1">Event Title *</label>
+                            <input 
+                                type="text" 
+                                id="emergencyTitle"
+                                class="w-full border border-gray-300 rounded px-3 py-2"
+                                placeholder="Emergency Test Event"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-1">Event Date *</label>
+                            <input 
+                                type="date" 
+                                id="emergencyDate"
+                                class="w-full border border-gray-300 rounded px-3 py-2"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-1">Community ID</label>
+                            <input 
+                                type="text" 
+                                id="emergencyCommunityId"
+                                class="w-full border border-gray-300 rounded px-3 py-2"
+                                placeholder="Enter community ID"
+                            />
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-1">Start Time</label>
+                            <input 
+                                type="time" 
+                                id="emergencyTime"
+                                class="w-full border border-gray-300 rounded px-3 py-2"
+                            />
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <label class="block font-medium mb-1">Description</label>
+                        <textarea 
+                            id="emergencyDescription"
+                            class="w-full border border-gray-300 rounded px-3 py-2 h-20"
+                            placeholder="Emergency test event created via debug tool"
+                        ></textarea>
+                    </div>
+                    <div class="mt-6 flex gap-2">
+                        <button 
+                            type="submit"
+                            class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold"
+                        >
+                            🚨 CREATE EVENT DIRECTLY
+                        </button>
+                        <button 
+                            type="button"
+                            onclick="fillTestData()"
+                            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg"
+                        >
+                            Fill Test Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Component State Inspector -->
+        <div class="debug-section info">
+            <h3 class="text-lg font-bold mb-4">🔍 Component State Inspector</h3>
+            <div id="stateInspector" class="bg-gray-100 p-4 rounded font-mono text-sm">
+                Click "Inspect React State" to see current component states
+            </div>
+            <button onclick="inspectReactState()" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                Inspect React State
+            </button>
+        </div>
+
+        <!-- Real-time Log -->
+        <div class="debug-section error">
+            <h3 class="text-lg font-bold mb-4">📜 Real-time Debug Log</h3>
+            <div id="realTimeLog" class="bg-black text-green-400 p-4 rounded font-mono text-sm h-40 overflow-y-auto">
+                Emergency debug tool loaded...<br>
+            </div>
+            <button onclick="clearLog()" class="mt-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+                Clear Log
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let supabase = null;
+        let debugLog = ['Emergency debug tool loaded...'];
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            debugLog.push(logMessage);
+            console.log('🚨 EMERGENCY DEBUG:', logMessage);
+            
+            const logElement = document.getElementById('realTimeLog');
+            logElement.innerHTML = debugLog.slice(-20).join('<br>') + '<br>';
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            debugLog = ['Log cleared...'];
+            document.getElementById('realTimeLog').innerHTML = 'Log cleared...<br>';
+        }
+
+        function initSupabase() {
+            try {
+                const url = localStorage.getItem('supabase_url') || prompt('🚨 EMERGENCY: Enter Supabase URL:');
+                const key = localStorage.getItem('supabase_anon_key') || prompt('🚨 EMERGENCY: Enter Supabase anon key:');
+                
+                if (url && key) {
+                    localStorage.setItem('supabase_url', url);
+                    localStorage.setItem('supabase_anon_key', key);
+                    supabase = window.supabase.createClient(url, key);
+                    log('✅ Supabase initialized successfully');
+                    return true;
+                } else {
+                    log('❌ Supabase credentials missing');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Supabase initialization failed: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function runEmergencyDiagnostics() {
+            log('🚨 STARTING EMERGENCY DIAGNOSTICS');
+            
+            const results = document.getElementById('diagnosticsResults');
+            results.innerHTML = '';
+
+            // Test 1: Basic JavaScript
+            try {
+                const test = 1 + 1;
+                results.innerHTML += `
+                    <div class="debug-section success">
+                        <h3 class="font-bold">✅ Test 1: JavaScript Execution</h3>
+                        <p>JavaScript is working properly (1+1=${test})</p>
+                    </div>
+                `;
+                log('✅ JavaScript execution test passed');
+            } catch (error) {
+                results.innerHTML += `
+                    <div class="debug-section error">
+                        <h3 class="font-bold">❌ Test 1: JavaScript Execution FAILED</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+                log(`❌ JavaScript execution failed: ${error.message}`);
+            }
+
+            // Test 2: DOM Manipulation
+            try {
+                const testDiv = document.createElement('div');
+                testDiv.innerHTML = 'DOM test';
+                results.innerHTML += `
+                    <div class="debug-section success">
+                        <h3 class="font-bold">✅ Test 2: DOM Manipulation</h3>
+                        <p>DOM manipulation is working properly</p>
+                    </div>
+                `;
+                log('✅ DOM manipulation test passed');
+            } catch (error) {
+                results.innerHTML += `
+                    <div class="debug-section error">
+                        <h3 class="font-bold">❌ Test 2: DOM Manipulation FAILED</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+                log(`❌ DOM manipulation failed: ${error.message}`);
+            }
+
+            // Test 3: Event Listeners
+            try {
+                const testBtn = document.createElement('button');
+                let clicked = false;
+                testBtn.addEventListener('click', () => { clicked = true; });
+                testBtn.click();
+                
+                results.innerHTML += `
+                    <div class="debug-section ${clicked ? 'success' : 'error'}">
+                        <h3 class="font-bold">${clicked ? '✅' : '❌'} Test 3: Event Listeners</h3>
+                        <p>Event listeners ${clicked ? 'are working' : 'failed'}</p>
+                    </div>
+                `;
+                log(`${clicked ? '✅' : '❌'} Event listener test: ${clicked ? 'passed' : 'failed'}`);
+            } catch (error) {
+                results.innerHTML += `
+                    <div class="debug-section error">
+                        <h3 class="font-bold">❌ Test 3: Event Listeners FAILED</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+                log(`❌ Event listener test failed: ${error.message}`);
+            }
+
+            // Test 4: React Detection
+            let reactWorking = false;
+            try {
+                // Check if React components are in the DOM
+                const reactElements = document.querySelectorAll('[data-react-root], [data-reactroot], #root');
+                if (reactElements.length > 0) {
+                    reactWorking = true;
+                    results.innerHTML += `
+                        <div class="debug-section success">
+                            <h3 class="font-bold">✅ Test 4: React App Detection</h3>
+                            <p>Found ${reactElements.length} React root element(s)</p>
+                        </div>
+                    `;
+                    log('✅ React app detected in DOM');
+                } else {
+                    results.innerHTML += `
+                        <div class="debug-section error">
+                            <h3 class="font-bold">❌ Test 4: React App Detection FAILED</h3>
+                            <p>No React root elements found in DOM</p>
+                        </div>
+                    `;
+                    log('❌ No React app found in DOM');
+                }
+            } catch (error) {
+                results.innerHTML += `
+                    <div class="debug-section error">
+                        <h3 class="font-bold">❌ Test 4: React Detection ERROR</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+                log(`❌ React detection error: ${error.message}`);
+            }
+
+            // Test 5: Supabase Connection
+            if (initSupabase()) {
+                try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    results.innerHTML += `
+                        <div class="debug-section ${session ? 'success' : 'warning'}">
+                            <h3 class="font-bold">${session ? '✅' : '⚠️'} Test 5: Authentication</h3>
+                            <p>${session ? `User logged in: ${session.user.email}` : 'No active session'}</p>
+                        </div>
+                    `;
+                    log(`${session ? '✅' : '⚠️'} Auth test: ${session ? 'logged in' : 'not logged in'}`);
+                } catch (error) {
+                    results.innerHTML += `
+                        <div class="debug-section error">
+                            <h3 class="font-bold">❌ Test 5: Authentication ERROR</h3>
+                            <p>Error: ${error.message}</p>
+                        </div>
+                    `;
+                    log(`❌ Auth test failed: ${error.message}`);
+                }
+            }
+
+            // Test 6: Check for Create Event Buttons
+            const createButtons = document.querySelectorAll('button');
+            const eventButtons = Array.from(createButtons).filter(btn => 
+                btn.textContent && (
+                    btn.textContent.includes('Create Event') || 
+                    btn.textContent.includes('Add Event') ||
+                    btn.textContent.includes('New Event')
+                )
+            );
+
+            results.innerHTML += `
+                <div class="debug-section ${eventButtons.length > 0 ? 'success' : 'error'}">
+                    <h3 class="font-bold">${eventButtons.length > 0 ? '✅' : '❌'} Test 6: Event Creation Buttons</h3>
+                    <p>Found ${eventButtons.length} event creation button(s) in DOM</p>
+                    ${eventButtons.length > 0 ? `
+                        <div class="mt-2">
+                            ${eventButtons.map((btn, i) => `
+                                <div class="p-2 bg-gray-100 rounded mb-1">
+                                    Button ${i+1}: "${btn.textContent.trim()}"
+                                    <button onclick="testButtonClick(${i})" class="ml-2 bg-red-500 text-white px-2 py-1 rounded text-xs">Test Click</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            log(`${eventButtons.length > 0 ? '✅' : '❌'} Found ${eventButtons.length} event creation buttons`);
+
+            // Final Recommendation
+            if (!reactWorking) {
+                results.innerHTML += `
+                    <div class="debug-section error">
+                        <h3 class="font-bold">🚨 CRITICAL ISSUE FOUND</h3>
+                        <p>React app is not rendering properly. This is why the create event button doesn't work.</p>
+                        <p><strong>Solution:</strong> Check browser console for React errors and ensure the app is loading correctly.</p>
+                    </div>
+                `;
+            } else if (eventButtons.length === 0) {
+                results.innerHTML += `
+                    <div class="debug-section error">
+                        <h3 class="font-bold">🚨 ISSUE FOUND</h3>
+                        <p>React is working but event creation buttons are not rendering in the DOM.</p>
+                        <p><strong>Solution:</strong> The component may not be rendering or the route may not be working.</p>
+                    </div>
+                `;
+            } else {
+                results.innerHTML += `
+                    <div class="debug-section info">
+                        <h3 class="font-bold">🔍 READY FOR DEEPER ANALYSIS</h3>
+                        <p>Basic systems are working. Use the manual tests above to identify the specific issue.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function testBasicClick() {
+            log('🧪 Testing basic click functionality');
+            alert('✅ Basic click test successful! JavaScript and event handling are working.');
+            log('✅ Basic click test passed');
+        }
+
+        function testStateChange() {
+            log('🧪 Testing state change simulation');
+            const testDiv = document.createElement('div');
+            testDiv.innerHTML = '🎯 State Change Test Active';
+            testDiv.className = 'fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded z-50';
+            document.body.appendChild(testDiv);
+            
+            setTimeout(() => {
+                testDiv.remove();
+                log('✅ State change simulation successful');
+                alert('✅ State change test successful! DOM updates are working.');
+            }, 2000);
+        }
+
+        function testDialogSystem() {
+            log('🧪 Testing dialog system');
+            const dialog = document.createElement('div');
+            dialog.innerHTML = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white p-6 rounded-lg max-w-md">
+                        <h3 class="font-bold mb-4">🧪 Dialog Test</h3>
+                        <p class="mb-4">This simulates how the event creation dialog should work.</p>
+                        <button onclick="this.closest('.fixed').remove()" class="bg-blue-600 text-white px-4 py-2 rounded">
+                            Close Dialog
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(dialog);
+            log('✅ Dialog test opened - click Close Dialog to complete test');
+        }
+
+        async function testSupabaseConnection() {
+            log('🧪 Testing Supabase connection');
+            
+            if (!initSupabase()) {
+                alert('❌ Cannot test Supabase - credentials not provided');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase.from('communities').select('id, name').limit(1);
+                if (error) {
+                    log(`❌ Supabase test failed: ${error.message}`);
+                    alert(`❌ Supabase connection failed: ${error.message}`);
+                } else {
+                    log('✅ Supabase connection successful');
+                    alert(`✅ Supabase working! Found ${data.length} community records.`);
+                }
+            } catch (error) {
+                log(`❌ Supabase test error: ${error.message}`);
+                alert(`❌ Supabase error: ${error.message}`);
+            }
+        }
+
+        function testButtonClick(buttonIndex) {
+            const buttons = Array.from(document.querySelectorAll('button')).filter(btn => 
+                btn.textContent && (
+                    btn.textContent.includes('Create Event') || 
+                    btn.textContent.includes('Add Event') ||
+                    btn.textContent.includes('New Event')
+                )
+            );
+            
+            if (buttons[buttonIndex]) {
+                log(`🧪 Testing click on button ${buttonIndex + 1}`);
+                buttons[buttonIndex].click();
+                log(`✅ Button ${buttonIndex + 1} click triggered`);
+            }
+        }
+
+        function fillTestData() {
+            log('🧪 Filling test data');
+            document.getElementById('emergencyTitle').value = 'Emergency Test Event';
+            document.getElementById('emergencyDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('emergencyTime').value = '14:00';
+            document.getElementById('emergencyDescription').value = 'This event was created using the emergency debug tool to test event creation functionality.';
+            
+            // Try to get community ID from URL
+            const urlParts = window.location.pathname.split('/');
+            const communityIndex = urlParts.indexOf('community');
+            if (communityIndex !== -1 && urlParts[communityIndex + 1]) {
+                document.getElementById('emergencyCommunityId').value = urlParts[communityIndex + 1];
+            }
+            
+            log('✅ Test data filled');
+        }
+
+        async function createEventDirectly(event) {
+            event.preventDefault();
+            log('🚨 ATTEMPTING DIRECT EVENT CREATION');
+            
+            if (!initSupabase()) {
+                alert('❌ Cannot create event - Supabase not configured');
+                return;
+            }
+
+            const title = document.getElementById('emergencyTitle').value;
+            const date = document.getElementById('emergencyDate').value;
+            const time = document.getElementById('emergencyTime').value;
+            const description = document.getElementById('emergencyDescription').value;
+            const communityId = document.getElementById('emergencyCommunityId').value;
+
+            if (!title || !date) {
+                alert('❌ Title and date are required');
+                return;
+            }
+
+            if (!communityId) {
+                alert('❌ Community ID is required');
+                return;
+            }
+
+            try {
+                log('📤 Sending event to database...');
+                
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    alert('❌ You must be logged in to create events');
+                    log('❌ No active session');
+                    return;
+                }
+
+                const eventData = {
+                    community_id: communityId,
+                    user_id: session.user.id,
+                    title: title,
+                    description: description || null,
+                    event_date: date,
+                    start_time: time || null,
+                    is_virtual: false
+                };
+
+                log(`📋 Event data: ${JSON.stringify(eventData)}`);
+
+                const { data, error } = await supabase
+                    .from('community_events')
+                    .insert(eventData)
+                    .select();
+
+                if (error) {
+                    log(`❌ Database error: ${error.message}`);
+                    alert(`❌ Failed to create event: ${error.message}`);
+                    
+                    // Provide specific guidance
+                    if (error.code === '42501') {
+                        alert('🔒 Permission denied. You may not have permission to create events in this community.');
+                    } else if (error.code === '23503') {
+                        alert('🔗 Foreign key error. The community may not exist or you may not be a member.');
+                    }
+                } else {
+                    log('✅ Event created successfully!');
+                    alert(`✅ SUCCESS! Event "${title}" created successfully!\n\nEvent ID: ${data[0].id}\n\nThe event creation system is working. If the button in your app still doesn't work, the issue is with the React component rendering.`);
+                    
+                    // Clear form
+                    document.getElementById('emergencyEventForm').reset();
+                }
+            } catch (error) {
+                log(`❌ Unexpected error: ${error.message}`);
+                alert(`❌ Unexpected error: ${error.message}`);
+            }
+        }
+
+        function inspectReactState() {
+            log('🔍 Inspecting React component state');
+            
+            let stateInfo = 'React Component Analysis:\n\n';
+            
+            // Check for React DevTools
+            if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+                stateInfo += '✅ React DevTools detected\n';
+            } else {
+                stateInfo += '❌ React DevTools not found\n';
+            }
+            
+            // Check for React elements
+            const reactElements = document.querySelectorAll('[data-reactroot], [data-react-root], #root');
+            stateInfo += `React elements found: ${reactElements.length}\n`;
+            
+            // Check for common React patterns
+            const componentElements = document.querySelectorAll('[class*="react"], [class*="component"]');
+            stateInfo += `Component-like elements: ${componentElements.length}\n`;
+            
+            // Check for event handlers
+            const buttonsWithHandlers = Array.from(document.querySelectorAll('button')).filter(btn => 
+                btn.onclick || btn.getAttribute('onclick') || btn.hasAttribute('data-*')
+            );
+            stateInfo += `Buttons with handlers: ${buttonsWithHandlers.length}\n`;
+            
+            // Look for error indicators
+            const errorElements = document.querySelectorAll('[class*="error"], .error, [aria-invalid="true"]');
+            stateInfo += `Error indicators: ${errorElements.length}\n`;
+            
+            document.getElementById('stateInspector').textContent = stateInfo;
+            log('🔍 React state inspection completed');
+        }
+
+        // Monitor for React errors
+        window.addEventListener('error', (e) => {
+            log(`❌ JavaScript Error: ${e.message} at ${e.filename}:${e.lineno}`);
+        });
+
+        // Monitor for console errors
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            log(`❌ Console Error: ${args.join(' ')}`);
+            originalConsoleError.apply(console, args);
+        };
+
+        // Auto-fill today's date
+        window.addEventListener('load', () => {
+            document.getElementById('emergencyDate').value = new Date().toISOString().split('T')[0];
+            log('🔧 Emergency debug tool ready');
+        });
+    </script>
+</body>
+</html>
