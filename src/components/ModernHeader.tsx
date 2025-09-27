@@ -17,8 +17,6 @@ import {
   Menu, 
   X,
   MessageCircle,
-  Radio,
-  Video,
   Home,
   Mail,
   Wallet
@@ -74,28 +72,10 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
       active: location.pathname.startsWith('/communities')
     },
     {
-      label: 'Random Chat',
-      href: '/random-chat',
-      icon: Video,
-      active: location.pathname.startsWith('/random-chat')
-    },
-    {
-      label: 'Chat',
-      href: '/chat',
-      icon: MessageCircle,
-      active: location.pathname.startsWith('/chat') && !location.pathname.startsWith('/random-chat')
-    },
-    {
       label: 'Messages',
       href: '/messages',
       icon: Mail,
       active: location.pathname.startsWith('/messages')
-    },
-    {
-      label: 'Live Streams',
-      href: '/azar-livestreams',
-      icon: Radio,
-      active: location.pathname.startsWith('/azar-livestreams')
     }
   ];
 

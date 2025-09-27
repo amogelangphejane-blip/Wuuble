@@ -3,7 +3,10 @@ import {
   Play,
   ArrowRight,
   Users,
-  Video,
+  BookOpen,
+  MessageSquare,
+  Trophy,
+  Calendar,
   Globe
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -53,9 +56,10 @@ const LandingPage = () => {
                 animationDuration: `${6 + Math.random() * 2}s`
               }}
             >
-              {i % 3 === 0 && <Video className="w-6 h-6 text-purple-400" />}
-              {i % 3 === 1 && <Users className="w-6 h-6 text-pink-400" />}
-              {i % 3 === 2 && <Globe className="w-6 h-6 text-blue-400" />}
+              {i % 4 === 0 && <MessageSquare className="w-6 h-6 text-purple-400" />}
+              {i % 4 === 1 && <Users className="w-6 h-6 text-pink-400" />}
+              {i % 4 === 2 && <BookOpen className="w-6 h-6 text-blue-400" />}
+              {i % 4 === 3 && <Trophy className="w-6 h-6 text-green-400" />}
             </div>
           ))}
         </div>
@@ -65,22 +69,22 @@ const LandingPage = () => {
             {/* Clean Logo/Icon */}
             <div className="mb-8">
               <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-                <Video className="w-12 h-12 text-white" />
+                <Users className="w-12 h-12 text-white" />
               </div>
             </div>
             
             {/* Simple Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-gray-900">
-              Meet New People
+              Build Your Community
               <span className="block bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mt-2">
-                Video Chat Instantly
+                Learn & Grow Together
               </span>
             </h1>
             
             {/* Clean Subtitle */}
             <p className="text-lg sm:text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
-              Connect with people from around the world through random video chats. 
-              Simple, fun, and instant connections.
+              Create thriving communities where members learn, engage, and achieve their goals together. 
+              The all-in-one platform for community builders.
             </p>
             
             {/* Primary CTA */}
@@ -91,7 +95,7 @@ const LandingPage = () => {
                 className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 px-12 py-6 text-xl font-semibold rounded-full transform hover:scale-105"
               >
                 <Play className="mr-3 w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-                Start Video Chat
+                Start Building
                 <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
               </Button>
             </div>
@@ -100,26 +104,26 @@ const LandingPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-3xl mx-auto">
               <div className="text-center">
                 <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-purple-600" />
+                  <MessageSquare className="w-8 h-8 text-purple-600" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Random Matching</h3>
-                <p className="text-gray-600 text-sm">Meet new people instantly with our smart matching system</p>
+                <h3 className="font-semibold text-gray-900 mb-2">Discussions</h3>
+                <p className="text-gray-600 text-sm">Engage in meaningful conversations with community members</p>
               </div>
               
               <div className="text-center">
                 <div className="w-16 h-16 bg-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Video className="w-8 h-8 text-pink-600" />
+                  <BookOpen className="w-8 h-8 text-pink-600" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">HD Video Chat</h3>
-                <p className="text-gray-600 text-sm">Crystal clear video and audio for the best experience</p>
+                <h3 className="font-semibold text-gray-900 mb-2">Classroom</h3>
+                <p className="text-gray-600 text-sm">Share knowledge and learn from expert-led courses</p>
               </div>
               
               <div className="text-center">
                 <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Globe className="w-8 h-8 text-blue-600" />
+                  <Trophy className="w-8 h-8 text-blue-600" />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Global Community</h3>
-                <p className="text-gray-600 text-sm">Connect with people from all around the world</p>
+                <h3 className="font-semibold text-gray-900 mb-2">Leaderboard</h3>
+                <p className="text-gray-600 text-sm">Track progress and recognize top contributors</p>
               </div>
             </div>
           </div>
