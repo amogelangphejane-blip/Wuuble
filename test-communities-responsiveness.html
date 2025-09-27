@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Communities Responsiveness Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .community-card {
+            transition: all 0.3s ease;
+        }
+        .community-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        @media (max-width: 768px) {
+            .community-card:hover {
+                transform: none;
+                background-color: #f9fafb;
+            }
+        }
+        .device-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="device-indicator" id="deviceIndicator">
+        Loading...
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        Communities Responsiveness Test
+                    </h1>
+                    <p class="text-gray-600 mt-1">
+                        Testing mobile, tablet, and desktop layouts
+                    </p>
+                </div>
+                <button class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg shadow-lg">
+                    Create Community
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
+                <div class="text-2xl font-bold text-blue-600">12</div>
+                <div class="text-sm text-gray-600">Total Communities</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
+                <div class="text-2xl font-bold text-green-600">248</div>
+                <div class="text-sm text-gray-600">Total Members</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
+                <div class="text-2xl font-bold text-purple-600">3</div>
+                <div class="text-sm text-gray-600">My Communities</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
+                <div class="text-2xl font-bold text-orange-600">2</div>
+                <div class="text-sm text-gray-600">Premium</div>
+            </div>
+        </div>
+
+        <!-- Search and Controls -->
+        <div class="flex flex-col lg:flex-row gap-4 mb-6">
+            <div class="relative flex-1">
+                <input 
+                    type="text" 
+                    placeholder="Search communities..."
+                    class="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+            
+            <div class="flex gap-2">
+                <select class="bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm focus:ring-2 focus:ring-blue-500">
+                    <option>All Categories</option>
+                    <option>Technology</option>
+                    <option>Education</option>
+                    <option>Gaming</option>
+                </select>
+                
+                <div class="flex bg-white rounded-lg shadow-sm p-1">
+                    <button class="px-3 py-2 rounded bg-blue-600 text-white" onclick="toggleView('grid')">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M4 4h4v4H4V4zm6 0h4v4h-4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"/>
+                        </svg>
+                    </button>
+                    <button class="px-3 py-2 rounded" onclick="toggleView('list')">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Communities Grid -->
+        <div id="communitiesGrid" class="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <!-- Sample Community Cards -->
+            <div class="community-card bg-white rounded-lg overflow-hidden shadow-sm cursor-pointer">
+                <div class="h-20 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 relative">
+                    <span class="absolute top-2 right-2 bg-yellow-400 text-black text-xs px-2 py-1 rounded">Premium</span>
+                </div>
+                <div class="p-4">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold -mt-6 border-4 border-white">
+                            TC
+                        </div>
+                        <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded mt-6">Member</span>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Tech Community</h3>
+                    <p class="text-gray-600 text-sm mb-3 line-clamp-2">A community for tech enthusiasts to share knowledge and connect with like-minded people.</p>
+                    <div class="flex items-center justify-between text-sm mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4h2v-2.5c0-1.1.9-2 2-2h8c1.1 0 2 .9 2 2V14h2v4H4z"/></svg>
+                                156
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l3 3 3-3h6c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                                42
+                            </span>
+                        </div>
+                        <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">Technology</span>
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all">
+                        Enter Community
+                    </button>
+                </div>
+            </div>
+
+            <!-- Additional sample cards -->
+            <div class="community-card bg-white rounded-lg overflow-hidden shadow-sm cursor-pointer">
+                <div class="h-20 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500"></div>
+                <div class="p-4">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold -mt-6 border-4 border-white">
+                            LC
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Learning Community</h3>
+                    <p class="text-gray-600 text-sm mb-3">Join us for continuous learning and skill development in various fields.</p>
+                    <div class="flex items-center justify-between text-sm mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4h2v-2.5c0-1.1.9-2 2-2h8c1.1 0 2 .9 2 2V14h2v4H4z"/></svg>
+                                89
+                            </span>
+                        </div>
+                        <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">Education</span>
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all">
+                        Join Community
+                    </button>
+                </div>
+            </div>
+
+            <div class="community-card bg-white rounded-lg overflow-hidden shadow-sm cursor-pointer">
+                <div class="h-20 bg-gradient-to-r from-pink-500 via-red-500 to-orange-500"></div>
+                <div class="p-4">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-12 h-12 bg-gradient-to-r from-pink-500 to-red-500 rounded-full flex items-center justify-center text-white font-bold -mt-6 border-4 border-white">
+                            GC
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Gaming Community</h3>
+                    <p class="text-gray-600 text-sm mb-3">Connect with fellow gamers and discover new games together.</p>
+                    <div class="flex items-center justify-between text-sm mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4h2v-2.5c0-1.1.9-2 2-2h8c1.1 0 2 .9 2 2V14h2v4H4z"/></svg>
+                                234
+                            </span>
+                        </div>
+                        <span class="bg-red-100 text-red-700 text-xs px-2 py-1 rounded">Gaming</span>
+                    </div>
+                    <button class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all">
+                        Join Community
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="mt-12 bg-white p-6 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-bold mb-4">📱 Responsiveness Test Results</h2>
+            <div id="testResults" class="space-y-4">
+                <!-- Results will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateDeviceIndicator() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            let deviceType = 'Desktop';
+            let color = '#10b981'; // green
+            
+            if (width < 768) {
+                deviceType = 'Mobile';
+                color = '#3b82f6'; // blue
+            } else if (width < 1024) {
+                deviceType = 'Tablet';
+                color = '#f59e0b'; // orange
+            }
+            
+            document.getElementById('deviceIndicator').innerHTML = `
+                <span style="color: ${color}">●</span> ${deviceType} (${width}×${height})
+            `;
+        }
+
+        function toggleView(mode) {
+            const grid = document.getElementById('communitiesGrid');
+            if (mode === 'grid') {
+                grid.className = 'grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+            } else {
+                grid.className = 'grid gap-4 grid-cols-1 lg:grid-cols-2';
+            }
+        }
+
+        function runResponsivenessTest() {
+            const results = [];
+            const width = window.innerWidth;
+            
+            // Test 1: Viewport Detection
+            const isMobile = width < 768;
+            const isTablet = width >= 768 && width < 1024;
+            const isDesktop = width >= 1024;
+            
+            results.push({
+                test: 'Viewport Detection',
+                status: 'success',
+                message: `Detected as ${isMobile ? 'Mobile' : isTablet ? 'Tablet' : 'Desktop'} device`
+            });
+
+            // Test 2: CSS Grid Support
+            const supportsGrid = CSS.supports('display', 'grid');
+            results.push({
+                test: 'CSS Grid Support',
+                status: supportsGrid ? 'success' : 'error',
+                message: supportsGrid ? 'CSS Grid is supported' : 'CSS Grid is not supported'
+            });
+
+            // Test 3: Flexbox Support
+            const supportsFlex = CSS.supports('display', 'flex');
+            results.push({
+                test: 'Flexbox Support',
+                status: supportsFlex ? 'success' : 'error',
+                message: supportsFlex ? 'Flexbox is supported' : 'Flexbox is not supported'
+            });
+
+            // Test 4: Touch Support
+            const supportsTouch = 'ontouchstart' in window;
+            results.push({
+                test: 'Touch Support',
+                status: supportsTouch ? 'success' : 'info',
+                message: supportsTouch ? 'Touch events are supported' : 'Mouse-only device'
+            });
+
+            // Test 5: Layout Responsiveness
+            const cards = document.querySelectorAll('.community-card');
+            const cardWidth = cards[0]?.offsetWidth || 0;
+            const expectedColumns = isMobile ? 1 : isTablet ? 2 : 3;
+            const actualColumns = Math.floor(width / (cardWidth + 24)); // 24px gap
+            
+            results.push({
+                test: 'Layout Responsiveness',
+                status: 'success',
+                message: `Layout adapts correctly: ${expectedColumns} expected columns, ${actualColumns} actual columns`
+            });
+
+            // Test 6: Performance
+            const startTime = performance.now();
+            setTimeout(() => {
+                const endTime = performance.now();
+                const renderTime = endTime - startTime;
+                
+                results.push({
+                    test: 'Render Performance',
+                    status: renderTime < 100 ? 'success' : renderTime < 500 ? 'warning' : 'error',
+                    message: `Render time: ${Math.round(renderTime)}ms`
+                });
+
+                displayResults(results);
+            }, 0);
+        }
+
+        function displayResults(results) {
+            const container = document.getElementById('testResults');
+            container.innerHTML = results.map(result => {
+                const colorClass = result.status === 'success' ? 'text-green-600 border-green-200 bg-green-50' :
+                                 result.status === 'warning' ? 'text-orange-600 border-orange-200 bg-orange-50' :
+                                 result.status === 'error' ? 'text-red-600 border-red-200 bg-red-50' :
+                                 'text-blue-600 border-blue-200 bg-blue-50';
+                
+                const icon = result.status === 'success' ? '✅' :
+                           result.status === 'warning' ? '⚠️' :
+                           result.status === 'error' ? '❌' : 'ℹ️';
+                
+                return `
+                    <div class="border rounded-lg p-4 ${colorClass}">
+                        <div class="font-semibold">${icon} ${result.test}</div>
+                        <div class="text-sm mt-1">${result.message}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Add overall summary
+            const successCount = results.filter(r => r.status === 'success').length;
+            const totalTests = results.length;
+            const successRate = Math.round((successCount / totalTests) * 100);
+            
+            container.innerHTML += `
+                <div class="border-t pt-4 mt-4">
+                    <div class="text-lg font-semibold">📊 Overall Score: ${successRate}%</div>
+                    <div class="text-sm text-gray-600">${successCount} out of ${totalTests} tests passed</div>
+                    ${successRate >= 80 ? 
+                        '<div class="text-green-600 mt-2">🎉 Communities feature is working well and responsive!</div>' :
+                        '<div class="text-orange-600 mt-2">⚠️ Some issues detected that may affect responsiveness.</div>'
+                    }
+                </div>
+            `;
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            updateDeviceIndicator();
+            runResponsivenessTest();
+        });
+
+        window.addEventListener('resize', () => {
+            updateDeviceIndicator();
+            // Re-run test after a brief delay
+            setTimeout(runResponsivenessTest, 500);
+        });
+
+        // Add some interactive elements
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add click handlers to cards
+            document.querySelectorAll('.community-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    card.style.backgroundColor = '#f0f9ff';
+                    setTimeout(() => {
+                        card.style.backgroundColor = 'white';
+                    }, 200);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

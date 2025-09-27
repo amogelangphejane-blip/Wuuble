@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar Feature Debug Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status-box {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 5px solid;
+        }
+        .success { border-left-color: #4CAF50; background-color: #f1f8e9; }
+        .error { border-left-color: #f44336; background-color: #ffebee; }
+        .warning { border-left-color: #ff9800; background-color: #fff3e0; }
+        .info { border-left-color: #2196f3; background-color: #e3f2fd; }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #45a049; }
+        .loading { display: none; }
+        pre { background-color: #f5f5f5; padding: 10px; overflow-x: auto; border-radius: 4px; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>📅 Calendar Feature Debug Tool</h1>
+    <p>This tool helps diagnose and fix calendar feature issues in your community platform.</p>
+
+    <div class="status-box info">
+        <h3>🔍 Debug Steps</h3>
+        <ol>
+            <li>Check database connection</li>
+            <li>Verify community_events table exists</li>
+            <li>Test event creation</li>
+            <li>Check Row Level Security (RLS) policies</li>
+            <li>Verify user permissions</li>
+        </ol>
+    </div>
+
+    <div>
+        <button onclick="runDiagnostics()">🔍 Run Full Diagnostics</button>
+        <button onclick="checkConnection()">📡 Test Connection</button>
+        <button onclick="checkTables()">🗃️ Check Tables</button>
+        <button onclick="testEventCreation()">✨ Test Event Creation</button>
+        <button onclick="checkPolicies()">🔐 Check Policies</button>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="status-box info">
+            <h3>⏳ Running diagnostics...</h3>
+            <p>Please wait while we check your calendar setup.</p>
+        </div>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        // Initialize Supabase client
+        let supabase;
+        
+        function initSupabase() {
+            // Try to get Supabase credentials from environment or prompt user
+            const supabaseUrl = localStorage.getItem('supabase_url') || prompt('Enter your Supabase URL:');
+            const supabaseKey = localStorage.getItem('supabase_anon_key') || prompt('Enter your Supabase anon key:');
+            
+            if (supabaseUrl && supabaseKey) {
+                localStorage.setItem('supabase_url', supabaseUrl);
+                localStorage.setItem('supabase_anon_key', supabaseKey);
+                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                return true;
+            }
+            return false;
+        }
+
+        function showResults(html) {
+            document.getElementById('results').innerHTML = html;
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function checkConnection() {
+            showLoading();
+            
+            if (!initSupabase()) {
+                showResults('<div class="status-box error"><h3>❌ Configuration Error</h3><p>Please provide valid Supabase credentials.</p></div>');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                
+                let html = '<div class="status-box success"><h3>✅ Connection Successful</h3><p>Successfully connected to Supabase.</p></div>';
+                
+                if (data.session) {
+                    html += `<div class="status-box success"><h3>👤 User Authenticated</h3><p>User ID: ${data.session.user.id}</p><p>Email: ${data.session.user.email}</p></div>`;
+                } else {
+                    html += '<div class="status-box warning"><h3>⚠️ Not Authenticated</h3><p>No active user session found. This may affect calendar functionality.</p></div>';
+                }
+
+                showResults(html);
+            } catch (error) {
+                showResults(`<div class="status-box error"><h3>❌ Connection Failed</h3><p>${error.message}</p></div>`);
+            }
+        }
+
+        async function checkTables() {
+            showLoading();
+            
+            if (!initSupabase()) {
+                showResults('<div class="status-box error"><h3>❌ Configuration Error</h3><p>Please provide valid Supabase credentials.</p></div>');
+                return;
+            }
+
+            let html = '<h2>📋 Database Tables Status</h2>';
+            
+            const tables = [
+                { name: 'community_events', description: 'Main events table' },
+                { name: 'event_categories', description: 'Event categories' },
+                { name: 'event_rsvps', description: 'RSVP tracking' },
+                { name: 'communities', description: 'Communities table' },
+                { name: 'community_members', description: 'Community membership' },
+                { name: 'profiles', description: 'User profiles' }
+            ];
+
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase.from(table.name).select('*').limit(1);
+                    
+                    if (error) {
+                        if (error.code === '42P01') {
+                            html += `<div class="status-box error"><h3>❌ Table Missing: ${table.name}</h3><p>${table.description}</p><p>Error: Table does not exist</p></div>`;
+                        } else {
+                            html += `<div class="status-box warning"><h3>⚠️ Table Issue: ${table.name}</h3><p>${table.description}</p><p>Error: ${error.message}</p></div>`;
+                        }
+                    } else {
+                        html += `<div class="status-box success"><h3>✅ Table OK: ${table.name}</h3><p>${table.description}</p><p>Table exists and is accessible</p></div>`;
+                    }
+                } catch (err) {
+                    html += `<div class="status-box error"><h3>❌ Table Error: ${table.name}</h3><p>${table.description}</p><p>Error: ${err.message}</p></div>`;
+                }
+            }
+
+            showResults(html);
+        }
+
+        async function testEventCreation() {
+            showLoading();
+            
+            if (!initSupabase()) {
+                showResults('<div class="status-box error"><h3>❌ Configuration Error</h3><p>Please provide valid Supabase credentials.</p></div>');
+                return;
+            }
+
+            let html = '<h2>🧪 Event Creation Test</h2>';
+
+            try {
+                // First check if user is authenticated
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    html += '<div class="status-box error"><h3>❌ Authentication Required</h3><p>Please sign in to test event creation.</p></div>';
+                    showResults(html);
+                    return;
+                }
+
+                // Try to get a community to test with
+                const { data: communities, error: communityError } = await supabase
+                    .from('communities')
+                    .select('id, name')
+                    .limit(1);
+
+                if (communityError || !communities || communities.length === 0) {
+                    html += '<div class="status-box warning"><h3>⚠️ No Test Community</h3><p>No accessible communities found for testing.</p></div>';
+                    showResults(html);
+                    return;
+                }
+
+                const testCommunity = communities[0];
+                html += `<div class="status-box info"><h3>🏠 Using Test Community</h3><p>Community: ${testCommunity.name} (${testCommunity.id})</p></div>`;
+
+                // Try to create a test event
+                const testEvent = {
+                    community_id: testCommunity.id,
+                    user_id: session.user.id,
+                    title: 'Test Event - Calendar Debug',
+                    description: 'This is a test event created by the calendar debug tool',
+                    event_date: new Date().toISOString().split('T')[0],
+                    start_time: '12:00:00',
+                    end_time: '13:00:00',
+                    location: 'Test Location',
+                    is_virtual: false
+                };
+
+                const { data: insertData, error: insertError } = await supabase
+                    .from('community_events')
+                    .insert(testEvent)
+                    .select();
+
+                if (insertError) {
+                    html += `<div class="status-box error"><h3>❌ Event Creation Failed</h3><p>Error: ${insertError.message}</p><p>Code: ${insertError.code}</p></div>`;
+                    
+                    // Provide specific guidance based on error
+                    if (insertError.code === '42501') {
+                        html += '<div class="status-box info"><h3>💡 Suggestion</h3><p>This is likely a Row Level Security (RLS) policy issue. Check your database policies.</p></div>';
+                    } else if (insertError.code === '23503') {
+                        html += '<div class="status-box info"><h3>💡 Suggestion</h3><p>Foreign key constraint violation. Check that all referenced tables exist and contain the required data.</p></div>';
+                    }
+                } else {
+                    html += '<div class="status-box success"><h3>✅ Event Creation Successful</h3><p>Test event created successfully!</p></div>';
+                    
+                    // Clean up test event
+                    if (insertData && insertData.length > 0) {
+                        await supabase.from('community_events').delete().eq('id', insertData[0].id);
+                        html += '<div class="status-box info"><h3>🧹 Cleanup</h3><p>Test event deleted.</p></div>';
+                    }
+                }
+
+            } catch (err) {
+                html += `<div class="status-box error"><h3>❌ Test Failed</h3><p>Unexpected error: ${err.message}</p></div>`;
+            }
+
+            showResults(html);
+        }
+
+        async function checkPolicies() {
+            showLoading();
+            
+            if (!initSupabase()) {
+                showResults('<div class="status-box error"><h3>❌ Configuration Error</h3><p>Please provide valid Supabase credentials.</p></div>');
+                return;
+            }
+
+            let html = '<h2>🔐 Database Policies Check</h2>';
+
+            try {
+                // Check if RLS is enabled on community_events table
+                const { data: rlsData, error: rlsError } = await supabase.rpc('check_rls_status', {
+                    table_name: 'community_events'
+                });
+
+                html += '<div class="status-box info"><h3>📋 RLS Policy Check</h3>';
+                html += '<p>This check verifies Row Level Security policies are properly configured.</p>';
+                html += '<p><strong>Note:</strong> Some policy details may not be accessible from the client.</p></div>';
+
+                // Try a basic select to see if policies allow access
+                const { data: selectData, error: selectError } = await supabase
+                    .from('community_events')
+                    .select('id')
+                    .limit(1);
+
+                if (selectError) {
+                    if (selectError.code === '42501') {
+                        html += '<div class="status-box error"><h3>❌ RLS Policy Issue</h3><p>Row Level Security is blocking access to community_events table.</p></div>';
+                        html += '<div class="status-box info"><h3>💡 Solution</h3><p>Run the complete_events_migration.sql script in your Supabase SQL Editor to set up proper policies.</p></div>';
+                    } else {
+                        html += `<div class="status-box warning"><h3>⚠️ Database Access Issue</h3><p>Error: ${selectError.message}</p></div>`;
+                    }
+                } else {
+                    html += '<div class="status-box success"><h3>✅ Basic Access OK</h3><p>Can read from community_events table.</p></div>';
+                }
+
+            } catch (err) {
+                html += `<div class="status-box error"><h3>❌ Policy Check Failed</h3><p>Error: ${err.message}</p></div>`;
+            }
+
+            showResults(html);
+        }
+
+        async function runDiagnostics() {
+            showLoading();
+            
+            let html = '<h2>🔍 Full Calendar Diagnostics</h2>';
+            
+            if (!initSupabase()) {
+                showResults('<div class="status-box error"><h3>❌ Configuration Error</h3><p>Please provide valid Supabase credentials to run diagnostics.</p></div>');
+                return;
+            }
+
+            try {
+                // Test 1: Connection
+                html += '<h3>1. Connection Test</h3>';
+                const { data, error } = await supabase.auth.getSession();
+                if (data.session) {
+                    html += '<div class="status-box success">✅ Connected and authenticated</div>';
+                } else {
+                    html += '<div class="status-box warning">⚠️ Connected but not authenticated</div>';
+                }
+
+                // Test 2: Tables
+                html += '<h3>2. Required Tables</h3>';
+                const tables = ['community_events', 'communities', 'community_members'];
+                let tablesOK = true;
+                
+                for (const table of tables) {
+                    try {
+                        await supabase.from(table).select('id').limit(1);
+                        html += `<div class="status-box success">✅ ${table} table exists</div>`;
+                    } catch (err) {
+                        html += `<div class="status-box error">❌ ${table} table issue: ${err.message}</div>`;
+                        tablesOK = false;
+                    }
+                }
+
+                // Test 3: Event Creation (if tables are OK)
+                if (tablesOK && data.session) {
+                    html += '<h3>3. Event Creation Test</h3>';
+                    try {
+                        const { data: communities } = await supabase.from('communities').select('id').limit(1);
+                        
+                        if (communities && communities.length > 0) {
+                            const testEvent = {
+                                community_id: communities[0].id,
+                                user_id: data.session.user.id,
+                                title: 'Test Event',
+                                event_date: new Date().toISOString().split('T')[0]
+                            };
+                            
+                            const { error: insertError } = await supabase
+                                .from('community_events')
+                                .insert(testEvent);
+                            
+                            if (insertError) {
+                                html += `<div class="status-box error">❌ Cannot create events: ${insertError.message}</div>`;
+                            } else {
+                                html += '<div class="status-box success">✅ Event creation works</div>';
+                                // Clean up
+                                await supabase.from('community_events').delete().eq('title', 'Test Event');
+                            }
+                        } else {
+                            html += '<div class="status-box warning">⚠️ No communities found for testing</div>';
+                        }
+                    } catch (err) {
+                        html += `<div class="status-box error">❌ Event creation test failed: ${err.message}</div>`;
+                    }
+                }
+
+                // Summary
+                html += '<h3>📋 Summary</h3>';
+                if (tablesOK && data.session) {
+                    html += '<div class="status-box success"><h4>✅ Calendar Should Work</h4><p>All basic requirements are met. If you\'re still having issues, check the browser console for JavaScript errors.</p></div>';
+                } else {
+                    html += '<div class="status-box error"><h4>❌ Issues Found</h4><p>Calendar feature has configuration issues that need to be resolved.</p></div>';
+                }
+
+                html += '<div class="status-box info"><h4>🛠️ Next Steps</h4>';
+                html += '<ul>';
+                html += '<li>If tables are missing, run the complete_events_migration.sql script</li>';
+                html += '<li>If authentication issues, check your auth setup</li>';
+                html += '<li>If RLS issues, verify your database policies</li>';
+                html += '<li>Check browser console for any JavaScript errors</li>';
+                html += '<li>Verify your Supabase project settings</li>';
+                html += '</ul></div>';
+
+            } catch (err) {
+                html += `<div class="status-box error"><h3>❌ Diagnostics Failed</h3><p>Unexpected error: ${err.message}</p></div>`;
+            }
+
+            showResults(html);
+        }
+
+        // Auto-run basic diagnostics on page load
+        window.onload = function() {
+            document.getElementById('results').innerHTML = `
+                <div class="status-box info">
+                    <h3>🚀 Ready to Debug</h3>
+                    <p>Click "Run Full Diagnostics" to check your calendar setup, or use individual test buttons above.</p>
+                    <p><strong>What this tool checks:</strong></p>
+                    <ul>
+                        <li>Database connection and authentication</li>
+                        <li>Required tables (community_events, communities, etc.)</li>
+                        <li>Event creation permissions</li>
+                        <li>Row Level Security policies</li>
+                    </ul>
+                </div>
+            `;
+        };
+    </script>
+</body>
+</html>

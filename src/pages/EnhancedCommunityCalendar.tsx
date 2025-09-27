@@ -340,7 +340,7 @@ const EnhancedCommunityCalendar = () => {
                 <CardContent>
                   <div className="grid grid-cols-7 gap-2">
                     {weekDays.map(day => {
-                      const dayEvents = weekEvents.filter(event =>
+                      const dayEvents = (weekEvents || []).filter(event =>
                         format(parseISO(event.event_date), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
                       );
                       
@@ -604,7 +604,9 @@ const EnhancedCommunityCalendar = () => {
       <EnhancedEventForm
         isOpen={showEventForm}
         onClose={() => setShowEventForm(false)}
-        onSubmit={createEvent}
+        onSubmit={async (data) => {
+          await createEvent(data);
+        }}
         communityId={id || ''}
         categories={categories}
         onCreateCategory={createCategory}
