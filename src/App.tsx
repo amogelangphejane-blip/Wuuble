@@ -10,19 +10,15 @@ import Auth from '@/pages/Auth';
 import EnhancedCommunities from '@/pages/EnhancedCommunities';
 import SkoolStyleCommunityDetail from '@/pages/SkoolStyleCommunityDetail';
 import CommunityMembers from '@/pages/CommunityMembers';
-import CommunityCalendar from '@/pages/CommunityCalendar';
+import SimpleCommunityCalendar from '@/pages/SimpleCommunityCalendar';
 import CommunityClassroom from '@/pages/CommunityClassroom';
 import CommunityLeaderboard from '@/pages/CommunityLeaderboard';
 import CommunityLinksPage from '@/pages/CommunityLinksPage';
-import CommunityVideoChat from '@/pages/CommunityVideoChat';
 import CommunityDiscussions from '@/pages/CommunityDiscussions';
 import CommunityAbout from '@/pages/CommunityAbout';
 import CommunitySubscriptions from '@/pages/CommunitySubscriptions';
 import CommunityPaymentSettings from '@/pages/CommunityPaymentSettings';
 import Messages from '@/pages/Messages';
-import Chat from '@/pages/Chat';
-import RandomChat from '@/pages/RandomChat';
-import AzarLivestreams from '@/pages/AzarLivestreams';
 import ProfileSettings from '@/pages/ProfileSettings';
 import PaymentMethods from '@/pages/PaymentMethods';
 import { CreatorWallet } from '@/pages/CreatorWallet';
@@ -81,7 +77,7 @@ function App() {
               } />
               <Route path="/community/:id/calendar" element={
                 <ProtectedRoute>
-                  <CommunityCalendar />
+                  <SimpleCommunityCalendar />
                 </ProtectedRoute>
               } />
               <Route path="/community/:id/classroom" element={
@@ -104,11 +100,6 @@ function App() {
                   <CommunityLinksPage />
                 </ProtectedRoute>
               } />
-              <Route path="/community/:id/video-chat" element={
-                <ProtectedRoute>
-                  <CommunityVideoChat />
-                </ProtectedRoute>
-              } />
               <Route path="/community/:id/about" element={
                 <ProtectedRoute>
                   <CommunityAbout />
@@ -127,21 +118,6 @@ function App() {
               <Route path="/messages" element={
                 <ProtectedRoute>
                   <Messages />
-                </ProtectedRoute>
-              } />
-              <Route path="/chat" element={
-                <ProtectedRoute>
-                  <Chat />
-                </ProtectedRoute>
-              } />
-              <Route path="/random-chat" element={
-                <ProtectedRoute>
-                  <RandomChat />
-                </ProtectedRoute>
-              } />
-              <Route path="/azar-livestreams" element={
-                <ProtectedRoute>
-                  <AzarLivestreams />
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={

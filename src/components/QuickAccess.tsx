@@ -9,8 +9,8 @@ import {
   MessageSquare,
   Calendar,
   Users,
-  Phone,
-  Video,
+  BookOpen,
+  Trophy,
   Settings,
   ArrowRight,
   Activity
@@ -18,8 +18,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { validateAvatarUrl } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { WhatsAppVideoCall } from '@/components/WhatsAppVideoCall';
-import { useWhatsAppVideoCall } from '@/hooks/useWhatsAppVideoCall';
 
 
 interface QuickAccessProps {
@@ -35,21 +33,6 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  // WhatsApp-style video call state
-  const { callState, startCall, joinCall, minimizeCall, maximizeCall, endCall } = useWhatsAppVideoCall();
-  
-  // Debug logging
-  console.log('🎥 QuickAccess - WhatsApp call state:', callState);
-
-  // Start a random video chat with WhatsApp-style interface
-  const startRandomVideoChat = () => {
-    startCall({
-      communityId: 'random', // Special ID for random chats
-      contactName: 'Random Video Chat',
-      contactAvatar: undefined,
-    });
-  };
 
   if (!isMember) {
     return (
@@ -58,7 +41,7 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
           <Zap className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Join to access quick features</h3>
           <p className="text-muted-foreground">
-            Become a member to access community video chat and other quick features.
+            Become a member to access community discussions, events, and other features.
           </p>
         </CardContent>
       </Card>
@@ -77,26 +60,26 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
         <CardContent className="space-y-6">
           {/* Quick Action Buttons */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Random Video Chat */}
+            {/* Discussions */}
             <Button 
               size="lg" 
               variant="outline" 
               className="h-16 flex-col gap-2"
-              onClick={() => navigate('/random-chat')}
+              onClick={() => navigate(`/community/${communityId}`)}
             >
-              <Video className="w-6 h-6" />
-              <span>Random Chat</span>
+              <MessageSquare className="w-6 h-6" />
+              <span>Discussions</span>
             </Button>
             
-            {/* Community Video Chat */}
+            {/* Classroom */}
             <Button 
               size="lg" 
               variant="outline" 
               className="h-16 flex-col gap-2"
-              onClick={startRandomVideoChat}
+              onClick={() => navigate(`/community/${communityId}`)}
             >
-              <Phone className="w-6 h-6" />
-              <span>Community Call</span>
+              <BookOpen className="w-6 h-6" />
+              <span>Classroom</span>
             </Button>
           </div>
         </CardContent>
@@ -106,7 +89,7 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Quick Discussion */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(`/communities/${communityId}#discussion`)}>
+              onClick={() => navigate(`/community/${communityId}`)}>
           <CardContent className="p-6 text-center">
             <MessageSquare className="w-12 h-12 text-primary mx-auto mb-4" />
             <h4 className="font-semibold mb-2">Discussion</h4>
@@ -118,7 +101,7 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
 
         {/* Quick Calendar */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(`/communities/${communityId}/calendar`)}>
+              onClick={() => navigate(`/community/${communityId}`)}>
           <CardContent className="p-6 text-center">
             <Calendar className="w-12 h-12 text-primary mx-auto mb-4" />
             <h4 className="font-semibold mb-2">Events</h4>
@@ -130,12 +113,24 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
 
         {/* Quick Members */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(`/communities/${communityId}/members`)}>
+              onClick={() => navigate(`/community/${communityId}`)}>
           <CardContent className="p-6 text-center">
             <Users className="w-12 h-12 text-primary mx-auto mb-4" />
             <h4 className="font-semibold mb-2">Members</h4>
             <p className="text-sm text-muted-foreground">
               Connect with members
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Leaderboard */}
+        <Card className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => navigate(`/community/${communityId}`)}>
+          <CardContent className="p-6 text-center">
+            <Trophy className="w-12 h-12 text-primary mx-auto mb-4" />
+            <h4 className="font-semibold mb-2">Leaderboard</h4>
+            <p className="text-sm text-muted-foreground">
+              View top contributors
             </p>
           </CardContent>
         </Card>
@@ -149,29 +144,15 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
             <div>
               <h4 className="font-semibold mb-2">Quick Access Features</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Join random video chats with other users</li>
-                <li>• Quick navigation to discussions and events</li>
-                <li>• Real-time activity updates</li>
+                <li>• Participate in community discussions</li>
+                <li>• Quick navigation to classroom and events</li>
+                <li>• View leaderboard and achievements</li>
                 <li>• Connect with community members</li>
               </ul>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* WhatsApp-style Video Call Component */}
-      {callState.isOpen && (
-        <WhatsAppVideoCall
-          communityId={callState.communityId!}
-          callId={callState.callId}
-          contactName={callState.contactName}
-          contactAvatar={callState.contactAvatar}
-          isMinimized={callState.isMinimized}
-          onClose={endCall}
-          onMinimize={minimizeCall}
-          onMaximize={maximizeCall}
-        />
-      )}
     </div>
   );
 };
