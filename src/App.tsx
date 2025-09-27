@@ -8,6 +8,7 @@ import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import EnhancedCommunities from '@/pages/EnhancedCommunities';
+import { CommunitiesFeatureFix } from '@/components/CommunitiesFeatureFix';
 import SkoolStyleCommunityDetail from '@/pages/SkoolStyleCommunityDetail';
 import CommunityMembers from '@/pages/CommunityMembers';
 import CommunityCalendar from '@/pages/CommunityCalendar';
@@ -67,7 +68,7 @@ function App() {
             {/* Protected routes */}
             <Route path="/communities" element={
               <ProtectedRoute>
-                <EnhancedCommunities />
+                <CommunitiesFeatureFix />
               </ProtectedRoute>
             } />
             <Route path="/community/:id" element={
