@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Creation Debug Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <style>
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 300px;
+            font-size: 12px;
+            z-index: 9999;
+        }
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-3xl font-bold mb-6">🔍 Event Creation Debug Tool</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+            <h2 class="text-xl font-semibold mb-4">Test Event Creation Flow</h2>
+            <p class="text-gray-600 mb-4">
+                This tool simulates the event creation process to identify where the issue occurs.
+            </p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button 
+                    id="testDialogBtn"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors"
+                    onclick="testDialogOpen()"
+                >
+                    🧪 Test Dialog Opening
+                </button>
+                
+                <button 
+                    id="testFormBtn"
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors"
+                    onclick="testFormSubmission()"
+                >
+                    📝 Test Form Submission
+                </button>
+                
+                <button 
+                    id="testAuthBtn"
+                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg transition-colors"
+                    onclick="testAuthentication()"
+                >
+                    🔐 Test Authentication
+                </button>
+                
+                <button 
+                    id="testComponentBtn"
+                    class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg transition-colors"
+                    onclick="testComponentRendering()"
+                >
+                    ⚛️ Test Component Rendering
+                </button>
+            </div>
+        </div>
+
+        <!-- Simulated Create Event Button -->
+        <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+            <h3 class="text-lg font-semibold mb-4">🎯 Simulate Create Event Button</h3>
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded border">
+                <div>
+                    <h4 class="font-medium">Community Calendar Header</h4>
+                    <p class="text-sm text-gray-600">This simulates the actual calendar page header</p>
+                </div>
+                <button 
+                    id="createEventBtn"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2 transition-colors"
+                    onclick="simulateCreateEventClick()"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Add Event
+                </button>
+            </div>
+        </div>
+
+        <!-- Mock Event Form -->
+        <div id="mockEventForm" class="bg-white p-6 rounded-lg shadow-lg hidden">
+            <h3 class="text-lg font-semibold mb-4">📝 Event Creation Form</h3>
+            <form id="eventForm" onsubmit="handleFormSubmit(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Event Title *</label>
+                        <input 
+                            type="text" 
+                            id="eventTitle"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            placeholder="Enter event title"
+                            required
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Event Date *</label>
+                        <input 
+                            type="date" 
+                            id="eventDate"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            required
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Description</label>
+                        <textarea 
+                            id="eventDescription"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 h-24"
+                            placeholder="Describe your event..."
+                        ></textarea>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button 
+                            type="button" 
+                            onclick="closeMockForm()"
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            type="submit"
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                        >
+                            Create Event
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results Area -->
+        <div id="results" class="bg-white p-6 rounded-lg shadow-sm">
+            <h3 class="text-lg font-semibold mb-4">📊 Test Results</h3>
+            <div id="testOutput" class="text-gray-600">
+                Click the test buttons above to diagnose the event creation issue.
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Panel -->
+    <div id="debugPanel" class="debug-panel">
+        <div class="font-semibold mb-2">🔍 Debug Log</div>
+        <div id="debugLog" class="max-h-48 overflow-y-auto">
+            <div class="log-entry">Debug tool loaded</div>
+        </div>
+        <button 
+            onclick="clearDebugLog()" 
+            class="mt-2 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs"
+        >
+            Clear
+        </button>
+    </div>
+
+    <script>
+        let debugLog = ['Debug tool loaded'];
+        
+        function addDebugLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `${timestamp}: ${message}`;
+            debugLog.push(logMessage);
+            console.log('🔍', logMessage);
+            updateDebugPanel();
+        }
+        
+        function updateDebugPanel() {
+            const panel = document.getElementById('debugLog');
+            panel.innerHTML = debugLog.slice(-10).map(log => 
+                `<div class="log-entry">${log}</div>`
+            ).join('');
+            panel.scrollTop = panel.scrollHeight;
+        }
+        
+        function clearDebugLog() {
+            debugLog = ['Debug log cleared'];
+            updateDebugPanel();
+        }
+        
+        function updateResults(html) {
+            document.getElementById('testOutput').innerHTML = html;
+        }
+
+        function testDialogOpen() {
+            addDebugLog('Testing dialog opening mechanism');
+            
+            let results = '<h4 class="font-semibold text-green-600">✅ Dialog Opening Test</h4>';
+            
+            // Test 1: Check if dialog elements exist
+            const dialog = document.querySelector('[role="dialog"]');
+            if (dialog) {
+                results += '<p>✅ Dialog element found in DOM</p>';
+            } else {
+                results += '<p>❌ No dialog element found</p>';
+            }
+            
+            // Test 2: Check if React is loaded
+            if (typeof React !== 'undefined') {
+                results += '<p>✅ React is loaded</p>';
+            } else {
+                results += '<p>❌ React not found</p>';
+            }
+            
+            // Test 3: Test modal state simulation
+            const mockForm = document.getElementById('mockEventForm');
+            if (mockForm.classList.contains('hidden')) {
+                mockForm.classList.remove('hidden');
+                results += '<p>✅ Mock dialog opened successfully</p>';
+                addDebugLog('Mock dialog opened');
+            } else {
+                mockForm.classList.add('hidden');
+                results += '<p>✅ Mock dialog closed</p>';
+                addDebugLog('Mock dialog closed');
+            }
+            
+            results += '<div class="mt-4 p-3 bg-blue-50 rounded"><strong>💡 Recommendation:</strong> If the mock dialog works but the real one doesn\'t, the issue is likely with React component state management or dialog library configuration.</div>';
+            
+            updateResults(results);
+        }
+
+        function testFormSubmission() {
+            addDebugLog('Testing form submission process');
+            
+            let results = '<h4 class="font-semibold text-green-600">✅ Form Submission Test</h4>';
+            
+            // Test form validation
+            const titleInput = document.getElementById('eventTitle');
+            const dateInput = document.getElementById('eventDate');
+            
+            if (titleInput && dateInput) {
+                results += '<p>✅ Form inputs are accessible</p>';
+                
+                // Fill with test data
+                titleInput.value = 'Test Event';
+                dateInput.value = new Date().toISOString().split('T')[0];
+                
+                results += '<p>✅ Form filled with test data</p>';
+                results += '<p>📝 Title: "Test Event"</p>';
+                results += `<p>📅 Date: ${dateInput.value}</p>`;
+            } else {
+                results += '<p>❌ Form inputs not found</p>';
+            }
+            
+            results += '<div class="mt-4 p-3 bg-green-50 rounded"><strong>💡 Next Step:</strong> Try submitting the form above to test the complete flow.</div>';
+            
+            updateResults(results);
+        }
+
+        function testAuthentication() {
+            addDebugLog('Testing authentication state');
+            
+            let results = '<h4 class="font-semibold text-green-600">✅ Authentication Test</h4>';
+            
+            // Check localStorage for auth tokens
+            const hasLocalStorage = typeof(Storage) !== "undefined";
+            if (hasLocalStorage) {
+                results += '<p>✅ Local storage is available</p>';
+                
+                const authKeys = Object.keys(localStorage).filter(key => 
+                    key.includes('supabase') || key.includes('auth') || key.includes('token')
+                );
+                
+                if (authKeys.length > 0) {
+                    results += `<p>✅ Found ${authKeys.length} potential auth keys</p>`;
+                    results += `<p class="text-xs text-gray-600">Keys: ${authKeys.join(', ')}</p>`;
+                } else {
+                    results += '<p>⚠️ No auth keys found in localStorage</p>';
+                }
+            } else {
+                results += '<p>❌ Local storage not available</p>';
+            }
+            
+            // Check cookies
+            if (document.cookie) {
+                results += '<p>✅ Cookies are available</p>';
+            } else {
+                results += '<p>⚠️ No cookies found</p>';
+            }
+            
+            results += '<div class="mt-4 p-3 bg-purple-50 rounded"><strong>💡 Note:</strong> If no auth data is found, the user may not be logged in, which could prevent event creation.</div>';
+            
+            updateResults(results);
+        }
+
+        function testComponentRendering() {
+            addDebugLog('Testing component rendering capabilities');
+            
+            let results = '<h4 class="font-semibold text-green-600">✅ Component Rendering Test</h4>';
+            
+            // Test JavaScript execution
+            try {
+                const testVar = 'test';
+                eval('const x = 1 + 1;');
+                results += '<p>✅ JavaScript execution works</p>';
+            } catch (err) {
+                results += `<p>❌ JavaScript execution error: ${err.message}</p>';
+            }
+            
+            // Test DOM manipulation
+            try {
+                const testDiv = document.createElement('div');
+                testDiv.innerHTML = '<span>Test</span>';
+                results += '<p>✅ DOM manipulation works</p>';
+            } catch (err) {
+                results += `<p>❌ DOM manipulation error: ${err.message}</p>`;
+            }
+            
+            // Test event listeners
+            try {
+                const testBtn = document.createElement('button');
+                testBtn.addEventListener('click', () => {});
+                results += '<p>✅ Event listeners work</p>';
+            } catch (err) {
+                results += `<p>❌ Event listener error: ${err.message}</p>`;
+            }
+            
+            // Check for common issues
+            const hasConsoleErrors = window.console && typeof window.console.error === 'function';
+            if (hasConsoleErrors) {
+                results += '<p>✅ Console is available for error reporting</p>';
+            }
+            
+            results += '<div class="mt-4 p-3 bg-orange-50 rounded"><strong>💡 Suggestion:</strong> If these basic tests pass but React components still don\'t work, check the browser console for React-specific errors.</div>';
+            
+            updateResults(results);
+        }
+
+        function simulateCreateEventClick() {
+            addDebugLog('🚨 CREATE EVENT BUTTON SIMULATION');
+            
+            // Simulate the click process
+            const btn = document.getElementById('createEventBtn');
+            btn.style.backgroundColor = '#1d4ed8';
+            btn.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                btn.style.backgroundColor = '#2563eb';
+                btn.style.transform = 'scale(1)';
+                
+                // Show mock form
+                const mockForm = document.getElementById('mockEventForm');
+                mockForm.classList.remove('hidden');
+                
+                addDebugLog('Mock form opened successfully');
+                
+                updateResults(`
+                    <h4 class="font-semibold text-green-600">✅ Button Click Simulation</h4>
+                    <p>✅ Button click event triggered</p>
+                    <p>✅ Visual feedback working</p>
+                    <p>✅ Mock form opened</p>
+                    <div class="mt-4 p-3 bg-green-50 rounded">
+                        <strong>💡 Analysis:</strong> If this simulation works but the real button doesn't, 
+                        the issue is likely with:
+                        <ul class="list-disc list-inside mt-2 text-sm">
+                            <li>React state management</li>
+                            <li>Component re-rendering issues</li>
+                            <li>Dialog component configuration</li>
+                            <li>Event handler binding</li>
+                        </ul>
+                    </div>
+                `);
+            }, 100);
+        }
+
+        function closeMockForm() {
+            addDebugLog('Mock form close requested');
+            document.getElementById('mockEventForm').classList.add('hidden');
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            addDebugLog('Mock form submitted');
+            
+            const title = document.getElementById('eventTitle').value;
+            const date = document.getElementById('eventDate').value;
+            const description = document.getElementById('eventDescription').value;
+            
+            updateResults(`
+                <h4 class="font-semibold text-green-600">✅ Form Submission Test</h4>
+                <p>✅ Form submitted successfully</p>
+                <div class="mt-2 p-3 bg-gray-50 rounded">
+                    <strong>Form Data:</strong><br>
+                    Title: ${title || 'Empty'}<br>
+                    Date: ${date || 'Not selected'}<br>
+                    Description: ${description || 'Empty'}
+                </div>
+                <div class="mt-4 p-3 bg-green-50 rounded">
+                    <strong>💡 Success:</strong> The form submission mechanism works properly. 
+                    If the real form doesn't submit, check for validation errors or API issues.
+                </div>
+            `);
+            
+            closeMockForm();
+        }
+
+        // Common debugging functions
+        function checkReactComponents() {
+            addDebugLog('Checking React component health');
+            
+            // This would normally check React components, but since this is a static page,
+            // we'll simulate the checks
+            const checks = [
+                'React DOM is available',
+                'Component state management works',
+                'Event handlers are properly bound',
+                'Dialog component is functional'
+            ];
+            
+            return checks;
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            addDebugLog('Page loaded successfully');
+            addDebugLog('Debug tool ready for testing');
+            
+            // Check for common issues
+            if (!document.querySelector) {
+                addDebugLog('⚠️ querySelector not available');
+            }
+            
+            if (!window.addEventListener) {
+                addDebugLog('⚠️ addEventListener not available');
+            }
+            
+            updateResults(`
+                <h4 class="font-semibold text-blue-600">🔍 Debug Tool Ready</h4>
+                <p>Use the test buttons above to diagnose the event creation issue.</p>
+                <div class="mt-4 p-3 bg-blue-50 rounded">
+                    <strong>Common Issues to Check:</strong>
+                    <ul class="list-disc list-inside mt-2 text-sm">
+                        <li>React component state not updating</li>
+                        <li>Dialog component not rendering</li>
+                        <li>Event handlers not firing</li>
+                        <li>Authentication issues preventing form access</li>
+                        <li>JavaScript errors preventing execution</li>
+                    </ul>
+                </div>
+            `);
+        });
+
+        // Error handling
+        window.addEventListener('error', (e) => {
+            addDebugLog(`❌ JavaScript error: ${e.message}`);
+        });
+    </script>
+</body>
+</html>

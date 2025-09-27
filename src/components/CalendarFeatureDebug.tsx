@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Calendar, Plus, Clock, MapPin, Users, AlertTriangle, CheckCircle } from 'lucide-react';
 import { EventForm } from '@/components/EventForm';
-import { EventCreationFix } from '@/components/EventCreationFix';
+import { EventFormDebug } from '@/components/EventFormDebug';
 import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -38,7 +38,7 @@ interface CommunityEvent {
   updated_at: string;
 }
 
-export const CalendarFeatureFix = () => {
+export const CalendarFeatureDebug = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -48,18 +48,28 @@ export const CalendarFeatureFix = () => {
   const [events, setEvents] = useState<CommunityEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [eventsLoading, setEventsLoading] = useState(false);
-  // Removed showEventForm state - using EventCreationFix component instead
+  const [showEventForm, setShowEventForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
+
+  // Debug function to track interactions
+  const addDebugInfo = (message: string) => {
+    console.log('🔍 Debug:', message);
+    setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
 
   useEffect(() => {
+    addDebugInfo('Component mounted');
     if (!authLoading && !user) {
+      addDebugInfo('No user found, redirecting to auth');
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (user && id) {
+      addDebugInfo(`User ${user.id} loading community ${id}`);
       fetchCommunityDetails();
       fetchEvents();
     }
@@ -69,9 +79,9 @@ export const CalendarFeatureFix = () => {
     if (!id || !user) return;
 
     try {
+      addDebugInfo('Fetching community details...');
       setError(null);
       
-      // Try to fetch community details directly first
       let communityData = null;
       let communityError = null;
 
@@ -84,12 +94,12 @@ export const CalendarFeatureFix = () => {
         
         communityData = result.data;
         communityError = result.error;
+        addDebugInfo(`Direct community fetch: ${communityError ? 'failed' : 'success'}`);
       } catch (err) {
-        console.log('Direct community fetch failed, trying through membership...');
+        addDebugInfo('Direct community fetch failed, trying membership...');
         communityError = err;
       }
 
-      // If we can't access the community directly, try through membership
       if (communityError || !communityData) {
         try {
           const { data: membershipData, error: memberError } = await supabase
@@ -103,27 +113,30 @@ export const CalendarFeatureFix = () => {
             .single();
 
           if (memberError) {
-            console.error('Membership fetch error:', memberError);
+            addDebugInfo(`Membership fetch error: ${memberError.message}`);
             setError('Unable to access this community. You may not be a member.');
             return;
           }
 
           if (membershipData?.communities) {
             communityData = membershipData.communities as Community;
+            addDebugInfo('Community access via membership: success');
           } else {
+            addDebugInfo('No community access found');
             setError('Community not found or you do not have access.');
             return;
           }
-        } catch (membershipErr) {
-          console.error('Membership check failed:', membershipErr);
+        } catch (membershipErr: any) {
+          addDebugInfo(`Membership check failed: ${membershipErr.message}`);
           setError('Failed to verify community membership.');
           return;
         }
       }
 
       setCommunity(communityData);
-    } catch (error) {
-      console.error('Error fetching community details:', error);
+      addDebugInfo(`Community loaded: ${communityData.name}`);
+    } catch (error: any) {
+      addDebugInfo(`Unexpected error: ${error.message}`);
       setError('An unexpected error occurred while loading the community.');
     } finally {
       setLoading(false);
@@ -134,6 +147,7 @@ export const CalendarFeatureFix = () => {
     if (!id) return;
 
     try {
+      addDebugInfo('Fetching events...');
       setEventsLoading(true);
       setError(null);
       
@@ -144,44 +158,78 @@ export const CalendarFeatureFix = () => {
         .order('event_date', { ascending: true });
 
       if (error) {
-        console.error('Error fetching events:', error);
+        addDebugInfo(`Events fetch error: ${error.message}`);
         setError('Failed to load events. Please try refreshing the page.');
         return;
       }
 
       setEvents(eventsData || []);
-    } catch (error) {
-      console.error('Error fetching events:', error);
+      addDebugInfo(`Events loaded: ${(eventsData || []).length} events`);
+    } catch (error: any) {
+      addDebugInfo(`Events fetch unexpected error: ${error.message}`);
       setError('An unexpected error occurred while loading events.');
     } finally {
       setEventsLoading(false);
     }
   };
 
+  const handleCreateEventClick = () => {
+    addDebugInfo('Create Event button clicked!');
+    addDebugInfo(`Current showEventForm state: ${showEventForm}`);
+    
+    if (!user) {
+      addDebugInfo('No user - redirecting to auth');
+      navigate('/auth');
+      return;
+    }
+
+    if (!community) {
+      addDebugInfo('No community loaded yet');
+      toast({
+        title: "Error",
+        description: "Please wait for the community to load before creating events.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addDebugInfo('Setting showEventForm to true');
+    setShowEventForm(true);
+    addDebugInfo(`showEventForm state after setting: ${!showEventForm}`); // This will show the previous state due to React's async nature
+  };
+
   const handleCreateEvent = async (eventData: any) => {
-    if (!id || !user) return;
+    if (!id || !user) {
+      addDebugInfo('Missing id or user for event creation');
+      return;
+    }
 
     try {
+      addDebugInfo('Creating event...');
       setEventsLoading(true);
       setError(null);
       
+      const eventPayload = {
+        community_id: id,
+        user_id: user.id,
+        title: eventData.title,
+        description: eventData.description,
+        event_date: format(eventData.eventDate, 'yyyy-MM-dd'),
+        start_time: eventData.startTime,
+        end_time: eventData.endTime,
+        location: eventData.location,
+        is_virtual: eventData.isVirtual,
+        max_attendees: eventData.maxAttendees,
+      };
+
+      addDebugInfo(`Event payload: ${JSON.stringify(eventPayload)}`);
+
       const { error } = await supabase
         .from('community_events')
-        .insert({
-          community_id: id,
-          user_id: user.id,
-          title: eventData.title,
-          description: eventData.description,
-          event_date: format(eventData.eventDate, 'yyyy-MM-dd'),
-          start_time: eventData.startTime,
-          end_time: eventData.endTime,
-          location: eventData.location,
-          is_virtual: eventData.isVirtual,
-          max_attendees: eventData.maxAttendees,
-        });
+        .insert(eventPayload);
 
       if (error) {
-        console.error('Error creating event:', error);
+        addDebugInfo(`Event creation error: ${error.message}`);
         toast({
           title: "Error",
           description: "Failed to create event. Please try again.",
@@ -190,15 +238,16 @@ export const CalendarFeatureFix = () => {
         return;
       }
 
+      addDebugInfo('Event created successfully!');
       toast({
         title: "Success",
         description: "Event created successfully!",
       });
 
-      // Refresh events after creation
+      setShowEventForm(false);
       await fetchEvents();
-    } catch (error) {
-      console.error('Error creating event:', error);
+    } catch (error: any) {
+      addDebugInfo(`Event creation unexpected error: ${error.message}`);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
@@ -207,6 +256,12 @@ export const CalendarFeatureFix = () => {
     } finally {
       setEventsLoading(false);
     }
+  };
+
+  const handleCloseEventForm = () => {
+    addDebugInfo('Event form close requested');
+    setShowEventForm(false);
+    addDebugInfo('Event form closed');
   };
 
   if (loading) {
@@ -261,6 +316,36 @@ export const CalendarFeatureFix = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Debug Panel */}
+      <div className="bg-yellow-50 border-b border-yellow-200 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-yellow-800">🔍 Debug Mode - Event Creation</h3>
+              <p className="text-sm text-yellow-700">
+                User: {user?.email || 'Not logged in'} | 
+                Community: {community?.name || 'None'} | 
+                Form Open: {showEventForm ? 'Yes' : 'No'}
+              </p>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setDebugInfo([])}
+            >
+              Clear Debug
+            </Button>
+          </div>
+          {debugInfo.length > 0 && (
+            <div className="mt-3 bg-white p-3 rounded text-xs max-h-32 overflow-y-auto">
+              {debugInfo.map((info, i) => (
+                <div key={i} className="text-gray-700">{info}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
@@ -275,16 +360,20 @@ export const CalendarFeatureFix = () => {
               </button>
             </div>
             <div className="flex items-center gap-3">
-              <EventCreationFix 
-                communityId={id || ''}
-                onEventCreated={() => {
-                  fetchEvents();
-                  toast({
-                    title: "Success",
-                    description: "Event created successfully!",
-                  });
+              <div className="text-xs text-gray-500">
+                Debug: Form {showEventForm ? 'Open' : 'Closed'}
+              </div>
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => {
+                  addDebugInfo('🚨 CREATE EVENT BUTTON CLICKED');
+                  handleCreateEventClick();
                 }}
-              />
+                disabled={eventsLoading}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Event (Debug)
+              </Button>
             </div>
           </div>
         </div>
@@ -296,22 +385,55 @@ export const CalendarFeatureFix = () => {
           <div className="flex items-center gap-3 mb-4">
             <Calendar className="h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Calendar (Debug Mode)</h1>
               <p className="text-gray-600">
-                Stay up to date with all {community.name} events and activities.
+                Testing event creation functionality for {community.name}
               </p>
             </div>
           </div>
 
-          {/* Success message if events loaded */}
-          {!eventsLoading && events.length > 0 && (
-            <Alert className="mb-6">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>
-                Calendar loaded successfully with {events.length} event{events.length !== 1 ? 's' : ''}.
-              </AlertDescription>
-            </Alert>
-          )}
+          {/* Debug Status */}
+          <Alert className="mb-6">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Debug Status:</strong> Calendar loaded successfully. 
+              Click "Add Event (Debug)" to test event creation functionality.
+              Watch the debug panel above for real-time information.
+            </AlertDescription>
+          </Alert>
+        </div>
+
+        {/* Test Buttons */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Button 
+            variant="outline"
+            onClick={() => {
+              addDebugInfo('Test button 1: Direct state toggle');
+              setShowEventForm(!showEventForm);
+            }}
+          >
+            Test: Toggle Form State
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => {
+              addDebugInfo('Test button 2: Force open form');
+              setShowEventForm(true);
+            }}
+          >
+            Test: Force Open Form
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => {
+              addDebugInfo('Test button 3: Check component state');
+              addDebugInfo(`showEventForm: ${showEventForm}`);
+              addDebugInfo(`user: ${user ? 'logged in' : 'not logged in'}`);
+              addDebugInfo(`community: ${community ? 'loaded' : 'not loaded'}`);
+            }}
+          >
+            Test: Check State
+          </Button>
         </div>
 
         {/* Calendar Grid */}
@@ -339,12 +461,15 @@ export const CalendarFeatureFix = () => {
                         <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p className="text-lg font-medium mb-2">No events scheduled yet</p>
                         <p className="text-sm mb-4">Create your first event to get started!</p>
-                        <EventCreationFix 
-                          communityId={id || ''}
-                          onEventCreated={() => {
-                            fetchEvents();
+                        <Button 
+                          onClick={() => {
+                            addDebugInfo('Empty state create button clicked');
+                            handleCreateEventClick();
                           }}
-                        />
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Event
+                        </Button>
                       </div>
                     ) : (
                       events
@@ -408,23 +533,43 @@ export const CalendarFeatureFix = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Debug Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">🔍 Debug Info</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div>User ID: {user?.id?.slice(0, 8) || 'None'}...</div>
+                <div>Community ID: {id?.slice(0, 8) || 'None'}...</div>
+                <div>Events Count: {events.length}</div>
+                <div>Form State: {showEventForm ? '🟢 Open' : '🔴 Closed'}</div>
+                <div>Loading: {eventsLoading ? '🟡 Yes' : '🟢 No'}</div>
+              </CardContent>
+            </Card>
+
             {/* Quick Actions */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <EventCreationFix 
-                  communityId={id || ''}
-                  onEventCreated={() => {
-                    fetchEvents();
-                  }}
-                  className="w-full"
-                />
                 <Button 
                   variant="outline" 
                   className="w-full justify-start"
                   onClick={() => {
+                    addDebugInfo('Sidebar create event button clicked');
+                    handleCreateEventClick();
+                  }}
+                  disabled={eventsLoading}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Event
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => {
+                    addDebugInfo('Refresh button clicked');
                     setSelectedDate(undefined);
                     fetchEvents();
                   }}
@@ -453,36 +598,28 @@ export const CalendarFeatureFix = () => {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Feature Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Calendar Features</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Create and manage events</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Virtual and in-person events</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Attendee limits and tracking</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Time and location details</span>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
 
-      {/* Event creation now handled by EventCreationFix components above */}
+      {/* Event Form Modal with Debug */}
+      <EventFormDebug
+        isOpen={showEventForm}
+        onClose={() => {
+          addDebugInfo('Event form onClose called');
+          handleCloseEventForm();
+        }}
+        onSubmit={handleCreateEvent}
+        communityId={id || ''}
+        isLoading={eventsLoading}
+      />
+
+      {/* Debug Overlay */}
+      {showEventForm && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-3 py-1 rounded text-sm z-[9999]">
+          ✅ Event Form is Open
+        </div>
+      )}
     </div>
   );
 };

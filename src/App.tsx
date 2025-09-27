@@ -13,6 +13,7 @@ import SkoolStyleCommunityDetail from '@/pages/SkoolStyleCommunityDetail';
 import CommunityMembers from '@/pages/CommunityMembers';
 import CommunityCalendar from '@/pages/CommunityCalendar';
 import { CalendarFeatureFix } from '@/components/CalendarFeatureFix';
+import { CalendarFeatureDebug } from '@/components/CalendarFeatureDebug';
 import CommunityClassroom from '@/pages/CommunityClassroom';
 import CommunityLeaderboard from '@/pages/CommunityLeaderboard';
 import CommunityLinksPage from '@/pages/CommunityLinksPage';
