@@ -103,35 +103,53 @@ const getUserDisplayName = (user: User): string => {
          'Anonymous';
 };
 
-const getUserAvatarUrl = (user: User | any): string => {
-  // Debug log to see what data we have
-  if (typeof window !== 'undefined') {
-    console.log('User avatar data:', {
-      id: user?.id,
-      email: user?.email,
-      user_metadata: user?.user_metadata,
-      avatar_url: user?.avatar_url,
-      picture: user?.user_metadata?.picture,
-      avatar_url_metadata: user?.user_metadata?.avatar_url
-    });
+const getUserAvatarUrl = (userObj: User | any, currentAuthUser?: any): string => {
+  // Check if this is the current authenticated user
+  const isCurrentUser = currentAuthUser && userObj?.id === currentAuthUser?.id;
+  
+  if (isCurrentUser) {
+    console.log('👤 Processing current authenticated user avatar');
+    console.log('🔍 Auth user data:', currentAuthUser);
+    
+    // Try all possible avatar sources for authenticated user
+    const possibleAvatars = [
+      currentAuthUser?.user_metadata?.avatar_url,
+      currentAuthUser?.user_metadata?.picture, 
+      currentAuthUser?.identities?.[0]?.identity_data?.avatar_url,
+      currentAuthUser?.identities?.[0]?.identity_data?.picture,
+      currentAuthUser?.user_metadata?.image_url,
+      currentAuthUser?.picture,
+      currentAuthUser?.avatar_url
+    ].filter(Boolean);
+    
+    console.log('🖼️ Found possible avatars:', possibleAvatars);
+    
+    if (possibleAvatars.length > 0) {
+      const selectedAvatar = possibleAvatars[0];
+      console.log('✅ Using avatar for current user:', selectedAvatar);
+      return selectedAvatar;
+    }
+    
+    // If no real avatar found, create a personalized placeholder
+    const displayName = getUserDisplayName(currentAuthUser);
+    const placeholderUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=6366f1&color=ffffff&size=150&bold=true&rounded=true`;
+    console.log('🎭 Using placeholder for current user:', placeholderUrl);
+    return placeholderUrl;
   }
   
-  // Priority order for avatar URL
-  const avatarUrl = 
-    user?.user_metadata?.avatar_url ||      // Supabase user_metadata.avatar_url
-    user?.user_metadata?.picture ||         // Auth provider picture (Google, etc.)
-    user?.avatar_url ||                     // Direct avatar_url property
-    user?.user_metadata?.image_url ||       // Some providers use image_url
-    user?.picture;                          // Some auth systems use direct picture
+  // For other users (like mock data users)
+  const otherUserAvatar = 
+    userObj?.user_metadata?.avatar_url ||
+    userObj?.user_metadata?.picture ||
+    userObj?.avatar_url ||
+    userObj?.picture;
   
-  // Only use default if no avatar found
-  if (!avatarUrl) {
-    console.log('No avatar found for user, using default');
-    return getDefaultAvatarUrl(user?.id);
+  if (otherUserAvatar) {
+    return otherUserAvatar;
   }
   
-  console.log('Using avatar URL:', avatarUrl);
-  return avatarUrl;
+  // Use default photos for mock users
+  return getDefaultAvatarUrl(userObj?.id);
 };
 
 const getDefaultAvatarUrl = (userId?: string): string => {
@@ -162,6 +180,19 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Debug current user data
+  useEffect(() => {
+    if (user) {
+      console.log('🔍 Current authenticated user:', {
+        id: user.id,
+        email: user.email,
+        user_metadata: user.user_metadata,
+        identities: user.identities,
+        app_metadata: user.app_metadata
+      });
+    }
+  }, [user]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,6 +220,24 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
   useEffect(() => {
     fetchPosts();
   }, [communityId, sortBy]);
+
+  // Refresh user data to ensure we have the latest profile info
+  useEffect(() => {
+    const refreshUserData = async () => {
+      if (user) {
+        try {
+          const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+          if (refreshedUser) {
+            console.log('🔄 Refreshed user data:', refreshedUser);
+          }
+        } catch (error) {
+          console.error('Error refreshing user data:', error);
+        }
+      }
+    };
+    
+    refreshUserData();
+  }, [user?.id]);
 
   const fetchPosts = async () => {
     try {
@@ -668,7 +717,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
               <Avatar className="w-12 h-12 ring-2 ring-gray-100 dark:ring-gray-800">
-                <AvatarImage src={getUserAvatarUrl(post.user)} className="object-cover" />
+                <AvatarImage src={getUserAvatarUrl(post.user, user)} className="object-cover" />
               </Avatar>
               
               <div className="flex-1">
@@ -850,7 +899,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 {post.comments?.map((comment) => (
                   <div key={comment.id} className="flex gap-3">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={getUserAvatarUrl(comment.user)} className="object-cover" />
+                      <AvatarImage src={getUserAvatarUrl(comment.user, user)} className="object-cover" />
                     </Avatar>
                     <div className="flex-1">
                       <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl px-4 py-3">
@@ -871,7 +920,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 {user && (
                   <div className="flex gap-3 mt-4">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={getUserAvatarUrl(user)} className="object-cover" />
+                      <AvatarImage src={getUserAvatarUrl(user, user)} className="object-cover" />
                     </Avatar>
                     <div className="flex-1 flex gap-2">
                       <Input
@@ -968,7 +1017,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src={getUserAvatarUrl(user)} className="object-cover" />
+                      <AvatarImage src={getUserAvatarUrl(user, user)} className="object-cover" />
                     </Avatar>
                     <div>
                       <p className="font-medium text-gray-900 dark:text-gray-100">
