@@ -126,7 +126,18 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
         const userProfiles = new Map<string, UserProfile>();
         
         for (const userId of userIds) {
-          const profile = await getUserProfile(userId);
+          let profile = await getUserProfile(userId);
+          
+          // If no profile or profile has no display_name, try to fix it
+          if (!profile) {
+            profile = await ensureUserProfile(userId);
+          }
+          
+          if (profile && (!profile.display_name || profile.display_name.trim() === '')) {
+            // For now, set a placeholder - we'll fix this with SQL or server-side function
+            console.warn(`Profile ${userId} has empty display_name, needs manual fix`);
+          }
+          
           if (profile) {
             userProfiles.set(userId, profile);
           }
