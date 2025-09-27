@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, User, Camera } from 'lucide-react';
 import { ProfilePictureUpload } from '@/components/ProfilePictureUpload';
+import { clearProfileCache } from '@/utils/profileUtils';
 
 interface UserProfile {
   user_id: string;
@@ -118,6 +119,9 @@ const ProfileSettings = () => {
         bio: bio.trim() || null,
         updated_at: new Date().toISOString()
       });
+
+      // Clear profile cache to ensure fresh data is used in discussions
+      clearProfileCache(user.id);
 
       toast({
         title: "Success",

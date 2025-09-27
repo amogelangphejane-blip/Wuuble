@@ -23,7 +23,7 @@ import {
   Share2,
   Send
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, validateAvatarUrl } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -346,7 +346,7 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
             <Card key={post.id} className="p-6 hover:shadow-lg transition-shadow">
               <div className="flex gap-4">
                 <Avatar className="w-10 h-10">
-                  <AvatarImage src={post.user?.avatar_url} />
+                  <AvatarImage src={validateAvatarUrl(post.user?.avatar_url)} />
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                     {getUserInitials(post)}
                   </AvatarFallback>

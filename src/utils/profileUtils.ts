@@ -111,7 +111,14 @@ export function getUserDisplayName(user: any, profile?: UserProfile | null): str
 
 export function getUserAvatar(user: any, profile?: UserProfile | null): string | null {
   // Priority: profile avatar_url > auth avatar_url
-  return profile?.avatar_url || user?.user_metadata?.avatar_url || null;
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || null;
+  
+  // Validate the URL to ensure it's properly formatted
+  if (!avatarUrl || typeof avatarUrl !== 'string' || avatarUrl.trim() === '') {
+    return null;
+  }
+  
+  return avatarUrl.trim();
 }
 
 export function getUserInitials(displayName: string): string {

@@ -33,7 +33,7 @@ import {
   Clock,
   Filter
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, validateAvatarUrl } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   getUserDisplayName, 
@@ -438,7 +438,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
               <Avatar className="w-10 h-10">
-                <AvatarImage src={post.user.avatar_url} />
+                <AvatarImage src={validateAvatarUrl(post.user.avatar_url)} />
                 <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
                   {getUserInitials(getUserDisplayName(null, post.user))}
                 </AvatarFallback>
@@ -545,7 +545,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
                 {post.comments?.map((comment) => (
                   <div key={comment.id} className="flex gap-3">
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={comment.user.avatar_url} />
+                      <AvatarImage src={validateAvatarUrl(comment.user.avatar_url)} />
                       <AvatarFallback className="text-xs">
                         {getUserInitials(getUserDisplayName(null, comment.user))}
                       </AvatarFallback>
