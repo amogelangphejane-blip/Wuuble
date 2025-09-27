@@ -24,7 +24,7 @@ import {
   BookOpen,
   AlertTriangle,
   CheckCircle,
-  Refresh,
+  RotateCcw,
   Grid3X3,
   List,
   Crown,
@@ -442,7 +442,7 @@ export const CommunitiesFeatureFix = () => {
           onClick={handleRetry}
           className="ml-4"
         >
-          <Refresh className="w-4 h-4 mr-2" />
+          <RotateCcw className="w-4 h-4 mr-2" />
           Retry
         </Button>
       </AlertDescription>
