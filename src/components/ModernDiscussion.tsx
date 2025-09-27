@@ -103,12 +103,35 @@ const getUserDisplayName = (user: User): string => {
          'Anonymous';
 };
 
-const getUserAvatarUrl = (user: User): string => {
-  // Priority: user_metadata.avatar_url > user_metadata.picture > avatar_url > default
-  return user.user_metadata?.avatar_url ||
-         user.user_metadata?.picture ||
-         user.avatar_url ||
-         getDefaultAvatarUrl(user.id);
+const getUserAvatarUrl = (user: User | any): string => {
+  // Debug log to see what data we have
+  if (typeof window !== 'undefined') {
+    console.log('User avatar data:', {
+      id: user?.id,
+      email: user?.email,
+      user_metadata: user?.user_metadata,
+      avatar_url: user?.avatar_url,
+      picture: user?.user_metadata?.picture,
+      avatar_url_metadata: user?.user_metadata?.avatar_url
+    });
+  }
+  
+  // Priority order for avatar URL
+  const avatarUrl = 
+    user?.user_metadata?.avatar_url ||      // Supabase user_metadata.avatar_url
+    user?.user_metadata?.picture ||         // Auth provider picture (Google, etc.)
+    user?.avatar_url ||                     // Direct avatar_url property
+    user?.user_metadata?.image_url ||       // Some providers use image_url
+    user?.picture;                          // Some auth systems use direct picture
+  
+  // Only use default if no avatar found
+  if (!avatarUrl) {
+    console.log('No avatar found for user, using default');
+    return getDefaultAvatarUrl(user?.id);
+  }
+  
+  console.log('Using avatar URL:', avatarUrl);
+  return avatarUrl;
 };
 
 const getDefaultAvatarUrl = (userId?: string): string => {
