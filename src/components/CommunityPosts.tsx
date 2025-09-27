@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -165,6 +166,7 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   
   const { user } = useAuth();
+  const { profile } = useProfile();
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -825,12 +827,15 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
           <div className="flex gap-4">
             <Avatar className="h-10 w-10 ring-2 ring-primary/20 flex-shrink-0">
               <AvatarImage 
-                src={validateAvatarUrl(user?.user_metadata?.avatar_url)} 
+                src={validateAvatarUrl(profile?.avatar_url || user?.user_metadata?.avatar_url)} 
                 alt="You"
               />
               <AvatarFallback className="bg-primary/10 text-primary">
-                {user?.user_metadata?.display_name ? 
-                  getInitials(user.user_metadata.display_name) : 'U'}
+                {profile?.display_name ? 
+                  getInitials(profile.display_name) : 
+                  user?.user_metadata?.display_name ? 
+                    getInitials(user.user_metadata.display_name) : 
+                    user?.email ? getInitials(user.email.split('@')[0]) : 'U'}
               </AvatarFallback>
             </Avatar>
             
