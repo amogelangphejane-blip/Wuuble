@@ -11,6 +11,7 @@ import EnhancedCommunities from '@/pages/EnhancedCommunities';
 import SkoolStyleCommunityDetail from '@/pages/SkoolStyleCommunityDetail';
 import CommunityMembers from '@/pages/CommunityMembers';
 import CommunityCalendar from '@/pages/CommunityCalendar';
+import { CalendarFeatureFix } from '@/components/CalendarFeatureFix';
 import CommunityClassroom from '@/pages/CommunityClassroom';
 import CommunityLeaderboard from '@/pages/CommunityLeaderboard';
 import CommunityLinksPage from '@/pages/CommunityLinksPage';
@@ -81,7 +82,7 @@ function App() {
               } />
               <Route path="/community/:id/calendar" element={
                 <ProtectedRoute>
-                  <CommunityCalendar />
+                  <CalendarFeatureFix />
                 </ProtectedRoute>
               } />
               <Route path="/community/:id/classroom" element={
