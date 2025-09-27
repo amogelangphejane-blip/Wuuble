@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { clearProfileCache } from '@/utils/profileUtils';
 import { Upload, X, User } from 'lucide-react';
 import { validateAvatarUrl } from '@/lib/utils';
 
@@ -122,6 +123,9 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
         }
       }
 
+      // Clear profile cache to ensure fresh data is used
+      clearProfileCache(user.id);
+      
       onAvatarUpdate(publicUrl);
       setPreviewUrl(null);
       setSelectedFile(null);
@@ -176,6 +180,9 @@ export const ProfilePictureUpload = ({ currentAvatarUrl, onAvatarUpdate }: Profi
         console.warn('Could not delete avatar from storage:', deleteError);
       }
 
+      // Clear profile cache to ensure fresh data is used
+      clearProfileCache(user.id);
+      
       onAvatarUpdate(null);
       toast({
         title: "Success",

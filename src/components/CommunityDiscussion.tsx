@@ -35,7 +35,14 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getUserDisplayName, ensureUserProfile } from '@/utils/profileUtils';
+import { 
+  getUserDisplayName, 
+  getUserAvatar, 
+  getUserInitials,
+  getUserProfile,
+  clearProfileCache,
+  type UserProfile 
+} from '@/utils/profileUtils';
 
 interface Post {
   id: string;
@@ -107,40 +114,47 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
       // First try to fetch real posts from the database
       let { data: realPosts, error } = await supabase
         .from('community_posts')
-        .select(`
-          *,
-          profiles:user_id (
-            display_name,
-            avatar_url,
-            email
-          )
-        `)
+        .select('*')
         .eq('community_id', communityId)
         .order('created_at', { ascending: false });
 
       if (!error && realPosts && realPosts.length > 0) {
+        // Get unique user IDs and fetch their profiles
+        const userIds = [...new Set(realPosts.map(post => post.user_id))];
+        const userProfiles = new Map<string, UserProfile>();
+        
+        for (const userId of userIds) {
+          const profile = await getUserProfile(userId);
+          if (profile) {
+            userProfiles.set(userId, profile);
+          }
+        }
+
         // Transform real posts to match our interface
-        const transformedPosts: Post[] = realPosts.map(post => ({
-          id: post.id,
-          community_id: post.community_id,
-          user_id: post.user_id,
-          title: post.title,
-          content: post.content,
-          image_url: post.image_url,
-          likes_count: post.likes_count || 0,
-          comments_count: post.comments_count || 0,
-          is_pinned: post.is_pinned || false,
-          created_at: post.created_at,
-          updated_at: post.updated_at,
-          user: {
-            id: post.user_id,
-            email: post.profiles?.email || '',
-            display_name: post.profiles?.display_name || post.profiles?.email?.split('@')[0] || 'User',
-            avatar_url: post.profiles?.avatar_url
-          },
-          comments: [],
-          liked_by_user: false
-        }));
+        const transformedPosts: Post[] = realPosts.map(post => {
+          const profile = userProfiles.get(post.user_id);
+          return {
+            id: post.id,
+            community_id: post.community_id,
+            user_id: post.user_id,
+            title: post.title,
+            content: post.content,
+            image_url: post.image_url,
+            likes_count: post.likes_count || 0,
+            comments_count: post.comments_count || 0,
+            is_pinned: post.is_pinned || false,
+            created_at: post.created_at,
+            updated_at: post.updated_at,
+            user: {
+              id: post.user_id,
+              email: profile?.email || '',
+              display_name: getUserDisplayName(null, profile),
+              avatar_url: getUserAvatar(null, profile)
+            },
+            comments: [],
+            liked_by_user: false
+          };
+        });
 
         setPosts(transformedPosts);
         return;
@@ -233,17 +247,12 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
 
     setIsPosting(true);
     try {
-      // Ensure user profile exists and get profile information
-      let profile = await ensureUserProfile(user.id, user.email, user.user_metadata?.display_name);
+      // Get user profile (this will use cache if available)
+      let profile = await getUserProfile(user.id);
       
       if (!profile) {
-        // Fallback: try to get existing profile
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('display_name, avatar_url, email')
-          .eq('user_id', user.id)
-          .single();
-        profile = existingProfile;
+        // Create profile if it doesn't exist
+        profile = await ensureUserProfile(user.id, user.email, user.user_metadata?.display_name);
       }
 
       // Try to create the post in the database
@@ -275,7 +284,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
             id: user.id,
             email: profile?.email || user.email || '',
             display_name: getUserDisplayName(user, profile),
-            avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url
+            avatar_url: getUserAvatar(user, profile)
           },
           comments: []
         };
@@ -298,7 +307,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
             id: user.id,
             email: profile?.email || user.email || '',
             display_name: getUserDisplayName(user, profile),
-            avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url
+            avatar_url: getUserAvatar(user, profile)
           },
           comments: []
         };
@@ -354,11 +363,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
 
     try {
       // Get user's profile information
-      let { data: profile } = await supabase
-        .from('profiles')
-        .select('display_name, avatar_url, email')
-        .eq('user_id', user.id)
-        .single();
+      const profile = await getUserProfile(user.id);
 
       const newComment: Comment = {
         id: Date.now().toString(),
@@ -435,7 +440,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
               <Avatar className="w-10 h-10">
                 <AvatarImage src={post.user.avatar_url} />
                 <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                  {(getUserDisplayName(null, post.user)).substring(0, 2).toUpperCase()}
+                  {getUserInitials(getUserDisplayName(null, post.user))}
                 </AvatarFallback>
               </Avatar>
               
@@ -542,7 +547,7 @@ export const CommunityDiscussion: React.FC<CommunityDiscussionProps> = ({
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={comment.user.avatar_url} />
                       <AvatarFallback className="text-xs">
-                        {(getUserDisplayName(null, comment.user)).substring(0, 2).toUpperCase()}
+                        {getUserInitials(getUserDisplayName(null, comment.user))}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
