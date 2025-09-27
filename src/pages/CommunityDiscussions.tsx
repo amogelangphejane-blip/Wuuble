@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { SkoolDiscussions } from '@/components/SkoolDiscussions';
+import ModernDiscussion from '@/components/ModernDiscussion';
 import ResponsiveLayout from '@/components/ResponsiveLayout';
 import { ModernHeader } from '@/components/ModernHeader';
 
@@ -34,7 +34,7 @@ const CommunityDiscussions: React.FC = () => {
             Back to Community
           </Button>
           
-          <SkoolDiscussions communityId={id} />
+          <ModernDiscussion communityId={id} isOwner={false} isModerator={false} />
         </div>
       </div>
     </ResponsiveLayout>
