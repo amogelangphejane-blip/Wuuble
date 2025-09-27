@@ -66,7 +66,7 @@ interface Post {
   link_url?: string;
   link_title?: string;
   link_description?: string;
-  link_image?: string;
+  link_image_url?: string;
   likes_count: number;
   comments_count: number;
   is_pinned: boolean;
@@ -219,6 +219,59 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
 
   useEffect(() => {
     fetchPosts();
+
+    // Set up real-time subscriptions for posts
+    const postsChannel = supabase
+      .channel(`community_posts_${communityId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'community_posts',
+          filter: `community_id=eq.${communityId}`,
+        },
+        () => {
+          fetchPosts();
+        }
+      )
+      .subscribe();
+
+    const likesChannel = supabase
+      .channel(`community_post_likes_${communityId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'community_post_likes',
+        },
+        () => {
+          fetchPosts();
+        }
+      )
+      .subscribe();
+
+    const commentsChannel = supabase
+      .channel(`community_post_comments_${communityId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'community_post_comments',
+        },
+        () => {
+          fetchPosts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(postsChannel);
+      supabase.removeChannel(likesChannel);
+      supabase.removeChannel(commentsChannel);
+    };
   }, [communityId, sortBy]);
 
   // Refresh user data to ensure we have the latest profile info
@@ -243,145 +296,125 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
     try {
       setLoading(true);
       
-      // For demo purposes, create mock posts with enhanced data
-      const mockPosts: Post[] = [
-        {
-          id: '1',
-          community_id: communityId,
-          user_id: 'user1',
-          content: 'Welcome to our community! 🎉 I\'m excited to be here and looking forward to connecting with everyone. This is a space where we can share ideas, collaborate, and learn from each other. Feel free to introduce yourselves and share what brings you to our community!',
-          image_url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=500&h=300&fit=crop',
-          likes_count: 24,
-          comments_count: 8,
-          is_pinned: true,
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-          updated_at: new Date(Date.now() - 3600000).toISOString(),
-          user: {
-            id: 'user1',
-            email: 'admin@example.com',
-            user_metadata: {
-              display_name: 'Alexandra Chen',
-              avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-              full_name: 'Alexandra Chen'
-            },
-            username: 'alexandra_chen'
-          },
-          liked_by_user: false,
-          bookmarked_by_user: false,
-          comments: [
-            {
-              id: 'c1',
-              post_id: '1',
-              user_id: 'user2',
-              content: 'Welcome Alexandra! So excited to be part of this community 🚀',
-              created_at: new Date(Date.now() - 1800000).toISOString(),
-              user: {
-                id: 'user2',
-                email: 'member@example.com',
-                user_metadata: {
-                  display_name: 'Sarah Johnson',
-                  avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-                  full_name: 'Sarah Johnson'
-                },
-                username: 'sarah_j'
+      // Fetch real posts from the database
+      const { data, error } = await supabase
+        .from('community_posts')
+        .select(`
+          id,
+          content,
+          image_url,
+          link_url,
+          link_title,
+          link_description,
+          link_image_url,
+          likes_count,
+          comments_count,
+          is_pinned,
+          created_at,
+          updated_at,
+          user_id,
+          category,
+          profiles!community_posts_user_id_fkey (
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('community_id', communityId)
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching posts:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load discussions",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Fetch likes and comments for each post
+      const postsWithInteractions = await Promise.all(
+        (data || []).map(async (post) => {
+          // Fetch likes
+          const { data: likes } = await supabase
+            .from('community_post_likes')
+            .select(`
+              id,
+              user_id,
+              created_at,
+              profiles!community_post_likes_user_id_fkey (
+                display_name
+              )
+            `)
+            .eq('post_id', post.id);
+
+          // Fetch comments
+          const { data: comments } = await supabase
+            .from('community_post_comments')
+            .select(`
+              id,
+              content,
+              created_at,
+              updated_at,
+              user_id,
+              parent_comment_id,
+              profiles!community_post_comments_user_id_fkey (
+                display_name,
+                avatar_url
+              )
+            `)
+            .eq('post_id', post.id)
+            .order('created_at', { ascending: true });
+
+          // Organize comments with replies
+          const topLevelComments = (comments || []).filter(c => !c.parent_comment_id);
+          const commentReplies = (comments || []).filter(c => c.parent_comment_id);
+          
+          const commentsWithReplies = topLevelComments.map(comment => ({
+            ...comment,
+            user: {
+              id: comment.user_id,
+              email: '',
+              user_metadata: {
+                display_name: comment.profiles?.display_name || 'Anonymous',
+                avatar_url: comment.profiles?.avatar_url || ''
               }
             },
-            {
-              id: 'c2',
-              post_id: '1',
-              user_id: 'user3',
-              content: 'Thanks for creating this space! Looking forward to the discussions ahead.',
-              created_at: new Date(Date.now() - 900000).toISOString(),
-              user: {
-                id: 'user3',
-                email: 'member3@example.com',
-                user_metadata: {
-                  display_name: 'Mike Rodriguez',
-                  avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-                  full_name: 'Mike Rodriguez'
-                },
-                username: 'mike_r'
+            replies: commentReplies
+              .filter(reply => reply.parent_comment_id === comment.id)
+              .map(reply => ({
+                ...reply,
+                user: {
+                  id: reply.user_id,
+                  email: '',
+                  user_metadata: {
+                    display_name: reply.profiles?.display_name || 'Anonymous',
+                    avatar_url: reply.profiles?.avatar_url || ''
+                  }
+                }
+              }))
+          }));
+
+          return {
+            ...post,
+            user: {
+              id: post.user_id,
+              email: '',
+              user_metadata: {
+                display_name: post.profiles?.display_name || 'Anonymous',
+                avatar_url: post.profiles?.avatar_url || ''
               }
-            }
-          ]
-        },
-        {
-          id: '2',
-          community_id: communityId,
-          user_id: 'user2',
-          content: 'Just discovered this amazing resource for learning React! The interactive tutorials and real-world examples make it super easy to understand complex concepts. Highly recommend checking it out if you\'re looking to level up your React skills.',
-          link_url: 'https://react.dev',
-          link_title: 'React - The library for web and native user interfaces',
-          link_description: 'React lets you build user interfaces out of individual pieces called components. Create your own React components like Thumbnail, LikeButton, and Video.',
-          link_image: 'https://react.dev/images/home/conf2021/cover.svg',
-          likes_count: 18,
-          comments_count: 5,
-          is_pinned: false,
-          created_at: new Date(Date.now() - 7200000).toISOString(),
-          updated_at: new Date(Date.now() - 7200000).toISOString(),
-          user: {
-            id: 'user2',
-            email: 'member@example.com',
-            user_metadata: {
-              display_name: 'Sarah Johnson',
-              avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-              full_name: 'Sarah Johnson'
             },
-            username: 'sarah_j'
-          },
-          liked_by_user: true,
-          bookmarked_by_user: true
-        },
-        {
-          id: '3',
-          community_id: communityId,
-          user_id: 'user4',
-          content: 'What are your favorite productivity tools? I\'m always looking for ways to optimize my workflow and would love to hear what works for you! Here are some of mine:\n\n• Notion for note-taking and project management\n• Figma for design collaboration\n• VS Code for development\n• Slack for team communication\n\nWhat would you add to this list?',
-          likes_count: 12,
-          comments_count: 15,
-          is_pinned: false,
-          created_at: new Date(Date.now() - 10800000).toISOString(),
-          updated_at: new Date(Date.now() - 10800000).toISOString(),
-          user: {
-            id: 'user4',
-            email: 'member4@example.com',
-            user_metadata: {
-              display_name: 'Jordan Kim',
-              // No avatar_url to demonstrate default avatar functionality
-              full_name: 'Jordan Kim'
-            },
-            username: 'jordan_k'
-          },
-          liked_by_user: false,
-          bookmarked_by_user: false
-        },
-        {
-          id: '4',
-          community_id: communityId,
-          user_id: 'user5',
-          content: 'Just finished reading a great article on React performance optimization. The key takeaways were using React.memo for expensive components and optimizing re-renders with useMemo and useCallback. Anyone else have tips for React performance?',
-          likes_count: 8,
-          comments_count: 3,
-          is_pinned: false,
-          created_at: new Date(Date.now() - 14400000).toISOString(),
-          updated_at: new Date(Date.now() - 14400000).toISOString(),
-          user: {
-            id: 'user5',
-            email: 'developer@example.com',
-            user_metadata: {
-              display_name: 'Emily Rodriguez',
-              avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face',
-              full_name: 'Emily Rodriguez'
-            },
-            username: 'emily_dev'
-          },
-          liked_by_user: false,
-          bookmarked_by_user: false
-        }
-      ];
+            comments: commentsWithReplies,
+            liked_by_user: user ? (likes || []).some(like => like.user_id === user.id) : false,
+            bookmarked_by_user: false // TODO: Implement bookmarks
+          };
+        })
+      );
 
       // Sort posts based on selected option
-      const sortedPosts = [...mockPosts].sort((a, b) => {
+      const sortedPosts = [...postsWithInteractions].sort((a, b) => {
         switch (sortBy) {
           case 'popular':
             return b.likes_count - a.likes_count;
@@ -510,39 +543,52 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         imageUrl = await uploadImage(selectedImage);
       }
 
-      const newPost: Post = {
-        id: Date.now().toString(),
-        community_id: communityId,
-        user_id: user.id,
-        content: newPostContent,
-        image_url: imageUrl,
-        link_url: linkUrl || undefined,
-        link_title: linkPreview?.title,
-        link_description: linkPreview?.description,
-        link_image: linkPreview?.image,
-        likes_count: 0,
-        comments_count: 0,
-        is_pinned: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        user: {
-          id: user.id,
-          email: user.email || '',
-          user_metadata: user.user_metadata,
-          username: user.user_metadata?.username || user.email?.split('@')[0]
-        },
-        comments: [],
-        liked_by_user: false,
-        bookmarked_by_user: false
-      };
+      // Ensure content is never empty for database NOT NULL constraint
+      const content = newPostContent.trim() || 
+        (selectedImage ? '[Image Post]' : '') ||
+        (linkUrl ? '[Link Post]' : '[Post]');
 
-      setPosts([newPost, ...posts]);
+      // Create the post in the database
+      const { data, error } = await supabase
+        .from('community_posts')
+        .insert([
+          {
+            community_id: communityId,
+            user_id: user.id,
+            content: content,
+            title: null, // We don't have a title field in this interface
+            image_url: imageUrl || null,
+            link_url: linkUrl || null,
+            link_title: linkPreview?.title || null,
+            link_description: linkPreview?.description || null,
+            link_image_url: linkPreview?.image || null,
+            link_domain: linkUrl ? new URL(linkUrl).hostname : null,
+            category: 'general'
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating post:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create post",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Clear the form
       setNewPostContent('');
       setSelectedImage(null);
       setImagePreview(null);
       setLinkUrl('');
       setLinkPreview(null);
       setShowNewPost(false);
+      
+      // Refresh posts to show the new post
+      await fetchPosts();
       
       toast({
         title: "Posted!",
@@ -570,16 +616,53 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
       return;
     }
 
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          liked_by_user: !post.liked_by_user,
-          likes_count: post.liked_by_user ? post.likes_count - 1 : post.likes_count + 1
-        };
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    try {
+      if (post.liked_by_user) {
+        // Remove like
+        const { error } = await supabase
+          .from('community_post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        // Add like
+        const { error } = await supabase
+          .from('community_post_likes')
+          .insert([
+            {
+              post_id: postId,
+              user_id: user.id
+            }
+          ]);
+
+        if (error) throw error;
       }
-      return post;
-    }));
+
+      // Update local state optimistically
+      setPosts(posts.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            liked_by_user: !p.liked_by_user,
+            likes_count: p.liked_by_user ? p.likes_count - 1 : p.likes_count + 1
+          };
+        }
+        return p;
+      }));
+
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleBookmarkPost = async (postId: string) => {
@@ -616,32 +699,27 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
     if (!user || !content?.trim()) return;
 
     try {
-      const newComment: Comment = {
-        id: Date.now().toString(),
-        post_id: postId,
-        user_id: user.id,
-        content: content,
-        created_at: new Date().toISOString(),
-        user: {
-          id: user.id,
-          email: user.email || '',
-          user_metadata: user.user_metadata,
-          username: user.user_metadata?.username || user.email?.split('@')[0]
-        }
-      };
+      // Create comment in database
+      const { data, error } = await supabase
+        .from('community_post_comments')
+        .insert([
+          {
+            post_id: postId,
+            user_id: user.id,
+            content: content.trim(),
+            parent_comment_id: null
+          }
+        ])
+        .select()
+        .single();
 
-      setPosts(posts.map(post => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            comments: [...(post.comments || []), newComment],
-            comments_count: post.comments_count + 1
-          };
-        }
-        return post;
-      }));
+      if (error) throw error;
 
+      // Clear input
       setCommentInputs({ ...commentInputs, [postId]: '' });
+      
+      // Refresh posts to show the new comment
+      await fetchPosts();
       
       toast({
         title: "Comment added",
@@ -802,9 +880,9 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 rel="noopener noreferrer"
                 className="block border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 transition-colors"
               >
-                {post.link_image && (
+                {post.link_image_url && (
                   <ResponsiveImage 
-                    src={post.link_image} 
+                    src={post.link_image_url} 
                     alt="" 
                     className="w-full h-48"
                     objectFit="cover"
