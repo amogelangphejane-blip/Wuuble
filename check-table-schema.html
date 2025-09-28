@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check Table Schema</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Database Schema Check</h1>
+    <div id="output"></div>
+
+    <script>
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8";
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const output = document.getElementById('output');
+
+        async function checkSchema() {
+            output.innerHTML = '<h2>Checking database schema...</h2>';
+            
+            try {
+                // Try to query information_schema to get column info
+                const { data, error } = await supabase.rpc('get_table_columns', { table_name: 'community_posts' });
+                
+                if (error) {
+                    output.innerHTML += `<p>❌ Error getting schema: ${error.message}</p>`;
+                    
+                    // Fallback: try a simple select to see what happens
+                    output.innerHTML += '<h3>Trying simple select...</h3>';
+                    const { data: testData, error: testError } = await supabase
+                        .from('community_posts')
+                        .select('*')
+                        .limit(1);
+                        
+                    if (testError) {
+                        output.innerHTML += `<p>❌ Simple select failed: ${testError.message}</p>`;
+                        output.innerHTML += `<pre>${JSON.stringify(testError, null, 2)}</pre>`;
+                    } else {
+                        output.innerHTML += `<p>✅ Simple select worked</p>`;
+                        output.innerHTML += `<pre>${JSON.stringify(testData, null, 2)}</pre>`;
+                    }
+                } else {
+                    output.innerHTML += '<p>✅ Schema query worked</p>';
+                    output.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+                
+                // Test if the new columns exist by trying to select them
+                output.innerHTML += '<h3>Testing individual columns...</h3>';
+                
+                const columnsToTest = [
+                    'id', 'content', 'community_id', 'user_id', 'created_at', // basic
+                    'title', 'category', 'tags', 'is_pinned', // extended
+                    'likes_count', 'comments_count', 'views_count', // counts
+                    'image_url', 'link_url', 'link_title', 'link_description', 'link_image_url', 'link_domain' // media
+                ];
+                
+                for (const column of columnsToTest) {
+                    try {
+                        const { error: colError } = await supabase
+                            .from('community_posts')
+                            .select(column)
+                            .limit(1);
+                            
+                        if (colError) {
+                            output.innerHTML += `<p>❌ Column '${column}': ${colError.message}</p>`;
+                        } else {
+                            output.innerHTML += `<p>✅ Column '${column}': OK</p>`;
+                        }
+                    } catch (e) {
+                        output.innerHTML += `<p>❌ Column '${column}': ${e.message}</p>`;
+                    }
+                }
+                
+            } catch (error) {
+                output.innerHTML += `<p>❌ Unexpected error: ${error.message}</p>`;
+                console.error(error);
+            }
+        }
+
+        checkSchema();
+    </script>
+</body>
+</html>

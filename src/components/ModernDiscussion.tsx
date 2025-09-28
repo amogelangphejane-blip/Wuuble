@@ -296,31 +296,18 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
     try {
       setLoading(true);
       
-      // Fetch real posts from the database
+      // Fetch real posts from the database - start with basic columns that should exist
       const { data, error } = await supabase
         .from('community_posts')
         .select(`
           id,
           content,
-          image_url,
-          link_url,
-          link_title,
-          link_description,
-          link_image_url,
-          likes_count,
-          comments_count,
-          is_pinned,
           created_at,
           updated_at,
           user_id,
-          category,
-          profiles!community_posts_user_id_fkey (
-            display_name,
-            avatar_url
-          )
+          community_id
         `)
         .eq('community_id', communityId)
-        .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -333,88 +320,130 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         return;
       }
 
-      // Fetch likes and comments for each post
-      const postsWithInteractions = await Promise.all(
+      // For now, let's get the user profile info separately to avoid foreign key issues
+      const postsWithUserInfo = await Promise.all(
         (data || []).map(async (post) => {
-          // Fetch likes
-          const { data: likes } = await supabase
-            .from('community_post_likes')
-            .select(`
-              id,
-              user_id,
-              created_at,
-              profiles!community_post_likes_user_id_fkey (
-                display_name
-              )
-            `)
-            .eq('post_id', post.id);
+          // Try to get user profile info
+          let userProfile = null;
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('display_name, avatar_url')
+              .eq('user_id', post.user_id)
+              .single();
+            userProfile = profile;
+          } catch (profileError) {
+            console.log('Could not fetch profile for user:', post.user_id);
+          }
 
-          // Fetch comments
-          const { data: comments } = await supabase
-            .from('community_post_comments')
-            .select(`
-              id,
-              content,
-              created_at,
-              updated_at,
-              user_id,
-              parent_comment_id,
-              profiles!community_post_comments_user_id_fkey (
-                display_name,
-                avatar_url
-              )
-            `)
-            .eq('post_id', post.id)
-            .order('created_at', { ascending: true });
+          // Try to get likes count (table might not exist yet)
+          let likesCount = 0;
+          let userLiked = false;
+          try {
+            const { data: likes } = await supabase
+              .from('community_post_likes')
+              .select('user_id')
+              .eq('post_id', post.id);
+            
+            likesCount = likes?.length || 0;
+            userLiked = user ? (likes || []).some(like => like.user_id === user.id) : false;
+          } catch (likesError) {
+            console.log('Likes table not available yet:', likesError.message);
+          }
 
-          // Organize comments with replies
-          const topLevelComments = (comments || []).filter(c => !c.parent_comment_id);
-          const commentReplies = (comments || []).filter(c => c.parent_comment_id);
-          
-          const commentsWithReplies = topLevelComments.map(comment => ({
-            ...comment,
-            user: {
-              id: comment.user_id,
-              email: '',
-              user_metadata: {
-                display_name: comment.profiles?.display_name || 'Anonymous',
-                avatar_url: comment.profiles?.avatar_url || ''
-              }
-            },
-            replies: commentReplies
-              .filter(reply => reply.parent_comment_id === comment.id)
-              .map(reply => ({
-                ...reply,
-                user: {
-                  id: reply.user_id,
-                  email: '',
-                  user_metadata: {
-                    display_name: reply.profiles?.display_name || 'Anonymous',
-                    avatar_url: reply.profiles?.avatar_url || ''
+          // Try to get comments count (table might not exist yet)
+          let commentsCount = 0;
+          let comments = [];
+          try {
+            const { data: commentData } = await supabase
+              .from('community_post_comments')
+              .select(`
+                id,
+                content,
+                created_at,
+                user_id,
+                parent_comment_id
+              `)
+              .eq('post_id', post.id)
+              .order('created_at', { ascending: true });
+
+            commentsCount = commentData?.length || 0;
+            
+            // Get user info for comments
+            if (commentData && commentData.length > 0) {
+              const commentsWithUsers = await Promise.all(
+                commentData.map(async (comment) => {
+                  let commentUserProfile = null;
+                  try {
+                    const { data: commentProfile } = await supabase
+                      .from('profiles')
+                      .select('display_name, avatar_url')
+                      .eq('user_id', comment.user_id)
+                      .single();
+                    commentUserProfile = commentProfile;
+                  } catch (e) {
+                    console.log('Could not fetch comment user profile');
                   }
-                }
-              }))
-          }));
+
+                  return {
+                    ...comment,
+                    user: {
+                      id: comment.user_id,
+                      email: '',
+                      user_metadata: {
+                        display_name: commentUserProfile?.display_name || 'Anonymous',
+                        avatar_url: commentUserProfile?.avatar_url || ''
+                      }
+                    }
+                  };
+                })
+              );
+              
+              // Organize comments with replies
+              const topLevelComments = commentsWithUsers.filter(c => !c.parent_comment_id);
+              const commentReplies = commentsWithUsers.filter(c => c.parent_comment_id);
+              
+              comments = topLevelComments.map(comment => ({
+                ...comment,
+                replies: commentReplies.filter(reply => reply.parent_comment_id === comment.id)
+              }));
+            }
+          } catch (commentsError) {
+            console.log('Comments table not available yet:', commentsError.message);
+          }
 
           return {
-            ...post,
+            id: post.id,
+            community_id: post.community_id,
+            user_id: post.user_id,
+            content: post.content,
+            image_url: null, // Will be null until schema is updated
+            link_url: null,
+            link_title: null,
+            link_description: null,
+            link_image_url: null,
+            likes_count: likesCount,
+            comments_count: commentsCount,
+            is_pinned: false, // Will be false until schema is updated
+            created_at: post.created_at,
+            updated_at: post.updated_at,
             user: {
               id: post.user_id,
               email: '',
               user_metadata: {
-                display_name: post.profiles?.display_name || 'Anonymous',
-                avatar_url: post.profiles?.avatar_url || ''
+                display_name: userProfile?.display_name || 'Anonymous User',
+                avatar_url: userProfile?.avatar_url || ''
               }
             },
-            comments: commentsWithReplies,
-            liked_by_user: user ? (likes || []).some(like => like.user_id === user.id) : false,
-            bookmarked_by_user: false // TODO: Implement bookmarks
+            comments: comments,
+            liked_by_user: userLiked,
+            bookmarked_by_user: false
           };
         })
       );
 
       // Sort posts based on selected option
-      const sortedPosts = [...postsWithInteractions].sort((a, b) => {
+      const sortedPosts = [...postsWithUserInfo].sort((a, b) => {
         switch (sortBy) {
           case 'popular':
             return b.likes_count - a.likes_count;
@@ -548,22 +577,14 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         (selectedImage ? '[Image Post]' : '') ||
         (linkUrl ? '[Link Post]' : '[Post]');
 
-      // Create the post in the database
+      // Create the post in the database - use only basic columns that should exist
       const { data, error } = await supabase
         .from('community_posts')
         .insert([
           {
             community_id: communityId,
             user_id: user.id,
-            content: content,
-            title: null, // We don't have a title field in this interface
-            image_url: imageUrl || null,
-            link_url: linkUrl || null,
-            link_title: linkPreview?.title || null,
-            link_description: linkPreview?.description || null,
-            link_image_url: linkPreview?.image || null,
-            link_domain: linkUrl ? new URL(linkUrl).hostname : null,
-            category: 'general'
+            content: content
           }
         ])
         .select()
@@ -620,6 +641,21 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
     if (!post) return;
 
     try {
+      // Check if likes table exists by trying to query it first
+      const { data: testLikes, error: testError } = await supabase
+        .from('community_post_likes')
+        .select('count')
+        .limit(1);
+        
+      if (testError) {
+        toast({
+          title: "Feature not available",
+          description: "Likes feature requires database setup. Please apply the schema first.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (post.liked_by_user) {
         // Remove like
         const { error } = await supabase
@@ -659,7 +695,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
       console.error('Error toggling like:', error);
       toast({
         title: "Error",
-        description: "Failed to update like",
+        description: "Failed to update like. Database schema may need to be applied.",
         variant: "destructive"
       });
     }
@@ -699,6 +735,21 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
     if (!user || !content?.trim()) return;
 
     try {
+      // Check if comments table exists by trying to query it first
+      const { data: testComments, error: testError } = await supabase
+        .from('community_post_comments')
+        .select('count')
+        .limit(1);
+        
+      if (testError) {
+        toast({
+          title: "Feature not available",
+          description: "Comments feature requires database setup. Please apply the schema first.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Create comment in database
       const { data, error } = await supabase
         .from('community_post_comments')
@@ -729,7 +780,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
       console.error('Error adding comment:', error);
       toast({
         title: "Error",
-        description: "Failed to add comment",
+        description: "Comments feature requires database setup. Please apply the schema first.",
         variant: "destructive"
       });
     }
