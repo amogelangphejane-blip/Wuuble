@@ -10,7 +10,7 @@ import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import EnhancedCommunities from '@/pages/EnhancedCommunities';
 import SkoolStyleCommunityDetail from '@/pages/SkoolStyleCommunityDetail';
-import ModernCommunityMembers from '@/pages/ModernCommunityMembers';
+import CommunityMembersRebuilt from '@/pages/CommunityMembersRebuilt';
 import SimpleCommunityCalendar from '@/pages/SimpleCommunityCalendar';
 import CommunityClassroom from '@/pages/CommunityClassroom';
 import CommunityLeaderboard from '@/pages/CommunityLeaderboard';
@@ -74,7 +74,7 @@ function App() {
             } />
               <Route path="/community/:id/members" element={
                 <ProtectedRoute>
-                  <ModernCommunityMembers />
+                  <CommunityMembersRebuilt />
                 </ProtectedRoute>
               } />
               <Route path="/community/:id/calendar" element={
