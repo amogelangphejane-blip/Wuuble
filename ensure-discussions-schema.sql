@@ -196,7 +196,7 @@ USING (
   OR EXISTS (
     SELECT 1 FROM public.communities c
     WHERE c.id = community_id 
-    AND c.owner_id = auth.uid()
+    AND c.creator_id = auth.uid()
   )
 );
 
@@ -289,7 +289,7 @@ USING (
     SELECT 1 FROM public.community_posts cp
     JOIN public.communities c ON c.id = cp.community_id
     WHERE cp.id = post_id 
-    AND c.owner_id = auth.uid()
+    AND c.creator_id = auth.uid()
   )
 );
 
