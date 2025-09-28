@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Phone, Video, MoreVertical, Info, AlertCircle } from 'lucide-react';
@@ -15,16 +15,28 @@ import { MessagingErrorBoundary, useMessagingErrorHandler } from '@/components/M
 import { useSendMessage, useConversations } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const Messages: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { handleError } = useMessagingErrorHandler();
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [isMobileConversationOpen, setIsMobileConversationOpen] = useState(false);
   const { sendMessage, isLoading: isSending, error: sendError } = useSendMessage();
   const { conversations, error: conversationsError } = useConversations();
+
+  // Handle conversation selection from URL parameters
+  useEffect(() => {
+    const conversationParam = searchParams.get('conversation');
+    if (conversationParam) {
+      setSelectedConversationId(conversationParam);
+      setIsMobileConversationOpen(true);
+    }
+  }, [searchParams]);
 
   // Find the selected conversation to show participant info in header
   const selectedConversation = selectedConversationId 
