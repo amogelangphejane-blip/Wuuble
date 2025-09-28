@@ -51,6 +51,10 @@ export const MessageDropdown: React.FC<MessageDropdownProps> = ({ className }) =
 
   const handleStartConversation = async (userId: string) => {
     try {
+      if (!userId) {
+        console.warn('No userId provided for conversation');
+        return;
+      }
       await createConversation(userId);
       setIsNewMessageOpen(false);
       clearResults();
@@ -58,6 +62,7 @@ export const MessageDropdown: React.FC<MessageDropdownProps> = ({ className }) =
       navigate('/messages');
     } catch (error) {
       console.error('Failed to start conversation:', error);
+      // Don't navigate on error
     }
   };
 
@@ -67,8 +72,12 @@ export const MessageDropdown: React.FC<MessageDropdownProps> = ({ className }) =
 
   const formatLastMessageTime = (timestamp: string) => {
     try {
-      return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
-    } catch {
+      if (!timestamp) return 'Recently';
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) return 'Recently';
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      console.warn('Error formatting timestamp:', error);
       return 'Recently';
     }
   };

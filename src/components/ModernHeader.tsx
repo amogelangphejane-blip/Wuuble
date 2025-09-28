@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
@@ -35,12 +35,48 @@ interface ModernHeaderProps {
   showAuthButtons?: boolean;
 }
 
+interface UserProfile {
+  display_name: string | null;
+  avatar_url: string | null;
+}
+
 export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
+
+  // Fetch user profile when user changes
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) {
+        setProfile(null);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('display_name, avatar_url')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) {
+          console.warn('Error fetching profile:', error);
+          setProfile(null);
+        } else {
+          setProfile(data);
+        }
+      } catch (error) {
+        console.warn('Error in fetchProfile:', error);
+        setProfile(null);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   const handleSignOut = async () => {
     try {
