@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, ArrowLeft } from 'lucide-react';
+import { Send, ArrowLeft, Menu, X } from 'lucide-react';
 import { UserIdHelper } from '@/components/UserIdHelper';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,6 +35,7 @@ export default function SimpleMessages() {
   const [newMessage, setNewMessage] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -44,6 +45,23 @@ export default function SimpleMessages() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Keyboard shortcut to toggle sidebar (Ctrl/Cmd + B)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
+        event.preventDefault();
+        setSidebarOpen(prev => !prev);
+      }
+      // Escape key to close sidebar
+      if (event.key === 'Escape' && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
 
   useEffect(() => {
     if (user) {
@@ -356,12 +374,37 @@ export default function SimpleMessages() {
   }
 
   return (
-    <div className="h-screen flex bg-white">
+    <div className="h-screen flex bg-white relative">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Conversations List */}
-      <div className="w-80 border-r flex flex-col">
+      <div className={`
+        w-80 border-r flex flex-col bg-white z-50 transition-transform duration-300 ease-in-out
+        lg:relative lg:translate-x-0
+        ${sidebarOpen 
+          ? 'fixed inset-y-0 left-0 translate-x-0' 
+          : 'fixed inset-y-0 left-0 -translate-x-full lg:translate-x-0'
+        }
+      `}>
         {/* Header */}
         <div className="p-4 border-b bg-gray-50">
-          <h1 className="text-lg font-semibold mb-4">Messages</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-lg font-semibold">Messages</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
           
           {/* New conversation */}
           <div className="space-y-2">
@@ -399,7 +442,10 @@ export default function SimpleMessages() {
                 className={`p-4 border-b cursor-pointer hover:bg-gray-50 ${
                   selectedConversation === conv.id ? 'bg-blue-50' : ''
                 }`}
-                onClick={() => setSelectedConversation(conv.id)}
+                onClick={() => {
+                  setSelectedConversation(conv.id);
+                  setSidebarOpen(false); // Close sidebar on mobile when conversation is selected
+                }}
               >
                 <div className="flex items-center space-x-3">
                   <Avatar>
@@ -423,6 +469,16 @@ export default function SimpleMessages() {
             {/* Chat Header */}
             <div className="p-4 border-b bg-gray-50">
               <div className="flex items-center space-x-3">
+                {/* Mobile menu button */}
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="lg:hidden"
+                  onClick={() => setSidebarOpen(true)}
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+                
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -499,13 +555,36 @@ export default function SimpleMessages() {
           </>
         ) : (
           /* No conversation selected */
-          <div className="flex-1 flex items-center justify-center bg-gray-50">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Send className="h-8 w-8 text-gray-500" />
+          <div className="flex-1 flex flex-col">
+            {/* Header with menu button for empty state */}
+            <div className="p-4 border-b bg-gray-50 lg:hidden">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setSidebarOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Menu className="h-4 w-4" />
+                <span>Open Messages</span>
+              </Button>
+            </div>
+            
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Send className="h-8 w-8 text-gray-500" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
+                <p className="text-gray-600 mb-4">Choose a conversation from the list to start messaging</p>
+                <Button 
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden"
+                  variant="outline"
+                >
+                  <Menu className="h-4 w-4 mr-2" />
+                  View Conversations
+                </Button>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
-              <p className="text-gray-600">Choose a conversation from the list to start messaging</p>
             </div>
           </div>
         )}
