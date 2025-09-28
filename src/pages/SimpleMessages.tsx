@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, ArrowLeft } from 'lucide-react';
+import { UserIdHelper } from '@/components/UserIdHelper';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -364,12 +365,15 @@ export default function SimpleMessages() {
           
           {/* New conversation */}
           <div className="space-y-2">
-            <Input
-              placeholder="Enter user ID to start chat"
-              value={newUserEmail}
-              onChange={(e) => setNewUserEmail(e.target.value)}
-              className="text-sm"
-            />
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter user ID to start chat"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                className="text-sm flex-1"
+              />
+              <UserIdHelper />
+            </div>
             <Button 
               onClick={startNewConversation} 
               size="sm" 
