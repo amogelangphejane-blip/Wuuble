@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -42,6 +42,55 @@ import {
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import ResponsiveImage from './ResponsiveImage';
+
+// Memoized comment input component to prevent keyboard issues
+const CommentInput = React.memo(({ 
+  postId, 
+  value, 
+  onChange, 
+  onSubmit, 
+  disabled,
+  userAvatarUrl 
+}: {
+  postId: string;
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  disabled: boolean;
+  userAvatarUrl: string;
+}) => {
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      onSubmit();
+    }
+  }, [onSubmit]);
+
+  return (
+    <div className="flex gap-3 mt-4">
+      <Avatar className="w-8 h-8">
+        <AvatarImage src={userAvatarUrl} className="object-cover" />
+      </Avatar>
+      <div className="flex-1 flex gap-2">
+        <Input
+          placeholder="Write a comment..."
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyPress={handleKeyPress}
+          className="rounded-full border-gray-200 dark:border-gray-800"
+        />
+        <Button
+          size="sm"
+          onClick={onSubmit}
+          disabled={disabled}
+          className="rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+        >
+          <Send className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+});
 
 interface User {
   id: string;
@@ -220,23 +269,27 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
   useEffect(() => {
     fetchPosts();
 
-    // Set up real-time subscriptions for posts
+    // Set up real-time subscriptions for posts (only for new posts, not updates)
     const postsChannel = supabase
       .channel(`community_posts_${communityId}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'community_posts',
           filter: `community_id=eq.${communityId}`,
         },
-        () => {
-          fetchPosts();
+        (payload) => {
+          // Only refetch if it's a new post from another user
+          if (payload.new && payload.new.user_id !== user?.id) {
+            fetchPosts();
+          }
         }
       )
       .subscribe();
 
+    // More selective subscriptions to reduce unnecessary updates
     const likesChannel = supabase
       .channel(`community_post_likes_${communityId}`)
       .on(
@@ -246,23 +299,31 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
           schema: 'public',
           table: 'community_post_likes',
         },
-        () => {
-          fetchPosts();
+        (payload) => {
+          // Only update if it's not the current user's action
+          if (payload.new?.user_id !== user?.id || payload.old?.user_id !== user?.id) {
+            // Debounce the update to prevent rapid re-renders
+            setTimeout(() => fetchPosts(), 500);
+          }
         }
       )
       .subscribe();
 
+    // Comments channel with debouncing
     const commentsChannel = supabase
       .channel(`community_post_comments_${communityId}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'community_post_comments',
         },
-        () => {
-          fetchPosts();
+        (payload) => {
+          // Only refetch if it's a comment from another user
+          if (payload.new && payload.new.user_id !== user?.id) {
+            setTimeout(() => fetchPosts(), 500);
+          }
         }
       )
       .subscribe();
@@ -730,26 +791,18 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
     }
   };
 
-  const handleComment = async (postId: string) => {
+  const handleCommentInputChange = useCallback((postId: string, value: string) => {
+    setCommentInputs(prev => ({
+      ...prev,
+      [postId]: value
+    }));
+  }, []);
+
+  const handleComment = useCallback(async (postId: string) => {
     const content = commentInputs[postId];
     if (!user || !content?.trim()) return;
 
     try {
-      // Check if comments table exists by trying to query it first
-      const { data: testComments, error: testError } = await supabase
-        .from('community_post_comments')
-        .select('count')
-        .limit(1);
-        
-      if (testError) {
-        toast({
-          title: "Feature not available",
-          description: "Comments feature requires database setup. Please apply the schema first.",
-          variant: "destructive"
-        });
-        return;
-      }
-
       // Create comment in database
       const { data, error } = await supabase
         .from('community_post_comments')
@@ -761,16 +814,51 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
             parent_comment_id: null
           }
         ])
-        .select()
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id
+        `)
         .single();
 
       if (error) throw error;
 
-      // Clear input
-      setCommentInputs({ ...commentInputs, [postId]: '' });
-      
-      // Refresh posts to show the new comment
-      await fetchPosts();
+      // Create new comment object for optimistic update
+      const newComment = {
+        id: data.id,
+        post_id: postId,
+        user_id: user.id,
+        content: content.trim(),
+        created_at: data.created_at,
+        parent_comment_id: null,
+        user: {
+          id: user.id,
+          email: '',
+          user_metadata: {
+            display_name: user.user_metadata?.display_name || 'Anonymous',
+            avatar_url: user.user_metadata?.avatar_url || ''
+          }
+        },
+        replies: []
+      };
+
+      // Update posts state optimistically without refetching everything
+      setPosts(prevPosts => 
+        prevPosts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              comments: [...post.comments, newComment],
+              comments_count: post.comments_count + 1
+            };
+          }
+          return post;
+        })
+      );
+
+      // Clear input AFTER state update to prevent keyboard issues
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
       
       toast({
         title: "Comment added",
@@ -780,11 +868,11 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
       console.error('Error adding comment:', error);
       toast({
         title: "Error",
-        description: "Comments feature requires database setup. Please apply the schema first.",
+        description: "Failed to add comment. Please try again.",
         variant: "destructive"
       });
     }
-  };
+  }, [commentInputs, user]);
 
   const toggleComments = (postId: string) => {
     const newExpanded = new Set(expandedComments);
@@ -1047,36 +1135,14 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 ))}
                 
                 {user && (
-                  <div className="flex gap-3 mt-4">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={getUserAvatarUrl(user, user)} className="object-cover" />
-                    </Avatar>
-                    <div className="flex-1 flex gap-2">
-                      <Input
-                        placeholder="Write a comment..."
-                        value={commentInputs[post.id] || ''}
-                        onChange={(e) => setCommentInputs({
-                          ...commentInputs,
-                          [post.id]: e.target.value
-                        })}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleComment(post.id);
-                          }
-                        }}
-                        className="rounded-full border-gray-200 dark:border-gray-800"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() => handleComment(post.id)}
-                        disabled={!commentInputs[post.id]?.trim()}
-                        className="rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  <CommentInput
+                    postId={post.id}
+                    value={commentInputs[post.id] || ''}
+                    onChange={(value) => handleCommentInputChange(post.id, value)}
+                    onSubmit={() => handleComment(post.id)}
+                    disabled={!commentInputs[post.id]?.trim()}
+                    userAvatarUrl={getUserAvatarUrl(user, user)}
+                  />
                 )}
               </motion.div>
             )}
