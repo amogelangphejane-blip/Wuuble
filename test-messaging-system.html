@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Messaging System</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        button {
+            background: #25d366;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #20c55e;
+        }
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Messaging System Tester</h1>
+        
+        <div class="test-section">
+            <h3>1. Database Connection Test</h3>
+            <button onclick="testDatabaseConnection()">Test Database</button>
+            <div id="db-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Authentication Test</h3>
+            <button onclick="testAuth()">Check Auth Status</button>
+            <div id="auth-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Profiles Test</h3>
+            <button onclick="testProfiles()">Check Profiles Table</button>
+            <div id="profiles-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Messaging Tables Test</h3>
+            <button onclick="testMessagingTables()">Check Messaging Tables</button>
+            <div id="tables-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Quick Message Test</h3>
+            <input type="text" id="test-message" placeholder="Type a test message..." />
+            <button onclick="sendTestMessage()">Send Test Message</button>
+            <div id="message-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. Real-time Test</h3>
+            <button onclick="testRealtime()">Test Real-time Updates</button>
+            <button onclick="stopRealtime()">Stop Test</button>
+            <div id="realtime-result"></div>
+            <div id="realtime-log" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // You'll need to replace these with your actual Supabase credentials
+        const SUPABASE_URL = 'your-supabase-url';
+        const SUPABASE_ANON_KEY = 'your-supabase-anon-key';
+        
+        let supabase;
+        let realtimeSubscription;
+
+        // Initialize Supabase (if credentials are provided)
+        if (SUPABASE_URL !== 'your-supabase-url' && SUPABASE_ANON_KEY !== 'your-supabase-anon-key') {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'warning';
+            element.innerHTML = `<div class="${className}"><strong>${type.toUpperCase()}:</strong> ${message}</div>`;
+        }
+
+        function appendLog(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+            element.scrollTop = element.scrollHeight;
+        }
+
+        async function testDatabaseConnection() {
+            if (!supabase) {
+                log('db-result', 'Please update the Supabase credentials in this file first', 'warning');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase.from('profiles').select('count');
+                if (error) throw error;
+                log('db-result', 'Database connection successful!', 'success');
+            } catch (error) {
+                log('db-result', `Database connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAuth() {
+            if (!supabase) {
+                log('auth-result', 'Please update the Supabase credentials first', 'warning');
+                return;
+            }
+
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    log('auth-result', `User authenticated: ${user.email}`, 'success');
+                } else {
+                    log('auth-result', 'No user authenticated', 'warning');
+                }
+            } catch (error) {
+                log('auth-result', `Auth check failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testProfiles() {
+            if (!supabase) {
+                log('profiles-result', 'Please update the Supabase credentials first', 'warning');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .limit(5);
+                
+                if (error) throw error;
+                log('profiles-result', `Found ${data.length} profiles in database`, 'success');
+            } catch (error) {
+                log('profiles-result', `Profiles test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testMessagingTables() {
+            if (!supabase) {
+                log('tables-result', 'Please update the Supabase credentials first', 'warning');
+                return;
+            }
+
+            try {
+                // Test conversations table
+                const { data: convData, error: convError } = await supabase
+                    .from('conversations')
+                    .select('*')
+                    .limit(1);
+
+                if (convError) throw new Error(`Conversations table: ${convError.message}`);
+
+                // Test messages table
+                const { data: msgData, error: msgError } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .limit(1);
+
+                if (msgError) throw new Error(`Messages table: ${msgError.message}`);
+
+                log('tables-result', 'Messaging tables exist and are accessible!', 'success');
+            } catch (error) {
+                log('tables-result', `Tables test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendTestMessage() {
+            if (!supabase) {
+                log('message-result', 'Please update the Supabase credentials first', 'warning');
+                return;
+            }
+
+            const messageInput = document.getElementById('test-message');
+            const message = messageInput.value.trim();
+
+            if (!message) {
+                log('message-result', 'Please enter a message', 'warning');
+                return;
+            }
+
+            try {
+                // This is a simplified test - in real app you'd need a conversation first
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    log('message-result', 'Please log in first', 'warning');
+                    return;
+                }
+
+                log('message-result', `Test message ready: "${message}"`, 'success');
+                messageInput.value = '';
+            } catch (error) {
+                log('message-result', `Message test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRealtime() {
+            if (!supabase) {
+                log('realtime-result', 'Please update the Supabase credentials first', 'warning');
+                return;
+            }
+
+            try {
+                appendLog('realtime-log', 'Starting real-time subscription...');
+                
+                realtimeSubscription = supabase
+                    .channel('messages-test')
+                    .on('postgres_changes', { 
+                        event: '*', 
+                        schema: 'public', 
+                        table: 'messages' 
+                    }, (payload) => {
+                        appendLog('realtime-log', `Real-time event: ${payload.eventType} - ${JSON.stringify(payload.new || payload.old)}`);
+                    })
+                    .subscribe((status) => {
+                        appendLog('realtime-log', `Subscription status: ${status}`);
+                        if (status === 'SUBSCRIBED') {
+                            log('realtime-result', 'Real-time connection established!', 'success');
+                        }
+                    });
+
+            } catch (error) {
+                log('realtime-result', `Real-time test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function stopRealtime() {
+            if (realtimeSubscription) {
+                supabase.removeChannel(realtimeSubscription);
+                realtimeSubscription = null;
+                log('realtime-result', 'Real-time subscription stopped', 'warning');
+                appendLog('realtime-log', 'Subscription stopped');
+            }
+        }
+
+        // Add instructions if credentials not set
+        if (!supabase) {
+            document.body.insertAdjacentHTML('afterbegin', `
+                <div style="background: #fff3cd; padding: 15px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #ffeaa7;">
+                    <strong>⚠️ Setup Required:</strong><br>
+                    To use this tester, please update the Supabase credentials at the top of this file:
+                    <ul>
+                        <li>Replace <code>SUPABASE_URL</code> with your Supabase project URL</li>
+                        <li>Replace <code>SUPABASE_ANON_KEY</code> with your Supabase anonymous key</li>
+                    </ul>
+                </div>
+            `);
+        }
+    </script>
+</body>
+</html>
