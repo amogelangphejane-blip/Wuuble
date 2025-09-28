@@ -20,7 +20,7 @@ import CommunityDiscussions from '@/pages/CommunityDiscussions';
 import CommunityAbout from '@/pages/CommunityAbout';
 import CommunitySubscriptions from '@/pages/CommunitySubscriptions';
 import CommunityPaymentSettings from '@/pages/CommunityPaymentSettings';
-import Messages from '@/pages/Messages';
+import SimpleMessages from '@/pages/SimpleMessages';
 import ProfileSettings from '@/pages/ProfileSettings';
 import PaymentMethods from '@/pages/PaymentMethods';
 import { CreatorWallet } from '@/pages/CreatorWallet';
@@ -120,7 +120,7 @@ function App() {
               } />
               <Route path="/messages" element={
                 <ProtectedRoute>
-                  <Messages />
+                  <SimpleMessages />
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={
