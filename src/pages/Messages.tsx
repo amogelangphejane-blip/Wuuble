@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Phone, Video, MoreVertical, Info, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Phone, Video, MoreVertical, Info, AlertCircle, Circle, Search } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,8 @@ import {
 import { ConversationList } from '@/components/ConversationList';
 import { MessageThread } from '@/components/MessageThread';
 import { MessageInput } from '@/components/MessageInput';
+import { MessageSearchDialog } from '@/components/MessageSearchDialog';
+import { NotificationSettingsDialog } from '@/components/NotificationSettingsDialog';
 import { MessagingErrorBoundary, useMessagingErrorHandler } from '@/components/MessagingErrorBoundary';
 import { useSendMessage, useConversations } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +25,14 @@ const Messages: React.FC = () => {
   const { handleError } = useMessagingErrorHandler();
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [isMobileConversationOpen, setIsMobileConversationOpen] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{
+    id: string;
+    content: string;
+    sender: string;
+  } | null>(null);
   const { sendMessage, isLoading: isSending, error: sendError } = useSendMessage();
   const { conversations, error: conversationsError } = useConversations();
 
@@ -190,13 +200,32 @@ const Messages: React.FC = () => {
                     <h3 className="font-medium text-[17px] text-gray-900 dark:text-gray-100">
                       {selectedConversation.participant.display_name || 'Unknown User'}
                     </h3>
-                    <p className="text-[13px] text-gray-500 dark:text-gray-400">
-                      {isParticipantOnline ? 'online' : 'last seen recently'}
-                    </p>
+                    {isTyping ? (
+                      <div className="flex items-center gap-1 text-[#25d366] text-[13px]">
+                        <div className="flex gap-1">
+                          <Circle className="h-1 w-1 animate-bounce fill-current" />
+                          <Circle className="h-1 w-1 animate-bounce fill-current" style={{animationDelay: '0.1s'}} />
+                          <Circle className="h-1 w-1 animate-bounce fill-current" style={{animationDelay: '0.2s'}} />
+                        </div>
+                        <span>typing...</span>
+                      </div>
+                    ) : (
+                      <p className="text-[13px] text-gray-500 dark:text-gray-400">
+                        {isParticipantOnline ? 'online' : 'last seen recently'}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full h-10 w-10"
+                    onClick={() => setIsSearchOpen(true)}
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -238,6 +267,12 @@ const Messages: React.FC = () => {
                       <DropdownMenuItem className="flex items-center gap-3 py-3">
                         Clear messages
                       </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="flex items-center gap-3 py-3"
+                        onClick={() => setIsNotificationSettingsOpen(true)}
+                      >
+                        Notification settings
+                      </DropdownMenuItem>
                       <DropdownMenuItem className="flex items-center gap-3 py-3 text-red-600 dark:text-red-400">
                         Delete chat
                       </DropdownMenuItem>
@@ -248,13 +283,42 @@ const Messages: React.FC = () => {
             </div>
 
             {/* Message Thread */}
-            <MessageThread conversationId={selectedConversationId} />
+            <MessageThread 
+              conversationId={selectedConversationId}
+              onReply={(message) => setReplyingTo(message)}
+            />
 
             {/* Message Input */}
             <MessageInput
               onSend={handleSendMessage}
               disabled={isSending}
               placeholder="Type a message..."
+              replyingTo={replyingTo}
+              onCancelReply={() => setReplyingTo(null)}
+            />
+
+            {/* Message Search Dialog */}
+            <MessageSearchDialog
+              isOpen={isSearchOpen}
+              onClose={() => setIsSearchOpen(false)}
+              conversationId={selectedConversationId}
+              onJumpToMessage={(messageId) => {
+                // TODO: Implement jump to message functionality
+                console.log('Jump to message:', messageId);
+              }}
+            />
+
+            {/* Notification Settings Dialog */}
+            <NotificationSettingsDialog
+              isOpen={isNotificationSettingsOpen}
+              onClose={() => setIsNotificationSettingsOpen(false)}
+              onSave={(settings) => {
+                console.log('Save notification settings:', settings);
+                toast({
+                  title: "Settings saved",
+                  description: "Your notification preferences have been updated.",
+                });
+              }}
             />
           </>
         ) : (

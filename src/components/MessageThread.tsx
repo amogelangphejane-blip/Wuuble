@@ -7,10 +7,12 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface MessageThreadProps {
   conversationId: string | null;
+  onReply?: (message: any) => void;
 }
 
 export const MessageThread: React.FC<MessageThreadProps> = ({
   conversationId,
+  onReply,
 }) => {
   const { user } = useAuth();
   const { messages, isLoading } = useMessages(conversationId);
@@ -158,6 +160,25 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
               isOwn={isOwn}
               showAvatar={showAvatar}
               isLast={isLast}
+              onReply={(msg) => {
+                onReply?.({
+                  id: msg.id,
+                  content: msg.content,
+                  sender: msg.sender?.display_name || 'Unknown User'
+                });
+              }}
+              onEdit={(msg) => {
+                // TODO: Implement edit functionality
+                console.log('Edit message:', msg.id);
+              }}
+              onDelete={(messageId) => {
+                // TODO: Implement delete functionality
+                console.log('Delete message:', messageId);
+              }}
+              onReact={(messageId, emoji) => {
+                // TODO: Implement reaction functionality
+                console.log('React with', emoji, 'on message:', messageId);
+              }}
             />
           );
         })}

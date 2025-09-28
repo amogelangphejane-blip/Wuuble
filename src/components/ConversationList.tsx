@@ -15,7 +15,15 @@ import {
   Filter,
   Check,
   Clock,
-  Pin
+  Pin,
+  Circle,
+  Zap,
+  Star,
+  Archive,
+  Volume2,
+  VolumeX,
+  MoreHorizontal,
+  Users
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -27,6 +35,7 @@ import {
 import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useConversations, useUserSearch, useCreateConversation } from '@/hooks/useMessages';
+import { GroupChatDialog } from './GroupChatDialog';
 import type { ConversationWithParticipant } from '@/services/messageService';
 
 interface ConversationListProps {
@@ -42,6 +51,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 }) => {
   const { conversations, isLoading } = useConversations();
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [isGroupChatOpen, setIsGroupChatOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   
@@ -167,9 +177,9 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* New chat button */}
-            <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
-              <DialogTrigger asChild>
+            {/* New chat dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button 
                   size="icon" 
                   variant="outline"
@@ -177,7 +187,21 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
-              </DialogTrigger>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsNewChatOpen(true)}>
+                  <User className="h-4 w-4 mr-2" />
+                  New Chat
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsGroupChatOpen(true)}>
+                  <Users className="h-4 w-4 mr-2" />
+                  New Group
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* New chat dialog */}
+            <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Start New Conversation</DialogTitle>
@@ -249,6 +273,17 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           )}
         </div>
       </ScrollArea>
+
+      {/* Group Chat Dialog */}
+      <GroupChatDialog
+        isOpen={isGroupChatOpen}
+        onClose={() => setIsGroupChatOpen(false)}
+        onCreateGroup={(groupData) => {
+          // TODO: Implement group creation
+          console.log('Create group:', groupData);
+          setIsGroupChatOpen(false);
+        }}
+      />
     </div>
   );
 };
@@ -268,8 +303,10 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
   getInitials,
   truncateMessage,
 }) => {
-  // Mock online status - in real app this would come from presence data
+  // Mock online status and typing - in real app this would come from presence data
   const isOnline = Math.random() > 0.5;
+  const isTyping = Math.random() > 0.8;
+  const lastSeen = isOnline ? null : 'last seen 5 minutes ago';
 
   return (
     <div
@@ -282,12 +319,18 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
       onClick={onClick}
     >
       <div className="relative flex-shrink-0">
-        <Avatar className="h-12 w-12">
+        <Avatar className="h-12 w-12 ring-2 ring-transparent hover:ring-blue-200 dark:hover:ring-blue-800 transition-all">
           <AvatarImage src={conversation.participant.avatar_url || undefined} />
-          <AvatarFallback className="bg-[#ddd] dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
             {getInitials(conversation.participant.display_name)}
           </AvatarFallback>
         </Avatar>
+        {/* Online status indicator */}
+        {isOnline && (
+          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#25d366] rounded-full border-2 border-white dark:border-gray-800">
+            <div className="w-full h-full bg-[#25d366] rounded-full animate-pulse"></div>
+          </div>
+        )}
       </div>
       
       <div className="flex-1 min-w-0">
@@ -300,14 +343,31 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
               {conversation.participant.display_name || 'Unknown User'}
             </h3>
             
-            {conversation.last_message && (
+            {isTyping ? (
+              <div className="flex items-center gap-1 text-[#25d366] text-sm">
+                <div className="flex gap-1">
+                  <Circle className="h-1 w-1 animate-bounce fill-current" />
+                  <Circle className="h-1 w-1 animate-bounce fill-current" style={{animationDelay: '0.1s'}} />
+                  <Circle className="h-1 w-1 animate-bounce fill-current" style={{animationDelay: '0.2s'}} />
+                </div>
+                <span className="ml-1">typing...</span>
+              </div>
+            ) : conversation.last_message ? (
               <p className={cn(
                 "text-[14px] truncate",
                 conversation.unread_count > 0 
                   ? "text-gray-900 dark:text-gray-100 font-medium" 
                   : "text-gray-500 dark:text-gray-400"
               )}>
-                {truncateMessage(conversation.last_message.content, 40)}
+                {conversation.last_message.sender_id === conversation.participant_1_id || conversation.last_message.sender_id === conversation.participant_2_id 
+                  ? '' 
+                  : 'You: '
+                }
+                {truncateMessage(conversation.last_message.content, 35)}
+              </p>
+            ) : (
+              <p className="text-[14px] text-gray-400 dark:text-gray-500">
+                Start a conversation...
               </p>
             )}
           </div>
