@@ -22,6 +22,7 @@ import CommunitySubscriptions from '@/pages/CommunitySubscriptions';
 import CommunityPaymentSettings from '@/pages/CommunityPaymentSettings';
 import SimpleMessages from '@/pages/SimpleMessages';
 import MessagesTester from '@/pages/MessagesTester';
+import DatabaseChecker from '@/pages/DatabaseChecker';
 import ProfileSettings from '@/pages/ProfileSettings';
 import PaymentMethods from '@/pages/PaymentMethods';
 import { CreatorWallet } from '@/pages/CreatorWallet';
@@ -127,6 +128,11 @@ function App() {
               <Route path="/messages/test" element={
                 <ProtectedRoute>
                   <MessagesTester />
+                </ProtectedRoute>
+              } />
+              <Route path="/messages/debug" element={
+                <ProtectedRoute>
+                  <DatabaseChecker />
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={
