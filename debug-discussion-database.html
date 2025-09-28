@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Discussion Database</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Debug Discussion Database</h1>
+    <div id="output"></div>
+
+    <script>
+        const SUPABASE_URL = "https://tgmflbglhmnrliredlbn.supabase.co";
+        const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnbWZsYmdsaG1ucmxpcmVkbGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MDY1MDksImV4cCI6MjA2OTQ4MjUwOX0.I5OHpsbFZwUDRTM4uFFjoE43nW1LyZb1kOE1N9OTAI8";
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            console.log(message);
+            output.innerHTML += '<p>' + JSON.stringify(message, null, 2) + '</p>';
+        }
+
+        async function debugDatabase() {
+            try {
+                log("=== Starting Database Debug ===");
+                
+                // Check if we can connect
+                log("1. Testing basic connection...");
+                const { data: connectionTest, error: connectionError } = await supabase.auth.getSession();
+                if (connectionError) {
+                    log("Connection Error: " + connectionError.message);
+                } else {
+                    log("✅ Connection successful");
+                }
+                
+                // Check if community_posts table exists
+                log("2. Checking if community_posts table exists...");
+                const { data: tableCheck, error: tableError } = await supabase
+                    .from('community_posts')
+                    .select('count')
+                    .limit(1);
+                    
+                if (tableError) {
+                    log("❌ community_posts table error: " + tableError.message);
+                    log("Error details: " + JSON.stringify(tableError));
+                } else {
+                    log("✅ community_posts table accessible");
+                }
+                
+                // Check for communities table
+                log("3. Checking communities table...");
+                const { data: communitiesData, error: communitiesError } = await supabase
+                    .from('communities')
+                    .select('id, name')
+                    .limit(3);
+                    
+                if (communitiesError) {
+                    log("❌ communities table error: " + communitiesError.message);
+                } else {
+                    log("✅ communities table accessible");
+                    log("Sample communities: " + JSON.stringify(communitiesData));
+                }
+                
+                // Check profiles table
+                log("4. Checking profiles table...");
+                const { data: profilesData, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('id, display_name')
+                    .limit(3);
+                    
+                if (profilesError) {
+                    log("❌ profiles table error: " + profilesError.message);
+                } else {
+                    log("✅ profiles table accessible");
+                    log("Sample profiles: " + JSON.stringify(profilesData));
+                }
+                
+                // Test the exact query from ModernDiscussion
+                log("5. Testing the exact query from ModernDiscussion...");
+                if (communitiesData && communitiesData.length > 0) {
+                    const communityId = communitiesData[0].id;
+                    const { data: postsData, error: postsError } = await supabase
+                        .from('community_posts')
+                        .select(`
+                            id,
+                            content,
+                            image_url,
+                            link_url,
+                            link_title,
+                            link_description,
+                            link_image_url,
+                            likes_count,
+                            comments_count,
+                            is_pinned,
+                            created_at,
+                            updated_at,
+                            user_id,
+                            category,
+                            profiles!community_posts_user_id_fkey (
+                                display_name,
+                                avatar_url
+                            )
+                        `)
+                        .eq('community_id', communityId)
+                        .order('is_pinned', { ascending: false })
+                        .order('created_at', { ascending: false });
+
+                    if (postsError) {
+                        log("❌ Posts query error: " + postsError.message);
+                        log("Error details: " + JSON.stringify(postsError));
+                    } else {
+                        log("✅ Posts query successful");
+                        log("Posts found: " + (postsData?.length || 0));
+                        if (postsData && postsData.length > 0) {
+                            log("Sample post: " + JSON.stringify(postsData[0]));
+                        }
+                    }
+                }
+                
+                // Check community_post_likes table
+                log("6. Checking community_post_likes table...");
+                const { data: likesData, error: likesError } = await supabase
+                    .from('community_post_likes')
+                    .select('count')
+                    .limit(1);
+                    
+                if (likesError) {
+                    log("❌ community_post_likes table error: " + likesError.message);
+                } else {
+                    log("✅ community_post_likes table accessible");
+                }
+                
+                // Check community_post_comments table
+                log("7. Checking community_post_comments table...");
+                const { data: commentsData, error: commentsError } = await supabase
+                    .from('community_post_comments')
+                    .select('count')
+                    .limit(1);
+                    
+                if (commentsError) {
+                    log("❌ community_post_comments table error: " + commentsError.message);
+                } else {
+                    log("✅ community_post_comments table accessible");
+                }
+
+                log("=== Debug Complete ===");
+                
+            } catch (error) {
+                log("❌ Unexpected error: " + error.message);
+                log("Error details: " + JSON.stringify(error));
+            }
+        }
+        
+        // Run debug on page load
+        debugDatabase();
+    </script>
+</body>
+</html>

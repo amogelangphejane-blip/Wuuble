@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -43,6 +43,55 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import ResponsiveImage from './ResponsiveImage';
 
+// Memoized comment input component to prevent keyboard issues
+const CommentInput = React.memo(({ 
+  postId, 
+  value, 
+  onChange, 
+  onSubmit, 
+  disabled,
+  userAvatarUrl 
+}: {
+  postId: string;
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  disabled: boolean;
+  userAvatarUrl: string;
+}) => {
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      onSubmit();
+    }
+  }, [onSubmit]);
+
+  return (
+    <div className="flex gap-3 mt-4">
+      <Avatar className="w-8 h-8">
+        <AvatarImage src={userAvatarUrl} className="object-cover" />
+      </Avatar>
+      <div className="flex-1 flex gap-2">
+        <Input
+          placeholder="Write a comment..."
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyPress={handleKeyPress}
+          className="rounded-full border-gray-200 dark:border-gray-800"
+        />
+        <Button
+          size="sm"
+          onClick={onSubmit}
+          disabled={disabled}
+          className="rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+        >
+          <Send className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+});
+
 interface User {
   id: string;
   email?: string;
@@ -66,7 +115,7 @@ interface Post {
   link_url?: string;
   link_title?: string;
   link_description?: string;
-  link_image?: string;
+  link_image_url?: string;
   likes_count: number;
   comments_count: number;
   is_pinned: boolean;
@@ -219,6 +268,71 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
 
   useEffect(() => {
     fetchPosts();
+
+    // Set up real-time subscriptions for posts (only for new posts, not updates)
+    const postsChannel = supabase
+      .channel(`community_posts_${communityId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'community_posts',
+          filter: `community_id=eq.${communityId}`,
+        },
+        (payload) => {
+          // Only refetch if it's a new post from another user
+          if (payload.new && payload.new.user_id !== user?.id) {
+            fetchPosts();
+          }
+        }
+      )
+      .subscribe();
+
+    // More selective subscriptions to reduce unnecessary updates
+    const likesChannel = supabase
+      .channel(`community_post_likes_${communityId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'community_post_likes',
+        },
+        (payload) => {
+          // Only update if it's not the current user's action
+          if (payload.new?.user_id !== user?.id || payload.old?.user_id !== user?.id) {
+            // Debounce the update to prevent rapid re-renders
+            setTimeout(() => fetchPosts(), 500);
+          }
+        }
+      )
+      .subscribe();
+
+    // Comments channel with debouncing
+    const commentsChannel = supabase
+      .channel(`community_post_comments_${communityId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'community_post_comments',
+        },
+        (payload) => {
+          // Only refetch if it's a comment from another user
+          if (payload.new && payload.new.user_id !== user?.id) {
+            setTimeout(() => fetchPosts(), 500);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(postsChannel);
+      supabase.removeChannel(likesChannel);
+      supabase.removeChannel(commentsChannel);
+    };
   }, [communityId, sortBy]);
 
   // Refresh user data to ensure we have the latest profile info
@@ -243,145 +357,154 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
     try {
       setLoading(true);
       
-      // For demo purposes, create mock posts with enhanced data
-      const mockPosts: Post[] = [
-        {
-          id: '1',
-          community_id: communityId,
-          user_id: 'user1',
-          content: 'Welcome to our community! 🎉 I\'m excited to be here and looking forward to connecting with everyone. This is a space where we can share ideas, collaborate, and learn from each other. Feel free to introduce yourselves and share what brings you to our community!',
-          image_url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=500&h=300&fit=crop',
-          likes_count: 24,
-          comments_count: 8,
-          is_pinned: true,
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-          updated_at: new Date(Date.now() - 3600000).toISOString(),
-          user: {
-            id: 'user1',
-            email: 'admin@example.com',
-            user_metadata: {
-              display_name: 'Alexandra Chen',
-              avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-              full_name: 'Alexandra Chen'
-            },
-            username: 'alexandra_chen'
-          },
-          liked_by_user: false,
-          bookmarked_by_user: false,
-          comments: [
-            {
-              id: 'c1',
-              post_id: '1',
-              user_id: 'user2',
-              content: 'Welcome Alexandra! So excited to be part of this community 🚀',
-              created_at: new Date(Date.now() - 1800000).toISOString(),
-              user: {
-                id: 'user2',
-                email: 'member@example.com',
-                user_metadata: {
-                  display_name: 'Sarah Johnson',
-                  avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-                  full_name: 'Sarah Johnson'
-                },
-                username: 'sarah_j'
-              }
-            },
-            {
-              id: 'c2',
-              post_id: '1',
-              user_id: 'user3',
-              content: 'Thanks for creating this space! Looking forward to the discussions ahead.',
-              created_at: new Date(Date.now() - 900000).toISOString(),
-              user: {
-                id: 'user3',
-                email: 'member3@example.com',
-                user_metadata: {
-                  display_name: 'Mike Rodriguez',
-                  avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-                  full_name: 'Mike Rodriguez'
-                },
-                username: 'mike_r'
-              }
+      // Fetch real posts from the database - start with basic columns that should exist
+      const { data, error } = await supabase
+        .from('community_posts')
+        .select(`
+          id,
+          content,
+          created_at,
+          updated_at,
+          user_id,
+          community_id
+        `)
+        .eq('community_id', communityId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching posts:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load discussions",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // For now, let's get the user profile info separately to avoid foreign key issues
+      const postsWithUserInfo = await Promise.all(
+        (data || []).map(async (post) => {
+          // Try to get user profile info
+          let userProfile = null;
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('display_name, avatar_url')
+              .eq('user_id', post.user_id)
+              .single();
+            userProfile = profile;
+          } catch (profileError) {
+            console.log('Could not fetch profile for user:', post.user_id);
+          }
+
+          // Try to get likes count (table might not exist yet)
+          let likesCount = 0;
+          let userLiked = false;
+          try {
+            const { data: likes } = await supabase
+              .from('community_post_likes')
+              .select('user_id')
+              .eq('post_id', post.id);
+            
+            likesCount = likes?.length || 0;
+            userLiked = user ? (likes || []).some(like => like.user_id === user.id) : false;
+          } catch (likesError) {
+            console.log('Likes table not available yet:', likesError.message);
+          }
+
+          // Try to get comments count (table might not exist yet)
+          let commentsCount = 0;
+          let comments = [];
+          try {
+            const { data: commentData } = await supabase
+              .from('community_post_comments')
+              .select(`
+                id,
+                content,
+                created_at,
+                user_id,
+                parent_comment_id
+              `)
+              .eq('post_id', post.id)
+              .order('created_at', { ascending: true });
+
+            commentsCount = commentData?.length || 0;
+            
+            // Get user info for comments
+            if (commentData && commentData.length > 0) {
+              const commentsWithUsers = await Promise.all(
+                commentData.map(async (comment) => {
+                  let commentUserProfile = null;
+                  try {
+                    const { data: commentProfile } = await supabase
+                      .from('profiles')
+                      .select('display_name, avatar_url')
+                      .eq('user_id', comment.user_id)
+                      .single();
+                    commentUserProfile = commentProfile;
+                  } catch (e) {
+                    console.log('Could not fetch comment user profile');
+                  }
+
+                  return {
+                    ...comment,
+                    user: {
+                      id: comment.user_id,
+                      email: '',
+                      user_metadata: {
+                        display_name: commentUserProfile?.display_name || 'Anonymous',
+                        avatar_url: commentUserProfile?.avatar_url || ''
+                      }
+                    }
+                  };
+                })
+              );
+              
+              // Organize comments with replies
+              const topLevelComments = commentsWithUsers.filter(c => !c.parent_comment_id);
+              const commentReplies = commentsWithUsers.filter(c => c.parent_comment_id);
+              
+              comments = topLevelComments.map(comment => ({
+                ...comment,
+                replies: commentReplies.filter(reply => reply.parent_comment_id === comment.id)
+              }));
             }
-          ]
-        },
-        {
-          id: '2',
-          community_id: communityId,
-          user_id: 'user2',
-          content: 'Just discovered this amazing resource for learning React! The interactive tutorials and real-world examples make it super easy to understand complex concepts. Highly recommend checking it out if you\'re looking to level up your React skills.',
-          link_url: 'https://react.dev',
-          link_title: 'React - The library for web and native user interfaces',
-          link_description: 'React lets you build user interfaces out of individual pieces called components. Create your own React components like Thumbnail, LikeButton, and Video.',
-          link_image: 'https://react.dev/images/home/conf2021/cover.svg',
-          likes_count: 18,
-          comments_count: 5,
-          is_pinned: false,
-          created_at: new Date(Date.now() - 7200000).toISOString(),
-          updated_at: new Date(Date.now() - 7200000).toISOString(),
-          user: {
-            id: 'user2',
-            email: 'member@example.com',
-            user_metadata: {
-              display_name: 'Sarah Johnson',
-              avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-              full_name: 'Sarah Johnson'
+          } catch (commentsError) {
+            console.log('Comments table not available yet:', commentsError.message);
+          }
+
+          return {
+            id: post.id,
+            community_id: post.community_id,
+            user_id: post.user_id,
+            content: post.content,
+            image_url: null, // Will be null until schema is updated
+            link_url: null,
+            link_title: null,
+            link_description: null,
+            link_image_url: null,
+            likes_count: likesCount,
+            comments_count: commentsCount,
+            is_pinned: false, // Will be false until schema is updated
+            created_at: post.created_at,
+            updated_at: post.updated_at,
+            user: {
+              id: post.user_id,
+              email: '',
+              user_metadata: {
+                display_name: userProfile?.display_name || 'Anonymous User',
+                avatar_url: userProfile?.avatar_url || ''
+              }
             },
-            username: 'sarah_j'
-          },
-          liked_by_user: true,
-          bookmarked_by_user: true
-        },
-        {
-          id: '3',
-          community_id: communityId,
-          user_id: 'user4',
-          content: 'What are your favorite productivity tools? I\'m always looking for ways to optimize my workflow and would love to hear what works for you! Here are some of mine:\n\n• Notion for note-taking and project management\n• Figma for design collaboration\n• VS Code for development\n• Slack for team communication\n\nWhat would you add to this list?',
-          likes_count: 12,
-          comments_count: 15,
-          is_pinned: false,
-          created_at: new Date(Date.now() - 10800000).toISOString(),
-          updated_at: new Date(Date.now() - 10800000).toISOString(),
-          user: {
-            id: 'user4',
-            email: 'member4@example.com',
-            user_metadata: {
-              display_name: 'Jordan Kim',
-              // No avatar_url to demonstrate default avatar functionality
-              full_name: 'Jordan Kim'
-            },
-            username: 'jordan_k'
-          },
-          liked_by_user: false,
-          bookmarked_by_user: false
-        },
-        {
-          id: '4',
-          community_id: communityId,
-          user_id: 'user5',
-          content: 'Just finished reading a great article on React performance optimization. The key takeaways were using React.memo for expensive components and optimizing re-renders with useMemo and useCallback. Anyone else have tips for React performance?',
-          likes_count: 8,
-          comments_count: 3,
-          is_pinned: false,
-          created_at: new Date(Date.now() - 14400000).toISOString(),
-          updated_at: new Date(Date.now() - 14400000).toISOString(),
-          user: {
-            id: 'user5',
-            email: 'developer@example.com',
-            user_metadata: {
-              display_name: 'Emily Rodriguez',
-              avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face',
-              full_name: 'Emily Rodriguez'
-            },
-            username: 'emily_dev'
-          },
-          liked_by_user: false,
-          bookmarked_by_user: false
-        }
-      ];
+            comments: comments,
+            liked_by_user: userLiked,
+            bookmarked_by_user: false
+          };
+        })
+      );
 
       // Sort posts based on selected option
-      const sortedPosts = [...mockPosts].sort((a, b) => {
+      const sortedPosts = [...postsWithUserInfo].sort((a, b) => {
         switch (sortBy) {
           case 'popular':
             return b.likes_count - a.likes_count;
@@ -510,39 +633,44 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         imageUrl = await uploadImage(selectedImage);
       }
 
-      const newPost: Post = {
-        id: Date.now().toString(),
-        community_id: communityId,
-        user_id: user.id,
-        content: newPostContent,
-        image_url: imageUrl,
-        link_url: linkUrl || undefined,
-        link_title: linkPreview?.title,
-        link_description: linkPreview?.description,
-        link_image: linkPreview?.image,
-        likes_count: 0,
-        comments_count: 0,
-        is_pinned: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        user: {
-          id: user.id,
-          email: user.email || '',
-          user_metadata: user.user_metadata,
-          username: user.user_metadata?.username || user.email?.split('@')[0]
-        },
-        comments: [],
-        liked_by_user: false,
-        bookmarked_by_user: false
-      };
+      // Ensure content is never empty for database NOT NULL constraint
+      const content = newPostContent.trim() || 
+        (selectedImage ? '[Image Post]' : '') ||
+        (linkUrl ? '[Link Post]' : '[Post]');
 
-      setPosts([newPost, ...posts]);
+      // Create the post in the database - use only basic columns that should exist
+      const { data, error } = await supabase
+        .from('community_posts')
+        .insert([
+          {
+            community_id: communityId,
+            user_id: user.id,
+            content: content
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating post:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create post",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Clear the form
       setNewPostContent('');
       setSelectedImage(null);
       setImagePreview(null);
       setLinkUrl('');
       setLinkPreview(null);
       setShowNewPost(false);
+      
+      // Refresh posts to show the new post
+      await fetchPosts();
       
       toast({
         title: "Posted!",
@@ -570,16 +698,68 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
       return;
     }
 
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          liked_by_user: !post.liked_by_user,
-          likes_count: post.liked_by_user ? post.likes_count - 1 : post.likes_count + 1
-        };
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    try {
+      // Check if likes table exists by trying to query it first
+      const { data: testLikes, error: testError } = await supabase
+        .from('community_post_likes')
+        .select('count')
+        .limit(1);
+        
+      if (testError) {
+        toast({
+          title: "Feature not available",
+          description: "Likes feature requires database setup. Please apply the schema first.",
+          variant: "destructive"
+        });
+        return;
       }
-      return post;
-    }));
+
+      if (post.liked_by_user) {
+        // Remove like
+        const { error } = await supabase
+          .from('community_post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        // Add like
+        const { error } = await supabase
+          .from('community_post_likes')
+          .insert([
+            {
+              post_id: postId,
+              user_id: user.id
+            }
+          ]);
+
+        if (error) throw error;
+      }
+
+      // Update local state optimistically
+      setPosts(posts.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            liked_by_user: !p.liked_by_user,
+            likes_count: p.liked_by_user ? p.likes_count - 1 : p.likes_count + 1
+          };
+        }
+        return p;
+      }));
+
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like. Database schema may need to be applied.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleBookmarkPost = async (postId: string) => {
@@ -611,37 +791,74 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
     }
   };
 
-  const handleComment = async (postId: string) => {
+  const handleCommentInputChange = useCallback((postId: string, value: string) => {
+    setCommentInputs(prev => ({
+      ...prev,
+      [postId]: value
+    }));
+  }, []);
+
+  const handleComment = useCallback(async (postId: string) => {
     const content = commentInputs[postId];
     if (!user || !content?.trim()) return;
 
     try {
-      const newComment: Comment = {
-        id: Date.now().toString(),
+      // Create comment in database
+      const { data, error } = await supabase
+        .from('community_post_comments')
+        .insert([
+          {
+            post_id: postId,
+            user_id: user.id,
+            content: content.trim(),
+            parent_comment_id: null
+          }
+        ])
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id
+        `)
+        .single();
+
+      if (error) throw error;
+
+      // Create new comment object for optimistic update
+      const newComment = {
+        id: data.id,
         post_id: postId,
         user_id: user.id,
-        content: content,
-        created_at: new Date().toISOString(),
+        content: content.trim(),
+        created_at: data.created_at,
+        parent_comment_id: null,
         user: {
           id: user.id,
-          email: user.email || '',
-          user_metadata: user.user_metadata,
-          username: user.user_metadata?.username || user.email?.split('@')[0]
-        }
+          email: '',
+          user_metadata: {
+            display_name: user.user_metadata?.display_name || 'Anonymous',
+            avatar_url: user.user_metadata?.avatar_url || ''
+          }
+        },
+        replies: []
       };
 
-      setPosts(posts.map(post => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            comments: [...(post.comments || []), newComment],
-            comments_count: post.comments_count + 1
-          };
-        }
-        return post;
-      }));
+      // Update posts state optimistically without refetching everything
+      setPosts(prevPosts => 
+        prevPosts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              comments: [...post.comments, newComment],
+              comments_count: post.comments_count + 1
+            };
+          }
+          return post;
+        })
+      );
 
-      setCommentInputs({ ...commentInputs, [postId]: '' });
+      // Clear input AFTER state update to prevent keyboard issues
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
       
       toast({
         title: "Comment added",
@@ -651,11 +868,11 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
       console.error('Error adding comment:', error);
       toast({
         title: "Error",
-        description: "Failed to add comment",
+        description: "Failed to add comment. Please try again.",
         variant: "destructive"
       });
     }
-  };
+  }, [commentInputs, user]);
 
   const toggleComments = (postId: string) => {
     const newExpanded = new Set(expandedComments);
@@ -802,9 +1019,9 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 rel="noopener noreferrer"
                 className="block border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 transition-colors"
               >
-                {post.link_image && (
+                {post.link_image_url && (
                   <ResponsiveImage 
-                    src={post.link_image} 
+                    src={post.link_image_url} 
                     alt="" 
                     className="w-full h-48"
                     objectFit="cover"
@@ -918,36 +1135,14 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 ))}
                 
                 {user && (
-                  <div className="flex gap-3 mt-4">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={getUserAvatarUrl(user, user)} className="object-cover" />
-                    </Avatar>
-                    <div className="flex-1 flex gap-2">
-                      <Input
-                        placeholder="Write a comment..."
-                        value={commentInputs[post.id] || ''}
-                        onChange={(e) => setCommentInputs({
-                          ...commentInputs,
-                          [post.id]: e.target.value
-                        })}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleComment(post.id);
-                          }
-                        }}
-                        className="rounded-full border-gray-200 dark:border-gray-800"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() => handleComment(post.id)}
-                        disabled={!commentInputs[post.id]?.trim()}
-                        className="rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  <CommentInput
+                    postId={post.id}
+                    value={commentInputs[post.id] || ''}
+                    onChange={(value) => handleCommentInputChange(post.id, value)}
+                    onSubmit={() => handleComment(post.id)}
+                    disabled={!commentInputs[post.id]?.trim()}
+                    userAvatarUrl={getUserAvatarUrl(user, user)}
+                  />
                 )}
               </motion.div>
             )}
