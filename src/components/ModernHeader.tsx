@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { validateAvatarUrl } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import NotificationCenter from '@/components/NotificationCenter';
+import { MessageDropdown } from '@/components/MessageDropdown';
 
 
 interface ModernHeaderProps {
@@ -70,12 +71,6 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
       href: '/communities',
       icon: Users,
       active: location.pathname.startsWith('/communities')
-    },
-    {
-      label: 'Messages',
-      href: '/messages',
-      icon: Mail,
-      active: location.pathname.startsWith('/messages')
     }
   ];
 
@@ -127,7 +122,8 @@ export const ModernHeader = ({ showAuthButtons = true }: ModernHeaderProps) => {
 
           {/* Right Section */}
           <div className="flex items-center space-x-4">
-
+            {/* Message Dropdown */}
+            {user && <MessageDropdown />}
 
             {/* Theme Toggle */}
             <ThemeToggle />
