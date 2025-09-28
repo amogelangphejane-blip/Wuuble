@@ -21,6 +21,7 @@ import CommunityAbout from '@/pages/CommunityAbout';
 import CommunitySubscriptions from '@/pages/CommunitySubscriptions';
 import CommunityPaymentSettings from '@/pages/CommunityPaymentSettings';
 import SimpleMessages from '@/pages/SimpleMessages';
+import MessagesTester from '@/pages/MessagesTester';
 import ProfileSettings from '@/pages/ProfileSettings';
 import PaymentMethods from '@/pages/PaymentMethods';
 import { CreatorWallet } from '@/pages/CreatorWallet';
@@ -121,6 +122,11 @@ function App() {
               <Route path="/messages" element={
                 <ProtectedRoute>
                   <SimpleMessages />
+                </ProtectedRoute>
+              } />
+              <Route path="/messages/test" element={
+                <ProtectedRoute>
+                  <MessagesTester />
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={

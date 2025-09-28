@@ -87,38 +87,59 @@ export default function SimpleMessages() {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // First get conversations
+      const { data: conversations, error } = await supabase
         .from('simple_conversations')
-        .select(`
-          id,
-          user1_id,
-          user2_id,
-          last_message,
-          updated_at,
-          user1:profiles!simple_conversations_user1_id_fkey(display_name),
-          user2:profiles!simple_conversations_user2_id_fkey(display_name)
-        `)
+        .select('id, user1_id, user2_id, last_message, updated_at')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
 
-      const formattedConversations = data?.map(conv => ({
-        id: conv.id,
-        other_user_id: conv.user1_id === user.id ? conv.user2_id : conv.user1_id,
-        other_user_name: conv.user1_id === user.id ? 
-          (conv.user2 as any)?.display_name || 'Unknown User' : 
-          (conv.user1 as any)?.display_name || 'Unknown User',
-        last_message: conv.last_message || 'No messages yet',
-        updated_at: conv.updated_at
-      })) || [];
+      if (!conversations || conversations.length === 0) {
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get all other user IDs
+      const otherUserIds = conversations.map(conv => 
+        conv.user1_id === user.id ? conv.user2_id : conv.user1_id
+      );
+
+      // Get profiles for other users
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', otherUserIds);
+
+      if (profileError) {
+        console.warn('Error loading profiles:', profileError);
+      }
+
+      // Create a map of user_id to display_name
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.user_id, profile.display_name);
+      });
+
+      const formattedConversations = conversations.map(conv => {
+        const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id;
+        return {
+          id: conv.id,
+          other_user_id: otherUserId,
+          other_user_name: profileMap.get(otherUserId) || `User ${otherUserId.slice(0, 8)}`,
+          last_message: conv.last_message || 'No messages yet',
+          updated_at: conv.updated_at
+        };
+      });
 
       setConversations(formattedConversations);
     } catch (error: any) {
       console.error('Error loading conversations:', error);
       toast({
         title: "Error",
-        description: "Failed to load conversations",
+        description: "Failed to load conversations. Make sure database schema is applied.",
         variant: "destructive",
       });
     } finally {
@@ -128,34 +149,54 @@ export default function SimpleMessages() {
 
   const loadMessages = async (conversationId: string) => {
     try {
-      const { data, error } = await supabase
+      // First get messages
+      const { data: messages, error } = await supabase
         .from('simple_messages')
-        .select(`
-          id,
-          content,
-          sender_id,
-          created_at,
-          sender:profiles!simple_messages_sender_id_fkey(display_name)
-        `)
+        .select('id, content, sender_id, created_at')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      const formattedMessages = data?.map(msg => ({
+      if (!messages || messages.length === 0) {
+        setMessages([]);
+        return;
+      }
+
+      // Get unique sender IDs
+      const senderIds = [...new Set(messages.map(msg => msg.sender_id))];
+
+      // Get profiles for senders
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', senderIds);
+
+      if (profileError) {
+        console.warn('Error loading sender profiles:', profileError);
+      }
+
+      // Create a map of user_id to display_name
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.user_id, profile.display_name);
+      });
+
+      const formattedMessages = messages.map(msg => ({
         id: msg.id,
         content: msg.content,
         sender_id: msg.sender_id,
         created_at: msg.created_at,
-        sender_name: (msg.sender as any)?.display_name || 'Unknown User'
-      })) || [];
+        sender_name: msg.sender_id === user?.id ? 'You' : 
+          (profileMap.get(msg.sender_id) || `User ${msg.sender_id.slice(0, 8)}`)
+      }));
 
       setMessages(formattedMessages);
     } catch (error: any) {
       console.error('Error loading messages:', error);
       toast({
         title: "Error",
-        description: "Failed to load messages",
+        description: "Failed to load messages. Check console for details.",
         variant: "destructive",
       });
     }
@@ -199,36 +240,84 @@ export default function SimpleMessages() {
     if (!newUserEmail.trim() || !user) return;
 
     try {
-      // Find user by email
-      const { data: userData, error: userError } = await supabase
+      let targetUserId = newUserEmail.trim();
+      
+      // If it looks like an email, try to find by email, otherwise treat as user ID
+      if (newUserEmail.includes('@')) {
+        // Try to find user by email in auth.users (this requires admin access, so we'll skip this)
+        toast({
+          title: "Note",
+          description: "Please use User ID instead of email for now",
+          variant: "default",
+        });
+        return;
+      }
+
+      // Check if user exists and get/create their profile
+      const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('user_id, display_name')
-        .eq('user_id', newUserEmail.trim())
+        .eq('user_id', targetUserId)
+        .maybeSingle();
+
+      if (profileError) {
+        console.warn('Profile check error:', profileError);
+      }
+
+      // If no profile exists, create one (this might fail if user doesn't exist)
+      if (!existingProfile) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({ 
+            user_id: targetUserId, 
+            display_name: `User ${targetUserId.slice(0, 8)}` 
+          });
+        
+        if (insertError) {
+          console.warn('Could not create profile:', insertError);
+        }
+      }
+
+      // Check if conversation already exists
+      const { data: existingConv } = await supabase
+        .from('simple_conversations')
+        .select('id')
+        .or(`and(user1_id.eq.${user.id},user2_id.eq.${targetUserId}),and(user1_id.eq.${targetUserId},user2_id.eq.${user.id})`)
+        .maybeSingle();
+
+      if (existingConv) {
+        setSelectedConversation(existingConv.id);
+        setNewUserEmail('');
+        toast({
+          title: "Info",
+          description: "Conversation already exists",
+        });
+        return;
+      }
+
+      // Create new conversation
+      const { data: convData, error: convError } = await supabase
+        .from('simple_conversations')
+        .insert({
+          user1_id: user.id,
+          user2_id: targetUserId
+        })
+        .select()
         .single();
 
-      if (userError) {
+      if (convError) {
+        console.error('Conversation creation error:', convError);
         toast({
           title: "Error",
-          description: "User not found",
+          description: "Failed to create conversation. Make sure the User ID is valid.",
           variant: "destructive",
         });
         return;
       }
 
-      // Create conversation
-      const { data: convData, error: convError } = await supabase
-        .from('simple_conversations')
-        .insert({
-          user1_id: user.id,
-          user2_id: userData.user_id
-        })
-        .select()
-        .single();
-
-      if (convError) throw convError;
-
       setNewUserEmail('');
       loadConversations();
+      setSelectedConversation(convData.id);
       toast({
         title: "Success",
         description: "New conversation started!",
@@ -237,7 +326,7 @@ export default function SimpleMessages() {
       console.error('Error creating conversation:', error);
       toast({
         title: "Error",
-        description: "Failed to create conversation",
+        description: "Failed to create conversation. Check console for details.",
         variant: "destructive",
       });
     }
