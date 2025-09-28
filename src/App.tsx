@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { LoadingProvider } from '@/contexts/LoadingContext';
 import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
 
@@ -9,7 +10,7 @@ import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import EnhancedCommunities from '@/pages/EnhancedCommunities';
 import SkoolStyleCommunityDetail from '@/pages/SkoolStyleCommunityDetail';
-import CommunityMembers from '@/pages/CommunityMembers';
+import ModernCommunityMembers from '@/pages/ModernCommunityMembers';
 import SimpleCommunityCalendar from '@/pages/SimpleCommunityCalendar';
 import CommunityClassroom from '@/pages/CommunityClassroom';
 import CommunityLeaderboard from '@/pages/CommunityLeaderboard';
@@ -52,8 +53,9 @@ function App() {
   return (
     <AuthProvider>
       <LoadingProvider>
-        <Router>
-          <div className="min-h-screen bg-gray-50">
+        <TooltipProvider>
+          <Router>
+            <div className="min-h-screen bg-gray-50">
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Index />} />
@@ -72,7 +74,7 @@ function App() {
             } />
               <Route path="/community/:id/members" element={
                 <ProtectedRoute>
-                  <CommunityMembers />
+                  <ModernCommunityMembers />
                 </ProtectedRoute>
               } />
               <Route path="/community/:id/calendar" element={
@@ -142,8 +144,9 @@ function App() {
             
             <Toaster />
             <GlobalLoadingOverlay />
-          </div>
-        </Router>
+            </div>
+          </Router>
+        </TooltipProvider>
       </LoadingProvider>
     </AuthProvider>
   );
