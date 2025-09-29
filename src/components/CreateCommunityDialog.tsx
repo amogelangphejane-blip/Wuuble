@@ -37,6 +37,7 @@ import {
   Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ensureUserProfile } from '@/utils/profileUtils';
 
 interface CreateCommunityDialogProps {
   open: boolean;
@@ -138,6 +139,9 @@ export const CreateCommunityDialog: React.FC<CreateCommunityDialogProps> = ({
         .single();
 
       if (error) throw error;
+
+      // Ensure user profile exists
+      await ensureUserProfile(user);
 
       // Add owner as first member
       await supabase

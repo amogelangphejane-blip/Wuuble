@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { useEnsureProfile } from '@/hooks/useEnsureProfile';
 import {
   ArrowLeft,
   Users,
@@ -36,15 +37,11 @@ interface CommunityMember {
   community_id: string;
   role: 'owner' | 'admin' | 'moderator' | 'member';
   joined_at: string;
-  user: {
-    id: string;
-    email: string;
-    user_metadata: {
-      display_name?: string;
-      avatar_url?: string;
-      full_name?: string;
-    };
-  };
+  profiles: {
+    display_name: string | null;
+    avatar_url: string | null;
+    bio: string | null;
+  } | null;
 }
 
 interface Community {
@@ -72,6 +69,9 @@ export const SimpleCommunityMembers: React.FC = () => {
   const [currentUserRole, setCurrentUserRole] = useState<string>('member');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Ensure current user has a profile
+  useEnsureProfile();
+
   useEffect(() => {
     if (user && id) {
       fetchCommunityAndMembers();
@@ -84,10 +84,10 @@ export const SimpleCommunityMembers: React.FC = () => {
       setFilteredMembers(members);
     } else {
       const filtered = members.filter(member => {
-        const displayName = getDisplayName(member.user);
-        const email = member.user.email || '';
+        const displayName = getDisplayName(member);
+        const bio = member.profiles?.bio || '';
         return displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-               email.toLowerCase().includes(searchQuery.toLowerCase());
+               bio.toLowerCase().includes(searchQuery.toLowerCase());
       });
       setFilteredMembers(filtered);
     }
@@ -124,10 +124,10 @@ export const SimpleCommunityMembers: React.FC = () => {
         .from('community_members')
         .select(`
           *,
-          user:user_id (
-            id,
-            email,
-            user_metadata
+          profiles:user_id (
+            display_name,
+            avatar_url,
+            bio
           )
         `)
         .eq('community_id', id)
@@ -166,17 +166,13 @@ export const SimpleCommunityMembers: React.FC = () => {
     }
   };
 
-  const getDisplayName = (userObj: any): string => {
-    return userObj?.user_metadata?.display_name ||
-           userObj?.user_metadata?.full_name ||
-           userObj?.email?.split('@')[0] ||
-           'Anonymous';
+  const getDisplayName = (member: CommunityMember): string => {
+    return member.profiles?.display_name || 'Anonymous';
   };
 
-  const getAvatarUrl = (userObj: any): string => {
-    return userObj?.user_metadata?.avatar_url ||
-           userObj?.user_metadata?.picture ||
-           `https://ui-avatars.com/api/?name=${encodeURIComponent(getDisplayName(userObj))}&background=6366f1&color=ffffff&size=150&bold=true&rounded=true`;
+  const getAvatarUrl = (member: CommunityMember): string => {
+    return member.profiles?.avatar_url ||
+           `https://ui-avatars.com/api/?name=${encodeURIComponent(getDisplayName(member))}&background=6366f1&color=ffffff&size=150&bold=true&rounded=true`;
   };
 
   const getRoleIcon = (role: string) => {
@@ -232,7 +228,7 @@ export const SimpleCommunityMembers: React.FC = () => {
           
           toast({
             title: "Member promoted",
-            description: `${getDisplayName(member.user)} has been promoted to ${newRole}.`
+            description: `${getDisplayName(member)} has been promoted to ${newRole}.`
           });
           break;
           
@@ -246,7 +242,7 @@ export const SimpleCommunityMembers: React.FC = () => {
           
           toast({
             title: "Member demoted",
-            description: `${getDisplayName(member.user)} has been demoted to member.`
+            description: `${getDisplayName(member)} has been demoted to member.`
           });
           break;
           
@@ -260,7 +256,7 @@ export const SimpleCommunityMembers: React.FC = () => {
           
           toast({
             title: "Member removed",
-            description: `${getDisplayName(member.user)} has been removed from the community.`
+            description: `${getDisplayName(member)} has been removed from the community.`
           });
           break;
           
@@ -436,21 +432,21 @@ export const SimpleCommunityMembers: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <Avatar className="w-12 h-12">
-                          <AvatarImage src={getAvatarUrl(member.user)} className="object-cover" />
+                          <AvatarImage src={getAvatarUrl(member)} className="object-cover" />
                           <AvatarFallback>
-                            {getDisplayName(member.user).substring(0, 2).toUpperCase()}
+                            {getDisplayName(member).substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-gray-900 dark:text-gray-100">
-                              {getDisplayName(member.user)}
+                              {getDisplayName(member)}
                             </p>
                             {getRoleIcon(member.role)}
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {member.user.email}
+                            {member.profiles?.bio || 'No bio available'}
                           </p>
                           <p className="text-xs text-gray-500">
                             Joined {formatDistanceToNow(new Date(member.joined_at), { addSuffix: true })}

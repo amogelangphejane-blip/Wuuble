@@ -12,6 +12,7 @@ import {
   BulkMemberAction,
   MemberEngagement
 } from '@/types/members';
+import { ensureUserProfile } from '@/utils/profileUtils';
 
 export class MemberService {
   // Fetch enhanced community members with all related data
@@ -298,6 +299,9 @@ export class MemberService {
     if (existingMember) {
       throw new Error('User is already a member of this community');
     }
+
+    // Ensure user profile exists
+    await ensureUserProfile(user.user);
 
     // Add user to community
     const { error: memberError } = await supabase
