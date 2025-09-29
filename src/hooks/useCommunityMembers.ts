@@ -77,7 +77,7 @@ export const useCommunityMembers = (communityId: string): UseMembersReturn => {
         .from('member_profiles')
         .select(`
           *,
-          member_badge_assignments!inner (
+          member_badge_assignments (
             id,
             awarded_at,
             progress,
