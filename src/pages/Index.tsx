@@ -14,8 +14,8 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ModernHeader />
+    <div className="min-h-screen bg-background">
+      <ModernHeader showAuthButtons={true} />
       <LandingPage />
     </div>
   );
