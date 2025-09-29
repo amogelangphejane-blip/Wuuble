@@ -139,13 +139,43 @@ export const CreateCommunityDialog: React.FC<CreateCommunityDialogProps> = ({
 
       if (error) throw error;
 
-      // Add owner as first member
-      await supabase
+      // Add owner as first member in community_members
+      const { error: memberError } = await supabase
         .from('community_members')
         .insert({
           community_id: data.id,
           user_id: user.id,
           role: 'owner'
+        });
+
+      if (memberError) {
+        console.error('Error adding creator as member:', memberError);
+        // Don't throw - the community was created successfully
+        // The trigger will handle syncing to member_profiles
+      }
+
+      // Also ensure creator is in member_profiles for immediate visibility
+      // (trigger handles this, but let's be explicit for real-time data)
+      await supabase
+        .from('member_profiles')
+        .insert({
+          user_id: user.id,
+          community_id: data.id,
+          role: 'creator',
+          status: 'active',
+          display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || 'Creator',
+          avatar_url: user.user_metadata?.avatar_url || null,
+          joined_at: new Date().toISOString(),
+          activity_score: 10,
+          engagement_level: 'active',
+          total_points: 50
+        })
+        .select()
+        .single()
+        .then(({ error: profileError }) => {
+          if (profileError && profileError.code !== '23505') { // Ignore duplicate key errors
+            console.error('Error creating member profile:', profileError);
+          }
         });
 
       toast({
