@@ -92,24 +92,24 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   if (isLoading) {
     return (
-      <div className="w-80 border-r bg-muted/20 backdrop-blur-sm">
-        <div className="p-4 border-b">
+      <div className="w-full border-r bg-muted/20 backdrop-blur-sm">
+        <div className="p-3 md:p-4 border-b">
           <div className="flex items-center justify-between">
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-4 md:h-6 w-16 md:w-20" />
+            <Skeleton className="h-6 w-6 md:h-8 md:w-8" />
           </div>
-          <div className="mt-4">
-            <Skeleton className="h-10 w-full" />
+          <div className="mt-3 md:mt-4">
+            <Skeleton className="h-8 md:h-10 w-full" />
           </div>
         </div>
-        <div className="p-4 space-y-4">
+        <div className="p-2 md:p-4 space-y-3 md:space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex gap-3">
-              <Skeleton className="h-12 w-12 rounded-full" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-32" />
-                <Skeleton className="h-3 w-16" />
+            <div key={i} className="flex gap-2 md:gap-3">
+              <Skeleton className="h-10 w-10 md:h-12 md:w-12 rounded-full" />
+              <div className="flex-1 space-y-1 md:space-y-2">
+                <Skeleton className="h-3 md:h-4 w-20 md:w-24" />
+                <Skeleton className="h-2 md:h-3 w-28 md:w-32" />
+                <Skeleton className="h-2 md:h-3 w-12 md:w-16" />
               </div>
             </div>
           ))}
@@ -308,7 +308,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
                   ? "text-gray-900 dark:text-gray-100 font-medium" 
                   : "text-gray-500 dark:text-gray-400"
               )}>
-                {truncateMessage(conversation.last_message.content, window.innerWidth < 768 ? 25 : 40)}
+                {truncateMessage(conversation.last_message.content, 40)}
               </p>
             )}
           </div>
