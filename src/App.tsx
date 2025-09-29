@@ -161,7 +161,8 @@ function App() {
           </Router>
         </TooltipProvider>
       </LoadingProvider>
-    </QueryClientProvider>
+    </AuthProvider>
+  </QueryClientProvider>
   );
 }
 
