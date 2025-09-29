@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ModernHeader } from '@/components/ModernHeader';
 import ResponsiveLayout from '@/components/ResponsiveLayout';
+import CommunityMemberService from '@/services/communityMemberService';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Users, 
   Calendar, 
@@ -20,7 +22,8 @@ import {
   Settings,
   ArrowLeft,
   Globe,
-  Lock
+  Lock,
+  Loader2
 } from 'lucide-react';
 
 interface Community {
@@ -40,8 +43,10 @@ const CommunityDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [community, setCommunity] = useState<Community | null>(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
 
@@ -79,14 +84,8 @@ const CommunityDetail: React.FC = () => {
     if (!user || !id) return;
 
     try {
-      const { data, error } = await supabase
-        .from('community_members')
-        .select('*')
-        .eq('community_id', id)
-        .eq('user_id', user.id)
-        .single();
-
-      setIsMember(!!data && !error);
+      const isMemberResult = await CommunityMemberService.isMember(id, user.id);
+      setIsMember(isMemberResult);
     } catch (err) {
       console.error('Error checking membership:', err);
     }
@@ -98,58 +97,85 @@ const CommunityDetail: React.FC = () => {
       return;
     }
 
+    setActionLoading(true);
+
     try {
-      const { error } = await supabase
-        .from('community_members')
-        .insert({
-          community_id: id,
-          user_id: user.id,
-          role: 'member'
+      const result = await CommunityMemberService.joinCommunity(id, user);
+
+      if (result.success) {
+        setIsMember(true);
+        
+        // Refresh community data to get updated member count
+        await fetchCommunity();
+        
+        toast({
+          title: "Success",
+          description: `You've joined ${community?.name || 'the community'}!`,
         });
-
-      if (error) {
-        console.error('Error joining community:', error);
-        return;
-      }
-
-      setIsMember(true);
-      // Update member count
-      if (community) {
-        setCommunity({
-          ...community,
-          member_count: (community.member_count || 0) + 1
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || 'Failed to join community',
+          variant: "destructive",
         });
       }
+      
     } catch (err) {
       console.error('Error:', err);
+      toast({
+        title: "Error", 
+        description: 'An unexpected error occurred',
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleLeaveCommunity = async () => {
     if (!user || !id) return;
 
+    // Confirm before leaving
+    const confirmed = window.confirm(
+      `Are you sure you want to leave ${community?.name || 'this community'}?`
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+
+    setActionLoading(true);
+
     try {
-      const { error } = await supabase
-        .from('community_members')
-        .delete()
-        .eq('community_id', id)
-        .eq('user_id', user.id);
+      const result = await CommunityMemberService.leaveCommunity(id, user.id);
 
-      if (error) {
-        console.error('Error leaving community:', error);
-        return;
-      }
-
-      setIsMember(false);
-      // Update member count
-      if (community) {
-        setCommunity({
-          ...community,
-          member_count: Math.max(0, (community.member_count || 0) - 1)
+      if (result.success) {
+        setIsMember(false);
+        
+        // Refresh community data to get updated member count
+        await fetchCommunity();
+        
+        toast({
+          title: "Success",
+          description: `You've left ${community?.name || 'the community'}`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || 'Failed to leave community',
+          variant: "destructive",
         });
       }
+      
     } catch (err) {
       console.error('Error:', err);
+      toast({
+        title: "Error",
+        description: 'An unexpected error occurred',
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -270,16 +296,32 @@ const CommunityDetail: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={handleLeaveCommunity}
+                          disabled={actionLoading}
                         >
-                          Leave Community
+                          {actionLoading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Leaving...
+                            </>
+                          ) : (
+                            'Leave Community'
+                          )}
                         </Button>
                       ) : (
                         <Button
                           size="sm"
                           onClick={handleJoinCommunity}
+                          disabled={actionLoading}
                           className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                         >
-                          Join Community
+                          {actionLoading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Joining...
+                            </>
+                          ) : (
+                            'Join Community'
+                          )}
                         </Button>
                       )}
                     </div>
