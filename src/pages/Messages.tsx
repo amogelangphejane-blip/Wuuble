@@ -20,7 +20,8 @@ import {
   Smile,
   Paperclip,
   Check,
-  CheckCheck
+  CheckCheck,
+  Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,106 +33,25 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday } from 'date-fns';
-
-// Mock data for demonstration
-const mockConversations = [
-  {
-    id: '1',
-    participant: {
-      id: '2',
-      display_name: 'Sarah Johnson',
-      avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612d2f7?w=150&h=150&fit=crop&crop=face',
-    },
-    last_message: {
-      content: 'Hey! How are you doing today?',
-      created_at: new Date().toISOString(),
-      sender_id: '2'
-    },
-    last_message_at: new Date().toISOString(),
-    unread_count: 2
-  },
-  {
-    id: '2', 
-    participant: {
-      id: '3',
-      display_name: 'Mike Chen',
-      avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-    },
-    last_message: {
-      content: 'Thanks for the help with the project!',
-      created_at: new Date(Date.now() - 3600000).toISOString(),
-      sender_id: '3'
-    },
-    last_message_at: new Date(Date.now() - 3600000).toISOString(),
-    unread_count: 0
-  },
-  {
-    id: '3',
-    participant: {
-      id: '4', 
-      display_name: 'Lisa Park',
-      avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-    },
-    last_message: {
-      content: 'See you at the meeting tomorrow',
-      created_at: new Date(Date.now() - 7200000).toISOString(),
-      sender_id: '1'
-    },
-    last_message_at: new Date(Date.now() - 7200000).toISOString(),
-    unread_count: 0
-  }
-];
-
-const mockMessages = [
-  {
-    id: '1',
-    content: 'Hey! How are you doing today?',
-    sender_id: '2',
-    created_at: new Date(Date.now() - 1800000).toISOString(),
-    sender: {
-      display_name: 'Sarah Johnson',
-      avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612d2f7?w=150&h=150&fit=crop&crop=face'
-    }
-  },
-  {
-    id: '2',
-    content: 'I\'m doing great! Working on some new features for our app.',
-    sender_id: '1',
-    created_at: new Date(Date.now() - 1200000).toISOString(),
-    sender: {
-      display_name: 'You',
-      avatar_url: null
-    }
-  },
-  {
-    id: '3',
-    content: 'That sounds exciting! What kind of features are you working on?',
-    sender_id: '2',
-    created_at: new Date(Date.now() - 600000).toISOString(),
-    sender: {
-      display_name: 'Sarah Johnson',
-      avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612d2f7?w=150&h=150&fit=crop&crop=face'
-    }
-  },
-  {
-    id: '4',
-    content: 'I\'m rebuilding our messaging system with a completely modern architecture! It\'s got real-time features, responsive design, and much better performance.',
-    sender_id: '1', 
-    created_at: new Date().toISOString(),
-    sender: {
-      display_name: 'You',
-      avatar_url: null
-    }
-  }
-];
+import { useConversations, useMessages, useSendMessage, useUserSearch, useCreateConversation } from '@/hooks/useMessages';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const Messages: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>('1');
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [isMobileConversationOpen, setIsMobileConversationOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [messageInput, setMessageInput] = useState('');
+  const [showUserSearch, setShowUserSearch] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+
+  // Real data hooks
+  const { conversations, isLoading: conversationsLoading, error: conversationsError } = useConversations();
+  const { messages, isLoading: messagesLoading } = useMessages(selectedConversationId);
+  const { sendMessage, isLoading: isSending } = useSendMessage();
+  const { searchResults, isSearching, searchQuery: currentSearchQuery, setSearchQuery: setCurrentSearchQuery } = useUserSearch();
+  const { createConversation, isLoading: isCreating } = useCreateConversation();
 
   // Get screen size
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
@@ -147,7 +67,7 @@ const Messages: React.FC = () => {
 
   // Find the selected conversation
   const selectedConversation = selectedConversationId 
-    ? mockConversations.find(c => c.id === selectedConversationId)
+    ? conversations.find(c => c.id === selectedConversationId)
     : null;
 
   const handleSelectConversation = (conversationId: string) => {
@@ -160,15 +80,51 @@ const Messages: React.FC = () => {
     setSelectedConversationId(null);
   };
 
-  const handleSendMessage = () => {
-    if (!messageInput.trim()) return;
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !selectedConversationId) return;
     
-    toast({
-      title: "Message sent!",
-      description: "Your message has been delivered.",
-    });
-    
-    setMessageInput('');
+    try {
+      await sendMessage({
+        conversationId: selectedConversationId,
+        content: messageInput.trim()
+      });
+      
+      setMessageInput('');
+      
+      toast({
+        title: "Message sent!",
+        description: "Your message has been delivered.",
+      });
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      toast({
+        title: "Failed to send message",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStartConversation = async (userId: string) => {
+    try {
+      await createConversation(userId);
+      setShowUserSearch(false);
+      
+      // The conversation should appear in the list automatically
+      // and we can select it when it arrives via real-time updates
+      
+      toast({
+        title: "Conversation started!",
+        description: "You can now send messages.",
+      });
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+      toast({
+        title: "Failed to start conversation",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getInitials = (name: string | null) => {
@@ -196,6 +152,31 @@ const Messages: React.FC = () => {
     );
   }
 
+  // Show error state if conversations failed to load
+  if (conversationsError) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="text-center max-w-md p-8 rounded-2xl bg-white dark:bg-gray-800 shadow-xl border">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+          </div>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Unable to load conversations</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-4">There was an error loading your conversations.</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Filter conversations based on search
+  const filteredConversations = conversations.filter(conv => {
+    if (!searchQuery.trim()) return true;
+    const searchText = `${conv.participant.display_name || ''} ${conv.last_message?.content || ''}`.toLowerCase();
+    return searchText.includes(searchQuery.toLowerCase());
+  });
+
   return (
     <div className="h-screen flex bg-white dark:bg-gray-900 overflow-hidden">
       {/* Conversation List */}
@@ -211,13 +192,29 @@ const Messages: React.FC = () => {
               <MessageCircle className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
               <span className="hidden sm:inline">Messages</span>
             </h2>
-            <Button 
-              size="icon" 
-              variant="outline"
-              className="h-8 w-8 rounded-full border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:hover:bg-blue-900/50"
-            >
-              <Plus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </Button>
+            <Dialog open={showUserSearch} onOpenChange={setShowUserSearch}>
+              <DialogTrigger asChild>
+                <Button 
+                  size="icon" 
+                  variant="outline"
+                  className="h-8 w-8 rounded-full border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:hover:bg-blue-900/50"
+                >
+                  <Plus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Start New Conversation</DialogTitle>
+                </DialogHeader>
+                <UserSearchDialog
+                  searchQuery={currentSearchQuery}
+                  onSearchChange={setCurrentSearchQuery}
+                  users={searchResults}
+                  isLoading={isSearching}
+                  onSelectUser={handleStartConversation}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Search bar */}
@@ -245,81 +242,127 @@ const Messages: React.FC = () => {
         {/* Conversations List */}
         <ScrollArea className="flex-1">
           <div className="p-1 md:p-2">
-            {mockConversations.map((conversation) => {
-              const isSelected = selectedConversationId === conversation.id;
-              const isOnline = Math.random() > 0.5;
-              
-              return (
-                <div
-                  key={conversation.id}
-                  className={cn(
-                    "group flex items-center gap-3 p-3 cursor-pointer transition-all duration-200 rounded-lg mx-1 touch-manipulation",
-                    "hover:bg-gray-50 dark:hover:bg-gray-800/50 active:bg-gray-100 dark:active:bg-gray-800",
-                    isSelected && "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
-                  )}
-                  onClick={() => handleSelectConversation(conversation.id)}
-                >
-                  {/* Avatar */}
-                  <div className="relative flex-shrink-0">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={conversation.participant.avatar_url || undefined} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white text-sm font-medium">
-                        {getInitials(conversation.participant.display_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    {isOnline && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-900" />
-                    )}
-                    
-                    {conversation.unread_count > 0 && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                        <span className="text-xs text-white font-medium">
-                          {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
-                        </span>
-                      </div>
-                    )}
+            {conversationsLoading ? (
+              // Loading skeletons
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex gap-3 p-3 mx-1">
+                  <Skeleton className="h-12 w-12 rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-16" />
                   </div>
-                  
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h3 className={cn(
-                          "text-sm font-medium text-gray-900 dark:text-gray-100 truncate",
-                          conversation.unread_count > 0 && "font-semibold"
-                        )}>
-                          {conversation.participant.display_name}
-                        </h3>
-                        
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {conversation.last_message.sender_id === user.id && (
-                            <span className="text-gray-500 dark:text-gray-400 text-xs">You:</span>
-                          )}
-                          <p className={cn(
-                            "text-xs truncate",
-                            conversation.unread_count > 0 
-                              ? "text-gray-900 dark:text-gray-100 font-medium" 
-                              : "text-gray-500 dark:text-gray-400"
+                </div>
+              ))
+            ) : filteredConversations.length === 0 ? (
+              <div className="text-center py-12 px-4">
+                {searchQuery ? (
+                  <>
+                    <Search className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">No conversations found</p>
+                    <p className="text-xs text-gray-500 mt-1">Try adjusting your search terms</p>
+                  </>
+                ) : conversations.length === 0 ? (
+                  <>
+                    <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">No conversations yet</p>
+                    <p className="text-xs text-gray-500 mt-1">Start a new conversation to get chatting</p>
+                    <Button 
+                      onClick={() => setShowUserSearch(true)}
+                      className="mt-4"
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Conversation
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">No conversations match your search</p>
+                    <p className="text-xs text-gray-500 mt-1">Try different keywords</p>
+                  </>
+                )}
+              </div>
+            ) : (
+              filteredConversations.map((conversation) => {
+                const isSelected = selectedConversationId === conversation.id;
+                const isOnline = Math.random() > 0.5; // Mock online status
+                
+                return (
+                  <div
+                    key={conversation.id}
+                    className={cn(
+                      "group flex items-center gap-3 p-3 cursor-pointer transition-all duration-200 rounded-lg mx-1 touch-manipulation",
+                      "hover:bg-gray-50 dark:hover:bg-gray-800/50 active:bg-gray-100 dark:active:bg-gray-800",
+                      isSelected && "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+                    )}
+                    onClick={() => handleSelectConversation(conversation.id)}
+                  >
+                    {/* Avatar */}
+                    <div className="relative flex-shrink-0">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={conversation.participant.avatar_url || undefined} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white text-sm font-medium">
+                          {getInitials(conversation.participant.display_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      {isOnline && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-900" />
+                      )}
+                      
+                      {conversation.unread_count > 0 && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-xs text-white font-medium">
+                            {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className={cn(
+                            "text-sm font-medium text-gray-900 dark:text-gray-100 truncate",
+                            conversation.unread_count > 0 && "font-semibold"
                           )}>
-                            {conversation.last_message.content.slice(0, 35)}...
+                            {conversation.participant.display_name || 'Unknown User'}
+                          </h3>
+                          
+                          {conversation.last_message && (
+                            <div className="flex items-center gap-1 mt-0.5">
+                              {conversation.last_message.sender_id === user.id && (
+                                <span className="text-gray-500 dark:text-gray-400 text-xs">You:</span>
+                              )}
+                              <p className={cn(
+                                "text-xs truncate",
+                                conversation.unread_count > 0 
+                                  ? "text-gray-900 dark:text-gray-100 font-medium" 
+                                  : "text-gray-500 dark:text-gray-400"
+                              )}>
+                                {conversation.last_message.content.slice(0, 35)}{conversation.last_message.content.length > 35 ? '...' : ''}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-col items-end gap-1 ml-2">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {conversation.last_message_at && isToday(new Date(conversation.last_message_at)) 
+                              ? format(new Date(conversation.last_message_at), 'HH:mm')
+                              : conversation.last_message_at && format(new Date(conversation.last_message_at), 'MMM dd')
+                            }
                           </p>
                         </div>
                       </div>
-                      
-                      <div className="flex flex-col items-end gap-1 ml-2">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {isToday(new Date(conversation.last_message_at)) 
-                            ? format(new Date(conversation.last_message_at), 'HH:mm')
-                            : format(new Date(conversation.last_message_at), 'MMM dd')
-                          }
-                        </p>
-                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </ScrollArea>
       </div>
@@ -398,71 +441,93 @@ const Messages: React.FC = () => {
             {/* Messages Area */}
             <ScrollArea className="flex-1 bg-gray-50 dark:bg-gray-900">
               <div className="p-4 space-y-4">
-                {mockMessages.map((message, index) => {
-                  const isOwn = message.sender_id === user.id;
-                  const previousMessage = mockMessages[index - 1];
-                  const showAvatar = !previousMessage || previousMessage.sender_id !== message.sender_id;
-                  
-                  return (
-                    <div key={message.id} className={cn(
-                      "flex gap-3 group",
-                      isOwn ? "flex-row-reverse" : "flex-row"
-                    )}>
-                      {/* Avatar */}
-                      {showAvatar && !isOwn && (
-                        <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
-                          <AvatarImage src={message.sender.avatar_url || undefined} />
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
-                            {getInitials(message.sender.display_name)}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      
-                      {!showAvatar && !isOwn && (
-                        <div className="h-8 w-8 flex-shrink-0" />
-                      )}
-                      
-                      {/* Message bubble */}
-                      <div className={cn(
-                        "max-w-[85%] sm:max-w-[75%] md:max-w-[70%]",
-                        isOwn ? "items-end" : "items-start"
+                {messagesLoading ? (
+                  // Loading messages
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className={`flex gap-3 ${i % 2 === 0 ? '' : 'flex-row-reverse'}`}>
+                      <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                      <div className="space-y-2 flex-1 max-w-[70%]">
+                        <Skeleton className={`h-16 rounded-2xl ${i % 2 === 0 ? 'w-48' : 'w-32'}`} />
+                      </div>
+                    </div>
+                  ))
+                ) : messages.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center text-center py-12">
+                    <div>
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                        <MessageCircle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-2 text-gray-900 dark:text-gray-100">Start the conversation</h3>
+                      <p className="text-gray-600 dark:text-gray-300">Send a message to begin your conversation</p>
+                    </div>
+                  </div>
+                ) : (
+                  messages.map((message, index) => {
+                    const isOwn = message.sender_id === user.id;
+                    const previousMessage = messages[index - 1];
+                    const showAvatar = !previousMessage || previousMessage.sender_id !== message.sender_id;
+                    
+                    return (
+                      <div key={message.id} className={cn(
+                        "flex gap-3 group",
+                        isOwn ? "flex-row-reverse" : "flex-row"
                       )}>
+                        {/* Avatar */}
+                        {showAvatar && !isOwn && (
+                          <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                            <AvatarImage src={message.sender.avatar_url || undefined} />
+                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
+                              {getInitials(message.sender.display_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        
+                        {!showAvatar && !isOwn && (
+                          <div className="h-8 w-8 flex-shrink-0" />
+                        )}
+                        
+                        {/* Message bubble */}
                         <div className={cn(
-                          "relative px-3 py-2 md:px-4 md:py-2.5 text-sm break-words shadow-sm rounded-2xl transition-all duration-200 hover:shadow-md",
-                          isOwn 
-                            ? "bg-blue-500 text-white rounded-br-md ml-auto" 
-                            : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md border border-gray-200 dark:border-gray-700"
+                          "max-w-[85%] sm:max-w-[75%] md:max-w-[70%]",
+                          isOwn ? "items-end" : "items-start"
                         )}>
-                          {/* Message tail */}
-                          {showAvatar && (
-                            <div className={cn(
-                              "absolute top-0 w-0 h-0",
-                              isOwn 
-                                ? "right-[-6px] border-l-[6px] border-l-blue-500 border-t-[6px] border-t-transparent"
-                                : "left-[-6px] border-r-[6px] border-r-white dark:border-r-gray-800 border-t-[6px] border-t-transparent"
-                            )} />
-                          )}
-                          
-                          {/* Message content */}
-                          <div className={cn("leading-relaxed whitespace-pre-wrap", isOwn ? "pr-16" : "pr-14")}>
-                            {message.content}
-                          </div>
-                          
-                          {/* Time and status */}
                           <div className={cn(
-                            "absolute bottom-1 right-2 flex items-center gap-1 text-xs leading-none",
-                            isOwn ? "text-blue-100" : "text-gray-500 dark:text-gray-400"
+                            "relative px-3 py-2 md:px-4 md:py-2.5 text-sm break-words shadow-sm rounded-2xl transition-all duration-200 hover:shadow-md",
+                            isOwn 
+                              ? "bg-blue-500 text-white rounded-br-md ml-auto" 
+                              : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md border border-gray-200 dark:border-gray-700"
                           )}>
-                            <time dateTime={message.created_at}>
-                              {format(new Date(message.created_at), 'HH:mm')}
-                            </time>
-                            {isOwn && <CheckCheck className="h-3 w-3 text-blue-200" />}
+                            {/* Message tail */}
+                            {showAvatar && (
+                              <div className={cn(
+                                "absolute top-0 w-0 h-0",
+                                isOwn 
+                                  ? "right-[-6px] border-l-[6px] border-l-blue-500 border-t-[6px] border-t-transparent"
+                                  : "left-[-6px] border-r-[6px] border-r-white dark:border-r-gray-800 border-t-[6px] border-t-transparent"
+                              )} />
+                            )}
+                            
+                            {/* Message content */}
+                            <div className={cn("leading-relaxed whitespace-pre-wrap", isOwn ? "pr-16" : "pr-14")}>
+                              {message.content}
+                            </div>
+                            
+                            {/* Time and status */}
+                            <div className={cn(
+                              "absolute bottom-1 right-2 flex items-center gap-1 text-xs leading-none",
+                              isOwn ? "text-blue-100" : "text-gray-500 dark:text-gray-400"
+                            )}>
+                              <time dateTime={message.created_at}>
+                                {format(new Date(message.created_at), 'HH:mm')}
+                              </time>
+                              {isOwn && <CheckCheck className="h-3 w-3 text-blue-200" />}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </ScrollArea>
 
@@ -510,7 +575,7 @@ const Messages: React.FC = () => {
                 {/* Send button */}
                 <Button
                   onClick={handleSendMessage}
-                  disabled={!messageInput.trim()}
+                  disabled={!messageInput.trim() || isSending}
                   size="icon"
                   className={cn(
                     "h-10 w-10 md:h-11 md:w-11 shrink-0 rounded-full transition-all duration-200",
@@ -519,7 +584,11 @@ const Messages: React.FC = () => {
                     "touch-manipulation active:scale-95"
                   )}
                 >
-                  <Send className="h-5 w-5" />
+                  {isSending ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -542,6 +611,95 @@ const Messages: React.FC = () => {
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// USER SEARCH DIALOG COMPONENT
+// ============================================================================
+
+interface UserSearchDialogProps {
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  users: any[];
+  isLoading: boolean;
+  onSelectUser: (userId: string) => void;
+}
+
+const UserSearchDialog: React.FC<UserSearchDialogProps> = ({
+  searchQuery,
+  onSearchChange,
+  users,
+  isLoading,
+  onSelectUser
+}) => {
+  const getInitials = (name: string | null) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+        <Input
+          placeholder="Search for users..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      <ScrollArea className="max-h-60">
+        <div className="space-y-2">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex gap-3 p-3 rounded-lg">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex-1 space-y-1">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              </div>
+            ))
+          ) : users.length === 0 && searchQuery ? (
+            <div className="text-center py-8">
+              <Search className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+              <p className="text-sm text-gray-600 dark:text-gray-300">No users found</p>
+              <p className="text-xs text-gray-500 mt-1">Try different search terms</p>
+            </div>
+          ) : (
+            users.map((user) => (
+              <div
+                key={user.id}
+                className="flex gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                onClick={() => onSelectUser(user.id)}
+              >
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={user.avatar_url || undefined} />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
+                    {getInitials(user.display_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                    {user.display_name || 'Unknown User'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {user.email || 'No email'}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 };

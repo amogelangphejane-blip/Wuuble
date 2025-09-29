@@ -1,9 +1,20 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { LoadingProvider } from '@/contexts/LoadingContext';
 import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes
+    },
+  },
+});
 
 // Pages
 import Index from '@/pages/Index';
@@ -52,12 +63,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <LoadingProvider>
-        <TooltipProvider>
-          <Router>
-            <div className="min-h-screen bg-gray-50">
-            <Routes>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <LoadingProvider>
+          <TooltipProvider>
+            <Router>
+              <div className="min-h-screen bg-gray-50">
+              <Routes>
               {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
@@ -149,7 +161,7 @@ function App() {
           </Router>
         </TooltipProvider>
       </LoadingProvider>
-    </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
