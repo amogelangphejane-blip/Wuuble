@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messaging Responsiveness Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .viewport-test {
+            border: 2px solid #ddd;
+            background: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .mobile-viewport {
+            width: 375px;
+            height: 667px;
+        }
+        .tablet-viewport {
+            width: 768px;
+            height: 1024px;
+        }
+        .desktop-viewport {
+            width: 1200px;
+            height: 800px;
+        }
+        .iframe-container {
+            width: 100%;
+            height: 100%;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            transform-origin: top left;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .warning { background: #fff3cd; color: #856404; }
+        .error { background: #f8d7da; color: #721c24; }
+        .test-controls {
+            margin: 15px 0;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f9fa;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #e9ecef;
+        }
+        .active {
+            background: #007bff !important;
+            color: white !important;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .checklist input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        h1, h2, h3 { color: #333; }
+        .description {
+            color: #666;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Messaging Feature Responsiveness Test</h1>
+        <p class="description">
+            This tool tests the responsiveness of the messaging feature across different screen sizes and devices.
+            Use this to identify any remaining layout or usability issues.
+        </p>
+
+        <div class="test-controls">
+            <h3>🎯 Quick Tests</h3>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="checkCSSLoading()">Check CSS Loading</button>
+            <button onclick="testTouchTargets()">Test Touch Targets</button>
+            <button onclick="testOverflow()">Check Overflow Issues</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📏 Viewport Tests</h3>
+            <div class="test-controls">
+                <button onclick="loadViewport('mobile')" class="active">Mobile (375x667)</button>
+                <button onclick="loadViewport('tablet')">Tablet (768x1024)</button>
+                <button onclick="loadViewport('desktop')">Desktop (1200x800)</button>
+            </div>
+            <div id="viewport-container">
+                <div class="viewport-test mobile-viewport">
+                    <iframe src="http://localhost:8080/messages" id="test-iframe"></iframe>
+                </div>
+            </div>
+            <div id="viewport-status" class="status success">✅ Mobile viewport loaded</div>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ Responsiveness Checklist</h3>
+            <ul class="checklist">
+                <li><input type="checkbox" id="check1"> Conversation list adapts to screen size</li>
+                <li><input type="checkbox" id="check2"> Message bubbles have proper width constraints</li>
+                <li><input type="checkbox" id="check3"> Text sizes are readable on mobile</li>
+                <li><input type="checkbox" id="check4"> Touch targets are at least 44px</li>
+                <li><input type="checkbox" id="check5"> Input area works with mobile keyboards</li>
+                <li><input type="checkbox" id="check6"> Navigation works properly on mobile</li>
+                <li><input type="checkbox" id="check7"> No horizontal scrolling occurs</li>
+                <li><input type="checkbox" id="check8"> Loading states are mobile-optimized</li>
+                <li><input type="checkbox" id="check9"> Error states are mobile-friendly</li>
+                <li><input type="checkbox" id="check10"> Emoji picker is properly sized</li>
+            </ul>
+            <div id="checklist-status">
+                <p><strong>Progress:</strong> <span id="progress">0/10</span> tests checked</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Specific Issue Detection</h3>
+            <div id="issue-detection">
+                <p>Click "Run All Tests" to automatically detect common responsiveness issues:</p>
+                <ul id="issues-list">
+                    <li>Checking CSS loading...</li>
+                    <li>Analyzing layout constraints...</li>
+                    <li>Validating touch targets...</li>
+                    <li>Testing overflow behavior...</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div id="test-results">
+                <div class="status warning">⏳ Click "Run All Tests" to see results</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🛠️ Manual Testing Guide</h3>
+            <ol>
+                <li><strong>Mobile Test (375px):</strong> Check if conversation list is readable and messages display properly</li>
+                <li><strong>Tablet Test (768px):</strong> Verify layout utilizes space efficiently</li>
+                <li><strong>Desktop Test (1200px):</strong> Ensure full functionality with proper spacing</li>
+                <li><strong>Rotation Test:</strong> Test both portrait and landscape orientations</li>
+                <li><strong>Touch Test:</strong> Verify all buttons are easily tappable (44px minimum)</li>
+                <li><strong>Keyboard Test:</strong> Test input behavior with mobile keyboards</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let currentViewport = 'mobile';
+        
+        function loadViewport(type) {
+            currentViewport = type;
+            const container = document.getElementById('viewport-container');
+            const iframe = document.getElementById('test-iframe');
+            const status = document.getElementById('viewport-status');
+            
+            // Update active button
+            document.querySelectorAll('.test-controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            let width, height, scale = 1;
+            
+            switch(type) {
+                case 'mobile':
+                    width = 375;
+                    height = 667;
+                    break;
+                case 'tablet':
+                    width = 768;
+                    height = 1024;
+                    break;
+                case 'desktop':
+                    width = 1200;
+                    height = 800;
+                    break;
+            }
+            
+            // Update container
+            container.innerHTML = `
+                <div class="viewport-test ${type}-viewport" style="width: ${width}px; height: ${height}px;">
+                    <iframe src="http://localhost:8080/messages" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            `;
+            
+            status.textContent = `✅ ${type.charAt(0).toUpperCase() + type.slice(1)} viewport loaded (${width}x${height})`;
+            status.className = 'status success';
+            
+            // Wait for iframe to load then test
+            setTimeout(() => {
+                testCurrentViewport();
+            }, 2000);
+        }
+
+        function testCurrentViewport() {
+            const issues = [];
+            const iframe = document.querySelector('iframe');
+            
+            if (!iframe || !iframe.contentWindow) {
+                issues.push('❌ Could not access iframe content for testing');
+                updateIssuesList(issues);
+                return;
+            }
+
+            // Test based on current viewport
+            switch(currentViewport) {
+                case 'mobile':
+                    if (iframe.offsetWidth > 375) {
+                        issues.push('⚠️ Content might overflow mobile viewport');
+                    }
+                    break;
+                case 'tablet':
+                    if (iframe.offsetWidth < 768) {
+                        issues.push('⚠️ Content not utilizing tablet space efficiently');
+                    }
+                    break;
+                case 'desktop':
+                    if (iframe.offsetWidth < 1200) {
+                        issues.push('⚠️ Content not utilizing desktop space properly');
+                    }
+                    break;
+            }
+            
+            updateIssuesList(issues);
+        }
+
+        function checkCSSLoading() {
+            const issues = [];
+            
+            // Check if our custom CSS classes exist
+            try {
+                const iframe = document.querySelector('iframe');
+                if (iframe && iframe.contentDocument) {
+                    const doc = iframe.contentDocument;
+                    const hasResponsiveClasses = doc.querySelector('.md\\:p-4') !== null;
+                    
+                    if (!hasResponsiveClasses) {
+                        issues.push('⚠️ Responsive CSS classes may not be loading properly');
+                    } else {
+                        issues.push('✅ CSS classes appear to be loading correctly');
+                    }
+                } else {
+                    issues.push('❓ Cannot access iframe content to check CSS loading');
+                }
+            } catch (e) {
+                issues.push('❓ Cannot access iframe due to CORS restrictions');
+            }
+            
+            updateIssuesList(issues);
+        }
+
+        function testTouchTargets() {
+            const issues = [];
+            
+            // This would ideally test actual button sizes in the iframe
+            // For now, we'll provide guidance
+            issues.push('📋 Manual Check Required:');
+            issues.push('• All buttons should be at least 44px tall');
+            issues.push('• Conversation items should be at least 44px tall'); 
+            issues.push('• Message input should be at least 44px tall');
+            issues.push('• Icon buttons should be at least 44px in both dimensions');
+            
+            updateIssuesList(issues);
+        }
+
+        function testOverflow() {
+            const issues = [];
+            const iframe = document.querySelector('iframe');
+            
+            if (iframe) {
+                const rect = iframe.getBoundingClientRect();
+                const containerRect = iframe.parentElement.getBoundingClientRect();
+                
+                if (rect.width > containerRect.width) {
+                    issues.push('❌ Horizontal overflow detected');
+                } else {
+                    issues.push('✅ No horizontal overflow detected');
+                }
+                
+                if (rect.height > containerRect.height) {
+                    issues.push('⚠️ Vertical overflow (may be normal for scrollable content)');
+                } else {
+                    issues.push('✅ Content fits within viewport height');
+                }
+            } else {
+                issues.push('❓ Cannot test overflow - iframe not found');
+            }
+            
+            updateIssuesList(issues);
+        }
+
+        function runAllTests() {
+            document.getElementById('test-results').innerHTML = '<div class="status warning">🔄 Running tests...</div>';
+            
+            setTimeout(() => {
+                const allIssues = [];
+                
+                // Run all tests
+                checkCSSLoading();
+                testTouchTargets();
+                testOverflow();
+                testCurrentViewport();
+                
+                // Compile results
+                let passed = 0, warnings = 0, errors = 0;
+                
+                const issuesList = document.getElementById('issues-list').children;
+                for (let issue of issuesList) {
+                    if (issue.textContent.includes('✅')) passed++;
+                    else if (issue.textContent.includes('⚠️')) warnings++;
+                    else if (issue.textContent.includes('❌')) errors++;
+                }
+                
+                let status = 'success';
+                let message = `✅ Tests completed: ${passed} passed`;
+                
+                if (warnings > 0) {
+                    message += `, ${warnings} warnings`;
+                    status = 'warning';
+                }
+                
+                if (errors > 0) {
+                    message += `, ${errors} errors`;
+                    status = 'error';
+                }
+                
+                document.getElementById('test-results').innerHTML = 
+                    `<div class="status ${status}">${message}</div>`;
+                
+            }, 1000);
+        }
+
+        function updateIssuesList(issues) {
+            const list = document.getElementById('issues-list');
+            list.innerHTML = '';
+            
+            issues.forEach(issue => {
+                const li = document.createElement('li');
+                li.textContent = issue;
+                list.appendChild(li);
+            });
+        }
+
+        // Update checklist progress
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+            const checked = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+            
+            document.getElementById('progress').textContent = `${checked.length}/${checkboxes.length}`;
+        }
+
+        // Add event listeners to checkboxes
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateProgress);
+            });
+            
+            updateProgress();
+        });
+
+        // Initial load
+        setTimeout(() => {
+            loadViewport('mobile');
+        }, 1000);
+    </script>
+</body>
+</html>

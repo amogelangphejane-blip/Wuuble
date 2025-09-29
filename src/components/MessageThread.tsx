@@ -65,7 +65,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   if (isLoading) {
     return (
       <div 
-        className="flex-1 p-6 space-y-6"
+        className="flex-1 p-3 md:p-6 space-y-4 md:space-y-6"
         role="main"
         aria-label="Loading messages"
         aria-busy="true"
@@ -74,12 +74,12 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
           Loading conversation messages...
         </div>
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className={`flex gap-3 ${i % 2 === 0 ? '' : 'flex-row-reverse'}`}>
-            <Skeleton className="h-8 w-8 rounded-full shrink-0" />
-            <div className="space-y-2 flex-1 max-w-[70%]">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className={`h-12 rounded-2xl ${i % 2 === 0 ? 'w-48' : 'w-32'}`} />
-              <Skeleton className="h-3 w-16" />
+          <div key={i} className={`flex gap-2 md:gap-3 ${i % 2 === 0 ? '' : 'flex-row-reverse'}`}>
+            <Skeleton className="h-6 w-6 md:h-8 md:w-8 rounded-full shrink-0" />
+            <div className="space-y-1 md:space-y-2 flex-1 max-w-[75%] md:max-w-[70%]">
+              <Skeleton className="h-3 md:h-4 w-16 md:w-20" />
+              <Skeleton className={`h-10 md:h-12 rounded-2xl ${i % 2 === 0 ? 'w-36 md:w-48' : 'w-24 md:w-32'}`} />
+              <Skeleton className="h-2 md:h-3 w-12 md:w-16" />
             </div>
           </div>
         ))}
@@ -134,7 +134,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       }}
     >
       <div 
-        className="p-4 space-y-1"
+        className="p-2 md:p-4 space-y-0.5 md:space-y-1"
         role="list"
         aria-label="Messages"
       >
@@ -163,7 +163,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
         })}
         
         {/* Extra padding at the bottom for better UX */}
-        <div className="h-4" aria-hidden="true" />
+        <div className="h-2 md:h-4" aria-hidden="true" />
       </div>
     </ScrollArea>
   );

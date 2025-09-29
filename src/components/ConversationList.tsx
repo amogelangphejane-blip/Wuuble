@@ -92,24 +92,24 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   if (isLoading) {
     return (
-      <div className="w-80 border-r bg-muted/20 backdrop-blur-sm">
-        <div className="p-4 border-b">
+      <div className="w-full border-r bg-muted/20 backdrop-blur-sm">
+        <div className="p-3 md:p-4 border-b">
           <div className="flex items-center justify-between">
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-4 md:h-6 w-16 md:w-20" />
+            <Skeleton className="h-6 w-6 md:h-8 md:w-8" />
           </div>
-          <div className="mt-4">
-            <Skeleton className="h-10 w-full" />
+          <div className="mt-3 md:mt-4">
+            <Skeleton className="h-8 md:h-10 w-full" />
           </div>
         </div>
-        <div className="p-4 space-y-4">
+        <div className="p-2 md:p-4 space-y-3 md:space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex gap-3">
-              <Skeleton className="h-12 w-12 rounded-full" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-32" />
-                <Skeleton className="h-3 w-16" />
+            <div key={i} className="flex gap-2 md:gap-3">
+              <Skeleton className="h-10 w-10 md:h-12 md:w-12 rounded-full" />
+              <div className="flex-1 space-y-1 md:space-y-2">
+                <Skeleton className="h-3 md:h-4 w-20 md:w-24" />
+                <Skeleton className="h-2 md:h-3 w-28 md:w-32" />
+                <Skeleton className="h-2 md:h-3 w-12 md:w-16" />
               </div>
             </div>
           ))}
@@ -121,11 +121,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   return (
     <div className="w-full border-r bg-white dark:bg-[#111b21] flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-[#f0f2f5] dark:bg-[#202c33]">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-primary" />
-            Messages
+      <div className="p-3 md:p-4 border-b border-gray-200 dark:border-gray-700 bg-[#f0f2f5] dark:bg-[#202c33]">
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          <h2 className="text-base md:text-lg font-semibold flex items-center gap-2">
+            <MessageCircle className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+            <span className="hidden sm:inline">Messages</span>
           </h2>
           <div className="flex items-center gap-2">
             {/* Filter menu */}
@@ -135,11 +135,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   size="icon" 
                   variant="ghost"
                   className={cn(
-                    "h-8 w-8",
+                    "h-8 w-8 md:h-8 md:w-8",
                     filter !== 'all' && "bg-primary/10 text-primary"
                   )}
                 >
-                  <Filter className="h-4 w-4" />
+                  <Filter className="h-3 w-3 md:h-4 md:w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -190,12 +190,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
         {/* Search bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-          <Input
+          <Search className="absolute left-2 md:left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 md:h-4 md:w-4 text-gray-500" />
+            <Input
             placeholder="Search or start new chat"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-10 bg-white dark:bg-[#2a3942] border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#25d366] focus:ring-1 focus:ring-[#25d366] text-gray-900 dark:text-gray-100"
+            className="pl-8 md:pl-10 pr-8 md:pr-10 text-sm md:text-base bg-white dark:bg-[#2a3942] border-gray-300 dark:border-gray-600 rounded-lg focus:border-[#25d366] focus:ring-1 focus:ring-[#25d366] text-gray-900 dark:text-gray-100"
           />
           {searchQuery && (
             <Button
@@ -212,7 +212,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
       {/* Conversations List */}
       <ScrollArea className="flex-1">
-        <div className="p-2">
+        <div className="p-1 md:p-2">
           {filteredConversations.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               {searchQuery ? (
@@ -274,17 +274,18 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 cursor-pointer transition-colors duration-150",
-        "hover:bg-[#f5f6f6] dark:hover:bg-[#2a3942]",
+        "flex items-center gap-2 md:gap-3 p-2 md:p-3 cursor-pointer transition-colors duration-150",
+        "hover:bg-[#f5f6f6] dark:hover:bg-[#2a3942] active:bg-[#e9edef] dark:active:bg-[#2a3942]",
         isSelected && "bg-[#e9edef] dark:bg-[#2a3942]",
-        "border-b border-gray-200/50 dark:border-gray-700/50 last:border-b-0"
+        "border-b border-gray-200/50 dark:border-gray-700/50 last:border-b-0",
+        "touch-manipulation" // Better touch responsiveness
       )}
       onClick={onClick}
     >
       <div className="relative flex-shrink-0">
-        <Avatar className="h-12 w-12">
+        <Avatar className="h-10 w-10 md:h-12 md:w-12">
           <AvatarImage src={conversation.participant.avatar_url || undefined} />
-          <AvatarFallback className="bg-[#ddd] dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+          <AvatarFallback className="bg-[#ddd] dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs md:text-sm">
             {getInitials(conversation.participant.display_name)}
           </AvatarFallback>
         </Avatar>
@@ -294,7 +295,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <h3 className={cn(
-              "text-[17px] text-gray-900 dark:text-gray-100 truncate mb-0.5",
+              "text-sm md:text-[17px] text-gray-900 dark:text-gray-100 truncate mb-0.5",
               conversation.unread_count > 0 && "font-semibold"
             )}>
               {conversation.participant.display_name || 'Unknown User'}
@@ -302,7 +303,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
             
             {conversation.last_message && (
               <p className={cn(
-                "text-[14px] truncate",
+                "text-xs md:text-[14px] truncate",
                 conversation.unread_count > 0 
                   ? "text-gray-900 dark:text-gray-100 font-medium" 
                   : "text-gray-500 dark:text-gray-400"
@@ -312,13 +313,13 @@ const ConversationItem: React.FC<ConversationItemProps> = ({
             )}
           </div>
           
-          <div className="flex flex-col items-end gap-1 ml-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col items-end gap-1 ml-1 md:ml-2">
+            <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
               {conversation.last_message_at ? format(new Date(conversation.last_message_at), 'HH:mm') : '--:--'}
             </p>
             
             {conversation.unread_count > 0 && (
-              <div className="bg-[#25d366] text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+              <div className="bg-[#25d366] text-white text-[10px] md:text-xs rounded-full min-w-[16px] md:min-w-[18px] h-[16px] md:h-[18px] flex items-center justify-center px-1">
                 {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
               </div>
             )}
