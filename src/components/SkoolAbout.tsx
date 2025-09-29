@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,10 @@ import {
   LogOut
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { NotificationPreferences } from './NotificationPreferences';
+import { BillingSubscription } from './BillingSubscription';
+import { AccountSettings } from './AccountSettings';
+import { LeaveCommunity } from './LeaveCommunity';
 
 interface SkoolAboutProps {
   community: {
@@ -30,6 +34,16 @@ interface SkoolAboutProps {
 }
 
 export const SkoolAbout: React.FC<SkoolAboutProps> = ({ community }) => {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showBilling, setShowBilling] = useState(false);
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [showLeaveCommunity, setShowLeaveCommunity] = useState(false);
+
+  const handleLeaveCommunity = () => {
+    // Redirect to communities page or refresh
+    window.location.href = '/communities';
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
@@ -99,19 +113,35 @@ export const SkoolAbout: React.FC<SkoolAboutProps> = ({ community }) => {
         <Card className="p-6">
           <h2 className="text-lg font-semibold mb-4">Settings</h2>
           <div className="space-y-3">
-            <Button variant="outline" className="w-full justify-start">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => setShowNotifications(true)}
+            >
               <Bell className="w-4 h-4 mr-3" />
               Notification Preferences
             </Button>
-            <Button variant="outline" className="w-full justify-start">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => setShowBilling(true)}
+            >
               <CreditCard className="w-4 h-4 mr-3" />
               Billing & Subscription
             </Button>
-            <Button variant="outline" className="w-full justify-start">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => setShowAccountSettings(true)}
+            >
               <Settings className="w-4 h-4 mr-3" />
               Account Settings
             </Button>
-            <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-700">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start text-red-600 hover:text-red-700"
+              onClick={() => setShowLeaveCommunity(true)}
+            >
               <LogOut className="w-4 h-4 mr-3" />
               Leave Community
             </Button>
@@ -144,6 +174,30 @@ export const SkoolAbout: React.FC<SkoolAboutProps> = ({ community }) => {
           </div>
         </Card>
       </div>
+
+      {/* Dialog Components */}
+      <NotificationPreferences 
+        isOpen={showNotifications} 
+        onClose={() => setShowNotifications(false)} 
+      />
+      
+      <BillingSubscription 
+        isOpen={showBilling} 
+        onClose={() => setShowBilling(false)} 
+      />
+      
+      <AccountSettings 
+        isOpen={showAccountSettings} 
+        onClose={() => setShowAccountSettings(false)} 
+      />
+      
+      <LeaveCommunity 
+        isOpen={showLeaveCommunity}
+        onClose={() => setShowLeaveCommunity(false)}
+        communityId={community.id}
+        communityName={community.name}
+        onLeave={handleLeaveCommunity}
+      />
     </div>
   );
 };
