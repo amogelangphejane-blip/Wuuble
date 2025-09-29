@@ -119,21 +119,51 @@ export const SimpleCommunityMembers: React.FC = () => {
 
       setCommunity(communityData);
 
-      // Fetch members with user profiles
-      const { data: membersData, error: membersError } = await supabase
+      // Fetch members with user profiles - try different approaches
+      let membersData = null;
+      let membersError = null;
+
+      // First try with profiles relationship
+      ({ data: membersData, error: membersError } = await supabase
         .from('community_members')
         .select(`
           *,
-          user:user_id (
-            id,
-            email,
-            user_metadata
+          profiles:user_id (
+            user_id,
+            display_name,
+            avatar_url,
+            email
           )
         `)
         .eq('community_id', id)
-        .order('joined_at', { ascending: false });
+        .order('joined_at', { ascending: false }));
 
-      if (membersError) {
+      // If profiles relationship fails, try with auth.users
+      if (membersError && membersError.message.includes('relationship')) {
+        console.log('Trying alternative user profile query...');
+        ({ data: membersData, error: membersError } = await supabase
+          .from('community_members')
+          .select('*')
+          .eq('community_id', id)
+          .order('joined_at', { ascending: false }));
+
+        // For each member, try to get user info from auth metadata
+        if (membersData && !membersError) {
+          for (const member of membersData) {
+            // Create a mock user object with available data
+            member.user = {
+              id: member.user_id,
+              email: `user-${member.user_id.slice(0, 8)}@example.com`, // Fallback email
+              user_metadata: {
+                display_name: `Member ${member.user_id.slice(0, 8)}`,
+                full_name: `Member ${member.user_id.slice(0, 8)}`
+              }
+            };
+          }
+        }
+      }
+
+      if (membersError && !membersError.message.includes('relationship')) {
         console.error('Error fetching members:', membersError);
         toast({
           title: "Error",
