@@ -48,11 +48,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     const isDelivered = messageAge > 2000; // Simulate delivered status after 2 seconds
     
     if (isRead) {
-      return <CheckCheck className="h-3 w-3 text-blue-500" />; // Blue checkmarks for read
+      return <CheckCheck className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-blue-500" />; // Blue checkmarks for read
     } else if (isDelivered) {
-      return <CheckCheck className="h-3 w-3 text-gray-400" />; // Gray checkmarks for delivered
+      return <CheckCheck className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />; // Gray checkmarks for delivered
     } else {
-      return <Check className="h-3 w-3 text-gray-400" />; // Single checkmark for sent
+      return <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-400" />; // Single checkmark for sent
     }
   };
 
@@ -92,7 +92,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       {/* Avatar - only show for other users and when showAvatar is true */}
       {showAvatar && !isOwn && (
         <Avatar 
-          className="h-6 w-6 mt-1 flex-shrink-0"
+          className="h-5 w-5 sm:h-6 sm:w-6 mt-1 flex-shrink-0"
           role="img"
           aria-label={`${senderName}'s profile picture`}
         >
@@ -100,7 +100,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             src={message.sender?.avatar_url || undefined} 
             alt={`${senderName}'s avatar`}
           />
-          <AvatarFallback className="text-[10px] bg-gradient-to-br from-gray-400 to-gray-500 text-white">
+          <AvatarFallback className="text-[8px] sm:text-[10px] bg-gradient-to-br from-gray-400 to-gray-500 text-white">
             {getInitials(message.sender?.display_name)}
           </AvatarFallback>
         </Avatar>
@@ -108,18 +108,18 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       
       {/* Spacer for non-avatar messages */}
       {!showAvatar && !isOwn && (
-        <div className="h-6 w-6 flex-shrink-0" />
+        <div className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
       )}
       
       <div className={cn(
-        "max-w-[75%] relative",
+        "max-w-[85%] sm:max-w-[75%] md:max-w-[70%] relative",
         isOwn ? "items-end" : "items-start"
       )}>
         {/* Message content */}
         <div className="relative group/message">
           <div 
             className={cn(
-              "relative px-3 py-2 text-[14px] break-words shadow-sm max-w-full min-w-[80px]",
+              "relative px-2 sm:px-3 py-2 text-sm sm:text-[14px] break-words shadow-sm max-w-full min-w-[60px] sm:min-w-[80px]",
               "transition-shadow duration-200 hover:shadow-md",
               isOwn 
                 ? "bg-[#dcf8c6] dark:bg-[#005c4b] text-gray-800 dark:text-white rounded-lg rounded-br-sm ml-auto"
@@ -143,13 +143,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             )}
             
             {/* Message text */}
-            <div className="pr-16 leading-[1.3]">
+            <div className="pr-12 sm:pr-16 leading-[1.3] sm:leading-[1.4]">
               {message.content || '[Message content unavailable]'}
             </div>
             
             {/* Time and status in bottom right */}
             <div className={cn(
-              "absolute bottom-1 right-2 flex items-center gap-1 text-[11px] leading-none",
+              "absolute bottom-1 right-1 sm:right-2 flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] leading-none",
               isOwn 
                 ? "text-gray-600 dark:text-gray-300" 
                 : "text-gray-500 dark:text-gray-400"

@@ -146,6 +146,17 @@
   @apply shadow-lg transform scale-[1.02];
 }
 
+/* Mobile-specific message bubble improvements */
+@media (max-width: 768px) {
+  .message-bubble:hover {
+    transform: none; /* Disable hover animations on mobile */
+  }
+  
+  .message-bubble:active {
+    @apply scale-95 opacity-80; /* Touch feedback */
+  }
+}
+
 .message-bubble-own {
   @apply bg-gradient-to-r from-blue-500 to-blue-600 text-white;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
@@ -252,6 +263,20 @@
 .message-input-area {
   @apply border-t bg-background/95 backdrop-blur-sm;
   box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Mobile keyboard support */
+@media (max-width: 768px) {
+  .message-input-area {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  
+  /* Handle iOS Safari address bar changes */
+  @supports (-webkit-touch-callout: none) {
+    .message-input-area {
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+  }
 }
 
 .message-input {
@@ -1020,6 +1045,63 @@
     
     .mobile-scale-down {
       transform: scale(0.8);
+    }
+
+    /* Messaging specific mobile improvements */
+    .message-bubble {
+      word-break: break-word;
+      hyphens: auto;
+    }
+    
+    .message-input-area .textarea {
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    /* Improve touch targets */
+    .conversation-item {
+      min-height: 44px;
+    }
+    
+    .message-send-button {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Optimize keyboard spacing */
+    .message-input-container {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    /* Better emoji picker on mobile */
+    .emoji-picker {
+      width: 90vw;
+      max-width: 300px;
+    }
+  }
+  
+  /* Small mobile devices */
+  @media (max-width: 480px) {
+    .message-bubble {
+      max-width: 90%;
+    }
+    
+    .conversation-list-header {
+      padding: 12px 16px;
+    }
+    
+    .message-thread {
+      padding: 8px 12px;
+    }
+  }
+  
+  /* Landscape orientation optimizations */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .emoji-picker {
+      max-height: 200px;
+    }
+    
+    .message-thread {
+      padding: 4px 8px;
     }
   }
 
