@@ -97,7 +97,7 @@ export const useCommunityMembers = (communityId: string): UseMembersReturn => {
             occurred_at,
             points_earned
           )
-        `)
+        `, { count: 'exact' })
         .eq('community_id', communityId)
         .eq('status', 'active');
 
