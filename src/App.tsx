@@ -22,7 +22,6 @@ import Auth from '@/pages/Auth';
 import EnhancedCommunities from '@/pages/EnhancedCommunities';
 import { SimpleCommunities } from '@/components/SimpleCommunities';
 import SkoolStyleCommunityDetail from '@/pages/SkoolStyleCommunityDetail';
-import CommunityMembersFixed from '@/pages/CommunityMembersFixed';
 import SimpleCommunityCalendar from '@/pages/SimpleCommunityCalendar';
 import CommunityClassroom from '@/pages/CommunityClassroom';
 import CommunityLeaderboard from '@/pages/CommunityLeaderboard';
@@ -85,11 +84,6 @@ function App() {
                 <SkoolStyleCommunityDetail />
               </ProtectedRoute>
             } />
-              <Route path="/community/:id/members" element={
-                <ProtectedRoute>
-                  <CommunityMembersFixed />
-                </ProtectedRoute>
-              } />
               <Route path="/community/:id/calendar" element={
                 <ProtectedRoute>
                   <SimpleCommunityCalendar />
