@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, BookOpen, Play, Clock, Users, Star, Plus, FolderOpen, Package, FileText, Video, Link2 } from 'lucide-react';
+import { SimpleResourceForm } from '@/components/SimpleResourceForm';
+import { useToast } from '@/hooks/use-toast';
 
 interface Community {
   id: string;
@@ -22,9 +24,12 @@ const CommunityClassroom = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   
   const [community, setCommunity] = useState<Community | null>(null);
   const [loading, setLoading] = useState(true);
+  const [createFormOpen, setCreateFormOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -90,6 +95,44 @@ const CommunityClassroom = () => {
     }
   };
 
+  const handleCreateResource = async (resourceData: any) => {
+    if (!user || !id) return;
+
+    setSubmitting(true);
+    try {
+      const { data: resource, error } = await supabase
+        .from('community_resources')
+        .insert({
+          ...resourceData,
+          community_id: id,
+          user_id: user.id,
+          is_approved: true // Auto-approve for now
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success!",
+        description: "Resource created successfully"
+      });
+
+      setCreateFormOpen(false);
+      // Optionally refresh or redirect
+
+    } catch (error: any) {
+      console.error('Error creating resource:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create resource",
+        variant: "destructive"
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
@@ -134,7 +177,10 @@ const CommunityClassroom = () => {
               </button>
             </div>
             <div className="flex items-center gap-3">
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button 
+                onClick={() => setCreateFormOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 <FolderOpen className="h-4 w-4 mr-2" />
                 Add Resource
@@ -325,9 +371,14 @@ const CommunityClassroom = () => {
                   <BookOpen className="h-4 w-4 mr-2" />
                   Browse All Courses
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setCreateFormOpen(true)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Course
+                  <FolderOpen className="h-4 w-4 mr-2" />
+                  Create Resource
                 </Button>
               </CardContent>
             </Card>
@@ -360,6 +411,15 @@ const CommunityClassroom = () => {
           </div>
         </div>
       </div>
+
+      {/* Resource Form Dialog */}
+      <SimpleResourceForm
+        isOpen={createFormOpen}
+        onClose={() => setCreateFormOpen(false)}
+        onSubmit={handleCreateResource}
+        communityId={id || ''}
+        loading={submitting}
+      />
     </div>
   );
 };

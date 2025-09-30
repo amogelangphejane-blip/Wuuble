@@ -6,6 +6,8 @@ import { Progress } from '@/components/ui/progress';
 import { BookOpen, Video, FileText, Lock, CheckCircle, Clock, Plus, GraduationCap, FolderOpen, Package, Link2, ExternalLink, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { SimpleResourceForm } from '@/components/SimpleResourceForm';
+import { useToast } from '@/hooks/use-toast';
 
 interface Resource {
   id: string;
@@ -22,8 +24,11 @@ interface SkoolClassroomProps {
 
 export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createFormOpen, setCreateFormOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchResources();
@@ -48,6 +53,44 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
       console.error('Error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateResource = async (resourceData: any) => {
+    if (!user) return;
+
+    setSubmitting(true);
+    try {
+      const { data: resource, error } = await supabase
+        .from('community_resources')
+        .insert({
+          ...resourceData,
+          community_id: communityId,
+          user_id: user.id,
+          is_approved: true // Auto-approve for now
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success!",
+        description: "Resource created successfully"
+      });
+
+      setCreateFormOpen(false);
+      fetchResources(); // Refresh the list
+
+    } catch (error: any) {
+      console.error('Error creating resource:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create resource",
+        variant: "destructive"
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -84,7 +127,10 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
             <p className="text-gray-500 text-sm mt-1">Courses and learning resources</p>
           </div>
         </div>
-        <Button className="bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 dark:text-black text-white">
+        <Button 
+          onClick={() => setCreateFormOpen(true)}
+          className="bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 dark:text-black text-white"
+        >
           <Plus className="w-4 h-4 mr-2" />
           <FolderOpen className="w-4 h-4 mr-2" />
           Add Resource
@@ -104,7 +150,10 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
           <p className="text-gray-500 mb-4">
             This community hasn't added any courses or learning materials yet.
           </p>
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            onClick={() => setCreateFormOpen(true)}
+          >
             <Plus className="w-4 h-4 mr-2" />
             <FolderOpen className="w-4 h-4 mr-2" />
             Create First Resource
@@ -154,6 +203,15 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
           ))}
         </div>
       )}
+
+      {/* Resource Form Dialog */}
+      <SimpleResourceForm
+        isOpen={createFormOpen}
+        onClose={() => setCreateFormOpen(false)}
+        onSubmit={handleCreateResource}
+        communityId={communityId}
+        loading={submitting}
+      />
     </div>
   );
 };
