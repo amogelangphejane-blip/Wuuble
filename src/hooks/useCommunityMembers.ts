@@ -188,7 +188,17 @@ export const useCommunityMembers = (communityId: string): UseMembersReturn => {
       // Execute query
       const { data: rawMembers, error: queryError, count } = await query;
 
+      console.log('🔍 Member Query Debug:', {
+        communityId,
+        rawMembers,
+        count,
+        error: queryError,
+        filters: currentFilters,
+        sort: currentSort
+      });
+
       if (queryError) {
+        console.error('❌ Query Error:', queryError);
         throw queryError;
       }
 
