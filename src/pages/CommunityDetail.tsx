@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ModernHeader } from '@/components/ModernHeader';
 import ResponsiveLayout from '@/components/ResponsiveLayout';
+import { CommunitySettings } from '@/components/CommunitySettings';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Users, 
   Calendar, 
@@ -40,10 +42,12 @@ const CommunityDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [community, setCommunity] = useState<Community | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMember, setIsMember] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -66,8 +70,14 @@ const CommunityDetail: React.FC = () => {
         return;
       }
 
-      setCommunity(data);
-      setIsOwner(data.owner_id === user?.id);
+      // Handle both creator_id and owner_id fields (database uses creator_id)
+      const communityData = {
+        ...data,
+        owner_id: data.owner_id || data.creator_id
+      };
+      setCommunity(communityData);
+      const ownerId = data.owner_id || data.creator_id;
+      setIsOwner(ownerId === user?.id);
     } catch (err) {
       console.error('Error:', err);
     } finally {
@@ -258,7 +268,7 @@ const CommunityDetail: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => navigate(`/community/${id}/settings`)}
+                          onClick={() => setShowSettings(true)}
                         >
                           <Settings className="w-4 h-4 mr-2" />
                           Settings
@@ -361,6 +371,41 @@ const CommunityDetail: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Community Settings Dialog */}
+      {community && isOwner && (
+        <CommunitySettings
+          community={{
+            id: community.id,
+            name: community.name,
+            avatar_url: community.avatar_url,
+            is_private: community.is_private,
+            member_count: community.member_count,
+            creator_id: community.owner_id,
+            created_at: community.created_at
+          }}
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          onUpdate={() => {
+            // Refresh community data after update
+            fetchCommunity();
+            toast({
+              title: "Success",
+              description: "Community updated successfully"
+            });
+          }}
+          onDelete={() => {
+            // Navigate back to communities page after deletion
+            toast({
+              title: "Community Deleted",
+              description: "The community has been deleted successfully"
+            });
+            navigate('/communities');
+          }}
+          isCreator={isOwner}
+          userId={user?.id || ''}
+        />
+      )}
     </ResponsiveLayout>
   );
 };
