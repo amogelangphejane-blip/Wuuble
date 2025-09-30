@@ -11,6 +11,7 @@ import { SkoolClassroom } from '@/components/SkoolClassroom';
 import { SkoolCalendar } from '@/components/SkoolCalendar';
 import { SkoolLeaderboard } from '@/components/SkoolLeaderboard';
 import { SkoolAbout } from '@/components/SkoolAbout';
+import { CommunitySettings } from '@/components/CommunitySettings';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home,
@@ -59,10 +60,12 @@ const SkoolStyleCommunityDetail: React.FC = () => {
   const [community, setCommunity] = useState<Community | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMember, setIsMember] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [activeSection, setActiveSection] = useState('discussions');
   const [userLevel, setUserLevel] = useState(3);
   const [userPoints, setUserPoints] = useState(450);
   const [notifications, setNotifications] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     // Get saved preference from localStorage
     const saved = localStorage.getItem('sidebarOpen');
@@ -105,14 +108,21 @@ const SkoolStyleCommunityDetail: React.FC = () => {
       }
 
       if (data) {
-        // Set the community data with activity_score defaulting to 0 if not present
-        setCommunity({
+        // Handle both creator_id and owner_id fields (database uses creator_id)
+        const communityData = {
           ...data,
+          owner_id: data.owner_id || data.creator_id,
           activity_score: data.activity_score || 0
-        });
+        };
         
-        // Check if user is a member
+        setCommunity(communityData);
+        
+        // Check if user is the owner/creator
         if (user) {
+          const ownerId = data.owner_id || data.creator_id;
+          setIsOwner(ownerId === user.id);
+          
+          // Check if user is a member
           const { data: memberData } = await supabase
             .from('community_members')
             .select('*')
@@ -180,7 +190,7 @@ const SkoolStyleCommunityDetail: React.FC = () => {
           </Button>
           
           {/* Community Info */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1">
             <Avatar className="w-9 h-9">
               <AvatarImage src={community.avatar_url} />
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-semibold">
@@ -201,6 +211,19 @@ const SkoolStyleCommunityDetail: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Owner Settings Icon */}
+          {isOwner && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowSettings(true)}
+              className="hover:bg-gray-100 dark:hover:bg-gray-800"
+              title="Community Settings"
+            >
+              <Settings className="w-5 h-5 text-gray-600" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -271,6 +294,20 @@ const SkoolStyleCommunityDetail: React.FC = () => {
               );
             })}
           </nav>
+
+          {/* Owner Settings Button */}
+          {isOwner && (
+            <div className="px-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+              <Button
+                variant="outline"
+                className="w-full justify-start text-blue-600 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900"
+                onClick={() => setShowSettings(true)}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Community Settings
+              </Button>
+            </div>
+          )}
 
           {/* User Info & Activity Score */}
           <div className="mt-auto border-t border-gray-200 dark:border-gray-800">
@@ -477,6 +514,41 @@ const SkoolStyleCommunityDetail: React.FC = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Community Settings Dialog */}
+      {community && isOwner && (
+        <CommunitySettings
+          community={{
+            id: community.id,
+            name: community.name,
+            avatar_url: community.avatar_url,
+            is_private: community.is_private,
+            member_count: community.member_count,
+            creator_id: community.owner_id,
+            created_at: community.created_at
+          }}
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          onUpdate={() => {
+            // Refresh community data after update
+            fetchCommunity();
+            toast({
+              title: "Success",
+              description: "Community updated successfully"
+            });
+          }}
+          onDelete={() => {
+            // Navigate back to communities page after deletion
+            toast({
+              title: "Community Deleted",
+              description: "The community has been deleted successfully"
+            });
+            navigate('/communities');
+          }}
+          isCreator={isOwner}
+          userId={user?.id || ''}
+        />
+      )}
     </div>
   );
 };
