@@ -93,84 +93,85 @@ const CommunityMembersSimple: React.FC = () => {
         .eq('community_id', id)
         .eq('status', 'active');
 
+      console.log('📊 Member Profiles Query:', {
+        communityId: id,
+        profilesData,
+        profilesError,
+        count: profilesData?.length
+      });
+
+      // Use member_profiles if available
       if (!profilesError && profilesData && profilesData.length > 0) {
-        // Use member_profiles
-        const enrichedMembers = await Promise.all(
-          profilesData.map(async (profile) => {
-            const { data: userData } = await supabase.auth.admin.getUserById(profile.user_id);
-            return {
-              id: profile.id,
-              user_id: profile.user_id,
-              community_id: profile.community_id,
-              role: profile.role,
-              joined_at: profile.joined_at,
-              display_name: profile.display_name || userData?.user?.email || 'Anonymous',
-              avatar_url: profile.avatar_url,
-              email: userData?.user?.email || ''
-            };
-          })
-        );
+        console.log('✅ Using member_profiles data:', profilesData);
+        const enrichedMembers = profilesData.map((profile) => ({
+          id: profile.id,
+          user_id: profile.user_id,
+          community_id: profile.community_id,
+          role: profile.role,
+          joined_at: profile.joined_at,
+          display_name: profile.display_name || 'Member',
+          avatar_url: profile.avatar_url,
+          email: ''
+        }));
+        
+        console.log('✅ Set members:', enrichedMembers);
         setMembers(enrichedMembers);
         setFilteredMembers(enrichedMembers);
       } else {
-        // Fallback to community_members with user data
+        console.log('⚠️ No member_profiles found, trying community_members...');
+        // Fallback to community_members
         const { data: membersData, error: membersError } = await supabase
           .from('community_members')
-          .select(`
-            id,
-            user_id,
-            community_id,
-            role,
-            joined_at
-          `)
+          .select('*')
           .eq('community_id', id);
+        
+        console.log('📊 Community Members Query:', {
+          membersData,
+          membersError,
+          count: membersData?.length
+        });
 
-        if (membersError) throw membersError;
+        if (membersError) {
+          console.error('Error fetching members:', membersError);
+          // If both fail, at least show the creator
+          const creatorMember = {
+            id: 'creator-' + communityData.creator_id,
+            user_id: communityData.creator_id,
+            community_id: id,
+            role: 'creator',
+            joined_at: communityData.created_at || new Date().toISOString(),
+            display_name: 'Community Creator',
+            avatar_url: null,
+            email: ''
+          };
+          setMembers([creatorMember]);
+          setFilteredMembers([creatorMember]);
+        } else {
+          // Get profiles for members
+          const enrichedMembers = await Promise.all(
+            (membersData || []).map(async (member) => {
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('display_name, avatar_url')
+                .eq('user_id', member.user_id)
+                .single();
 
-        // Get user data for each member
-        const enrichedMembers = await Promise.all(
-          (membersData || []).map(async (member) => {
-            const { data: userData } = await supabase
-              .from('profiles')
-              .select('display_name, avatar_url')
-              .eq('user_id', member.user_id)
-              .single();
+              return {
+                id: member.id,
+                user_id: member.user_id,
+                community_id: member.community_id,
+                role: member.role,
+                joined_at: member.joined_at,
+                display_name: profileData?.display_name || 'Member',
+                avatar_url: profileData?.avatar_url || null,
+                email: ''
+              };
+            })
+          );
 
-            const { data: authData } = await supabase.auth.admin.getUserById(member.user_id);
-
-            return {
-              ...member,
-              display_name: userData?.display_name || 
-                           authData?.user?.user_metadata?.display_name || 
-                           authData?.user?.email || 
-                           'Anonymous',
-              avatar_url: userData?.avatar_url || authData?.user?.user_metadata?.avatar_url,
-              email: authData?.user?.email || ''
-            };
-          })
-        );
-
-        setMembers(enrichedMembers);
-        setFilteredMembers(enrichedMembers);
-      }
-
-      // Ensure creator is in the list
-      if (communityData && !members.some(m => m.user_id === communityData.creator_id)) {
-        const { data: creatorData } = await supabase.auth.admin.getUserById(communityData.creator_id);
-        const creatorMember = {
-          id: 'creator-' + communityData.creator_id,
-          user_id: communityData.creator_id,
-          community_id: id,
-          role: 'creator',
-          joined_at: communityData.created_at || new Date().toISOString(),
-          display_name: creatorData?.user?.user_metadata?.display_name || 
-                       creatorData?.user?.email || 
-                       'Creator',
-          avatar_url: creatorData?.user?.user_metadata?.avatar_url || null,
-          email: creatorData?.user?.email || ''
-        };
-        setMembers(prev => [creatorMember, ...prev]);
-        setFilteredMembers(prev => [creatorMember, ...prev]);
+          setMembers(enrichedMembers);
+          setFilteredMembers(enrichedMembers);
+        }
       }
 
       // Set current user role
