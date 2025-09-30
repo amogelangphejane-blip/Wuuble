@@ -102,16 +102,38 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
         }
       }
 
-      // Verify community membership
+      // Verify community membership and auto-join if not a member
       const { data: membership, error: membershipError } = await supabase
         .from('community_members')
         .select('id')
         .eq('community_id', communityId)
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid error if not found
 
-      if (membershipError || !membership) {
-        throw new Error("You must be a member of this community to add resources. Please join the community first.");
+      if (!membership) {
+        console.log('Not a community member, attempting to auto-join...');
+        
+        // Try to auto-join the community
+        const { error: joinError } = await supabase
+          .from('community_members')
+          .insert({
+            community_id: communityId,
+            user_id: session.user.id,
+            role: 'member',
+            joined_at: new Date().toISOString()
+          });
+
+        if (joinError) {
+          console.error('Auto-join failed:', joinError);
+          throw new Error("Unable to join community automatically. Please click the 'Join Community' button on the main community page first.");
+        }
+        
+        console.log('Successfully auto-joined the community');
+        
+        toast({
+          title: "Joined Community",
+          description: "You've been automatically added to this community"
+        });
       }
 
       // Insert the resource with the authenticated user's ID
