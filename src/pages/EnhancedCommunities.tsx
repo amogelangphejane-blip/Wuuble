@@ -145,17 +145,53 @@ const EnhancedCommunities: React.FC = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // Get memberships from community_members
+      const { data: memberData, error: memberError } = await supabase
         .from('community_members')
         .select('community_id, role, joined_at')
         .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching memberships:', error);
-        return;
+      if (memberError) {
+        console.error('Error fetching memberships:', memberError);
       }
 
-      setUserMemberships(data || []);
+      // Also get communities where user is the creator
+      const { data: creatorData, error: creatorError } = await supabase
+        .from('communities')
+        .select('id, created_at')
+        .eq('creator_id', user.id);
+
+      if (creatorError) {
+        console.error('Error fetching creator communities:', creatorError);
+      }
+
+      // Combine both - memberships + created communities
+      const memberships: UserMembership[] = [];
+      
+      // Add from community_members
+      if (memberData) {
+        memberships.push(...memberData.map(m => ({
+          community_id: m.community_id,
+          role: m.role as 'owner' | 'admin' | 'moderator' | 'member',
+          joined_at: m.joined_at
+        })));
+      }
+      
+      // Add communities where user is creator (if not already in the list)
+      if (creatorData) {
+        creatorData.forEach(c => {
+          if (!memberships.some(m => m.community_id === c.id)) {
+            memberships.push({
+              community_id: c.id,
+              role: 'owner',
+              joined_at: c.created_at
+            });
+          }
+        });
+      }
+
+      console.log('✅ User memberships loaded:', memberships.length);
+      setUserMemberships(memberships);
     } catch (err) {
       console.error('Error:', err);
     }
