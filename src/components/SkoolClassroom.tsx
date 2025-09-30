@@ -57,22 +57,44 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
   };
 
   const handleCreateResource = async (resourceData: any) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in to create resources",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setSubmitting(true);
     try {
+      // Get the current session to ensure we have the auth user ID
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.user) {
+        throw new Error("Authentication session expired. Please log in again.");
+      }
+
+      // Insert the resource with the authenticated user's ID
       const { data: resource, error } = await supabase
         .from('community_resources')
         .insert({
-          ...resourceData,
+          title: resourceData.title,
+          description: resourceData.description,
+          resource_type: resourceData.resource_type,
+          content_url: resourceData.content_url || null,
+          is_free: resourceData.is_free !== false, // Default to true
           community_id: communityId,
-          user_id: user.id,
+          user_id: session.user.id, // Use session user ID to ensure it's from auth.users
           is_approved: true // Auto-approve for now
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw new Error(error.message || "Failed to create resource");
+      }
 
       toast({
         title: "Success!",
@@ -84,9 +106,20 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
 
     } catch (error: any) {
       console.error('Error creating resource:', error);
+      
+      let errorMessage = "Failed to create resource";
+      
+      if (error.message?.includes('foreign key')) {
+        errorMessage = "Authentication error. Please log out and log back in.";
+      } else if (error.message?.includes('violates')) {
+        errorMessage = "Database constraint error. Please check your input.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to create resource",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
