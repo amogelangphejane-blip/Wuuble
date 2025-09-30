@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, BookOpen, Play, Clock, Users, Star, Plus } from 'lucide-react';
+import { ArrowLeft, BookOpen, Play, Clock, Users, Star, Plus, FolderOpen, Package, FileText, Video, Link2 } from 'lucide-react';
+import { SimpleResourceForm } from '@/components/SimpleResourceForm';
+import { useToast } from '@/hooks/use-toast';
 
 interface Community {
   id: string;
@@ -22,9 +24,12 @@ const CommunityClassroom = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   
   const [community, setCommunity] = useState<Community | null>(null);
   const [loading, setLoading] = useState(true);
+  const [createFormOpen, setCreateFormOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -90,6 +95,146 @@ const CommunityClassroom = () => {
     }
   };
 
+  const handleCreateResource = async (resourceData: any) => {
+    if (!user || !id) {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in to create resources",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Get the current session to ensure we have the auth user ID
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.user) {
+        throw new Error("Authentication session expired. Please log in again.");
+      }
+
+      console.log('Creating resource with user ID:', session.user.id);
+      console.log('Community ID:', id);
+
+      // First, ensure the user has a profile (this might be missing)
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileError && profileError.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        console.log('Profile not found, creating...');
+        const { error: createProfileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: session.user.id,
+            email: session.user.email,
+            display_name: session.user.email?.split('@')[0] || 'User',
+            created_at: new Date().toISOString()
+          });
+
+        if (createProfileError) {
+          console.error('Failed to create profile:', createProfileError);
+        }
+      }
+
+      // Verify community membership and auto-join if not a member
+      const { data: membership, error: membershipError } = await supabase
+        .from('community_members')
+        .select('id')
+        .eq('community_id', id)
+        .eq('user_id', session.user.id)
+        .maybeSingle(); // Use maybeSingle instead of single to avoid error if not found
+
+      if (!membership) {
+        console.log('Not a community member, attempting to auto-join...');
+        
+        // Try to auto-join the community
+        const { error: joinError } = await supabase
+          .from('community_members')
+          .insert({
+            community_id: id,
+            user_id: session.user.id,
+            role: 'member',
+            joined_at: new Date().toISOString()
+          });
+
+        if (joinError) {
+          console.error('Auto-join failed:', joinError);
+          throw new Error("Unable to join community automatically. Please click the 'Join Community' button on the main community page first.");
+        }
+        
+        console.log('Successfully auto-joined the community');
+        
+        toast({
+          title: "Joined Community",
+          description: "You've been automatically added to this community"
+        });
+      }
+
+      // Insert the resource with the authenticated user's ID
+      const { data: resource, error } = await supabase
+        .from('community_resources')
+        .insert({
+          title: resourceData.title,
+          description: resourceData.description,
+          resource_type: resourceData.resource_type,
+          content_url: resourceData.content_url || null,
+          is_free: resourceData.is_free !== false, // Default to true
+          community_id: id,
+          user_id: session.user.id, // Use session user ID to ensure it's from auth.users
+          is_approved: true // Auto-approve for now
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        throw error;
+      }
+
+      toast({
+        title: "Success!",
+        description: "Resource created successfully"
+      });
+
+      setCreateFormOpen(false);
+      // Resource created successfully
+
+    } catch (error: any) {
+      console.error('Error creating resource:', error);
+      console.error('Error details:', error);
+      
+      let errorMessage = "Failed to create resource";
+      let errorTitle = "Error";
+      
+      if (error.message?.includes('member of this community')) {
+        errorTitle = "Access Denied";
+        errorMessage = error.message;
+      } else if (error.message?.includes('foreign key constraint') || error.code === '23503') {
+        errorTitle = "Database Error";
+        errorMessage = "There's an issue with your account setup. Please contact support with this info: User ID - " + user.id;
+      } else if (error.message?.includes('violates')) {
+        errorTitle = "Validation Error";
+        errorMessage = "Please check all fields are filled correctly.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: errorTitle,
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
@@ -134,9 +279,13 @@ const CommunityClassroom = () => {
               </button>
             </div>
             <div className="flex items-center gap-3">
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button 
+                onClick={() => setCreateFormOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Course
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Add Resource
               </Button>
             </div>
           </div>
@@ -146,13 +295,17 @@ const CommunityClassroom = () => {
       {/* Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <BookOpen className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Classroom</h1>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <FolderOpen className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Classroom Resources</h1>
+              <p className="text-gray-600">
+                Access courses, tutorials, and learning materials
+              </p>
+            </div>
           </div>
-          <p className="text-gray-600">
-            Access courses, tutorials, and learning materials shared by {community.name}.
-          </p>
         </div>
 
         {/* Classroom Content */}
@@ -320,9 +473,14 @@ const CommunityClassroom = () => {
                   <BookOpen className="h-4 w-4 mr-2" />
                   Browse All Courses
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => setCreateFormOpen(true)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Course
+                  <FolderOpen className="h-4 w-4 mr-2" />
+                  Create Resource
                 </Button>
               </CardContent>
             </Card>
@@ -355,6 +513,15 @@ const CommunityClassroom = () => {
           </div>
         </div>
       </div>
+
+      {/* Resource Form Dialog */}
+      <SimpleResourceForm
+        isOpen={createFormOpen}
+        onClose={() => setCreateFormOpen(false)}
+        onSubmit={handleCreateResource}
+        communityId={id || ''}
+        loading={submitting}
+      />
     </div>
   );
 };
