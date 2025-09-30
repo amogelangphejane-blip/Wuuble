@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Video, FileText, Lock, CheckCircle, Clock, Plus, GraduationCap } from 'lucide-react';
+import { BookOpen, Video, FileText, Lock, CheckCircle, Clock, Plus, GraduationCap, FolderOpen, Package, Link2, ExternalLink, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -54,23 +54,39 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
   const getResourceIcon = (type: string) => {
     switch (type) {
       case 'video':
-        return <Video className="w-5 h-5" />;
+        return <Video className="w-5 h-5 text-red-500" />;
       case 'document':
-        return <FileText className="w-5 h-5" />;
+        return <FileText className="w-5 h-5 text-blue-500" />;
+      case 'article':
+        return <FileText className="w-5 h-5 text-green-500" />;
+      case 'link':
+        return <Link2 className="w-5 h-5 text-purple-500" />;
+      case 'course':
+        return <GraduationCap className="w-5 h-5 text-yellow-500" />;
+      case 'tool':
+        return <Package className="w-5 h-5 text-orange-500" />;
+      case 'service':
+        return <Package className="w-5 h-5 text-cyan-500" />;
       default:
-        return <BookOpen className="w-5 h-5" />;
+        return <FolderOpen className="w-5 h-5 text-gray-500" />;
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Classroom</h1>
-          <p className="text-gray-500 text-sm mt-1">Courses and learning resources</p>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+            <FolderOpen className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Classroom</h1>
+            <p className="text-gray-500 text-sm mt-1">Courses and learning resources</p>
+          </div>
         </div>
         <Button className="bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 dark:text-black text-white">
           <Plus className="w-4 h-4 mr-2" />
+          <FolderOpen className="w-4 h-4 mr-2" />
           Add Resource
         </Button>
       </div>
@@ -81,42 +97,57 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
         </div>
       ) : resources.length === 0 ? (
         <Card className="p-8 text-center">
-          <GraduationCap className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <FolderOpen className="w-12 h-12 text-gray-400" />
+          </div>
           <h3 className="text-lg font-semibold mb-2">No learning resources yet</h3>
           <p className="text-gray-500 mb-4">
             This community hasn't added any courses or learning materials yet.
           </p>
           <Button variant="outline">
             <Plus className="w-4 h-4 mr-2" />
-            Create First Course
+            <FolderOpen className="w-4 h-4 mr-2" />
+            Create First Resource
           </Button>
         </Card>
       ) : (
         <div className="space-y-4">
           {resources.map((resource) => (
-            <Card key={resource.id} className="hover:shadow-lg transition-all cursor-pointer">
+            <Card key={resource.id} className="hover:shadow-lg transition-all cursor-pointer group">
               <div className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                  <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                     {getResourceIcon(resource.resource_type)}
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-2">{resource.title}</h3>
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-lg font-semibold group-hover:text-blue-600 transition-colors">{resource.title}</h3>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
                     {resource.description && (
                       <p className="text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
                         {resource.description}
                       </p>
                     )}
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
-                        {resource.resource_type}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        {getResourceIcon(resource.resource_type)}
+                        <span className="capitalize">{resource.resource_type}</span>
                       </Badge>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
                         Added {new Date(resource.created_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
-                  <Button size="sm">View</Button>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    View
+                  </Button>
                 </div>
               </div>
             </Card>

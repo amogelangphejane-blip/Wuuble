@@ -13,7 +13,8 @@ import {
   Trophy,
   Settings,
   ArrowRight,
-  Activity
+  Activity,
+  FolderOpen
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { validateAvatarUrl } from '@/lib/utils';
@@ -76,10 +77,10 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
               size="lg" 
               variant="outline" 
               className="h-16 flex-col gap-2"
-              onClick={() => navigate(`/community/${communityId}`)}
+              onClick={() => navigate(`/community/${communityId}/classroom`)}
             >
-              <BookOpen className="w-6 h-6" />
-              <span>Classroom</span>
+              <FolderOpen className="w-6 h-6" />
+              <span>Resources</span>
             </Button>
           </div>
         </CardContent>
@@ -99,9 +100,21 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
           </CardContent>
         </Card>
 
+        {/* Quick Resources */}
+        <Card className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => navigate(`/community/${communityId}/classroom`)}>
+          <CardContent className="p-6 text-center">
+            <FolderOpen className="w-12 h-12 text-primary mx-auto mb-4" />
+            <h4 className="font-semibold mb-2">Resources</h4>
+            <p className="text-sm text-muted-foreground">
+              Access learning materials
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Quick Calendar */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(`/community/${communityId}`)}>
+              onClick={() => navigate(`/community/${communityId}/calendar`)}>
           <CardContent className="p-6 text-center">
             <Calendar className="w-12 h-12 text-primary mx-auto mb-4" />
             <h4 className="font-semibold mb-2">Events</h4>
@@ -113,7 +126,7 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
 
         {/* Quick Members */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(`/community/${communityId}`)}>
+              onClick={() => navigate(`/community/${communityId}/members`)}>
           <CardContent className="p-6 text-center">
             <Users className="w-12 h-12 text-primary mx-auto mb-4" />
             <h4 className="font-semibold mb-2">Members</h4>
@@ -125,7 +138,7 @@ export const QuickAccess = ({ communityId, communityName, isMember, isCreator }:
 
         {/* Leaderboard */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(`/community/${communityId}`)}>
+              onClick={() => navigate(`/community/${communityId}/leaderboard`)}>
           <CardContent className="p-6 text-center">
             <Trophy className="w-12 h-12 text-primary mx-auto mb-4" />
             <h4 className="font-semibold mb-2">Leaderboard</h4>

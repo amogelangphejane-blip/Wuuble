@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, BookOpen, Play, Clock, Users, Star, Plus } from 'lucide-react';
+import { ArrowLeft, BookOpen, Play, Clock, Users, Star, Plus, FolderOpen, Package, FileText, Video, Link2 } from 'lucide-react';
 
 interface Community {
   id: string;
@@ -136,7 +136,8 @@ const CommunityClassroom = () => {
             <div className="flex items-center gap-3">
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Course
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Add Resource
               </Button>
             </div>
           </div>
@@ -146,13 +147,17 @@ const CommunityClassroom = () => {
       {/* Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <BookOpen className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Classroom</h1>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <FolderOpen className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Classroom Resources</h1>
+              <p className="text-gray-600">
+                Access courses, tutorials, and learning materials
+              </p>
+            </div>
           </div>
-          <p className="text-gray-600">
-            Access courses, tutorials, and learning materials shared by {community.name}.
-          </p>
         </div>
 
         {/* Classroom Content */}
