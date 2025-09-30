@@ -30,6 +30,8 @@ import CommunityDiscussions from '@/pages/CommunityDiscussions';
 import CommunityAbout from '@/pages/CommunityAbout';
 import CommunitySubscriptions from '@/pages/CommunitySubscriptions';
 import CommunityPaymentSettings from '@/pages/CommunityPaymentSettings';
+import SimpleMembers from '@/pages/SimpleMembers';
+import MemberProfile from '@/components/MemberProfile';
 import Messages from '@/pages/Messages';
 import ProfileSettings from '@/pages/ProfileSettings';
 import PaymentMethods from '@/pages/PaymentMethods';
@@ -112,6 +114,16 @@ function App() {
               <Route path="/community/:id/about" element={
                 <ProtectedRoute>
                   <CommunityAbout />
+                </ProtectedRoute>
+              } />
+              <Route path="/community/:id/members" element={
+                <ProtectedRoute>
+                  <SimpleMembers />
+                </ProtectedRoute>
+              } />
+              <Route path="/community/:id/members/:memberId" element={
+                <ProtectedRoute>
+                  <MemberProfile />
                 </ProtectedRoute>
               } />
               <Route path="/community/:id/subscriptions" element={

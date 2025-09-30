@@ -1,13 +1,8 @@
 import React from 'react';
-import { SimpleCommunityMembers } from '@/components/SimpleCommunityMembers';
-import ResponsiveLayout from '@/components/ResponsiveLayout';
+import SimpleMembers from '@/pages/SimpleMembers';
 
 const CommunityMembers: React.FC = () => {
-  return (
-    <ResponsiveLayout>
-      <SimpleCommunityMembers />
-    </ResponsiveLayout>
-  );
+  return <SimpleMembers />;
 };
 
 export default CommunityMembers;
