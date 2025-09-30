@@ -24,10 +24,14 @@ import {
   MessageCircle,
   UserMinus,
   UserCheck,
-  Loader2
+  Loader2,
+  Eye,
+  TrendingUp,
+  BarChart3
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import ResponsiveLayout from '@/components/ResponsiveLayout';
+import MemberTracking from '@/components/MemberTracking';
 
 interface Member {
   id: string;
@@ -37,10 +41,10 @@ interface Member {
   joined_at: string;
   profiles?: {
     id: string;
-    email: string;
     display_name?: string;
     avatar_url?: string;
   };
+  email?: string;
 }
 
 interface Community {
@@ -62,6 +66,7 @@ const SimpleMembers: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUserRole, setCurrentUserRole] = useState<string>('member');
+  const [showTracking, setShowTracking] = useState(false);
 
   useEffect(() => {
     if (user && id) {
@@ -73,11 +78,11 @@ const SimpleMembers: React.FC = () => {
     if (searchQuery.trim() === '') {
       setFilteredMembers(members);
     } else {
-      const query = searchQuery.toLowerCase();
+        const query = searchQuery.toLowerCase();
       setFilteredMembers(
         members.filter(member => {
           const name = getDisplayName(member);
-          const email = member.profiles?.email || '';
+          const email = member.email || '';
           return name.toLowerCase().includes(query) || email.toLowerCase().includes(query);
         })
       );
@@ -103,26 +108,35 @@ const SimpleMembers: React.FC = () => {
       // Fetch members
       const { data: membersData, error: membersError } = await supabase
         .from('community_members')
-        .select(`
-          id,
-          user_id,
-          community_id,
-          role,
-          joined_at,
-          profiles (
-            id,
-            email,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select('id, user_id, community_id, role, joined_at')
         .eq('community_id', id)
         .order('joined_at', { ascending: false });
 
       if (membersError) throw membersError;
 
-      setMembers(membersData || []);
-      setFilteredMembers(membersData || []);
+      // Fetch profiles for all members
+      if (membersData && membersData.length > 0) {
+        const userIds = membersData.map(m => m.user_id);
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, user_id, display_name, avatar_url')
+          .in('user_id', userIds);
+
+        // Combine members with their profiles
+        // Note: Email would need to be fetched from auth.users individually or via RPC
+        const membersWithProfiles: Member[] = membersData.map(member => ({
+          ...member,
+          role: member.role as 'owner' | 'admin' | 'moderator' | 'member',
+          profiles: profilesData?.find(p => p.user_id === member.user_id),
+          email: 'user@example.com' // Placeholder - in production, fetch from auth.users
+        }));
+
+        setMembers(membersWithProfiles);
+        setFilteredMembers(membersWithProfiles);
+      } else {
+        setMembers([]);
+        setFilteredMembers([]);
+      }
 
       // Determine current user's role
       const currentMember = membersData?.find(m => m.user_id === user.id);
@@ -146,7 +160,7 @@ const SimpleMembers: React.FC = () => {
 
   const getDisplayName = (member: Member): string => {
     return member.profiles?.display_name || 
-           member.profiles?.email?.split('@')[0] || 
+           member.email?.split('@')[0] || 
            'Unknown User';
   };
 
@@ -312,7 +326,7 @@ const SimpleMembers: React.FC = () => {
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-6xl mx-auto px-4 py-6">
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center justify-between mb-4">
               <Button
                 variant="ghost"
                 onClick={() => navigate(`/community/${id}`)}
@@ -320,6 +334,15 @@ const SimpleMembers: React.FC = () => {
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back
+              </Button>
+              
+              <Button
+                variant={showTracking ? "default" : "outline"}
+                onClick={() => setShowTracking(!showTracking)}
+                className="gap-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+                {showTracking ? 'Hide' : 'Show'} Analytics
               </Button>
             </div>
             
@@ -340,6 +363,13 @@ const SimpleMembers: React.FC = () => {
         </div>
 
         <div className="max-w-6xl mx-auto px-4 py-8">
+          {/* Member Tracking Analytics */}
+          {showTracking && id && (
+            <div className="mb-8">
+              <MemberTracking communityId={id} />
+            </div>
+          )}
+
           {/* Search */}
           <div className="mb-6">
             <div className="relative max-w-md">
@@ -416,7 +446,10 @@ const SimpleMembers: React.FC = () => {
                   {filteredMembers.map((member) => (
                     <div key={member.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                        <div 
+                          className="flex items-center gap-4 flex-1 cursor-pointer"
+                          onClick={() => navigate(`/community/${id}/members/${member.id}`)}
+                        >
                           <Avatar className="w-12 h-12">
                             <AvatarImage src={getAvatarUrl(member)} />
                             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
@@ -426,13 +459,13 @@ const SimpleMembers: React.FC = () => {
                           
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-medium text-gray-900 dark:text-gray-100">
+                              <p className="font-medium text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400">
                                 {getDisplayName(member)}
                               </p>
                               {getRoleBadge(member.role)}
                             </div>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {member.profiles?.email}
+                              {member.email}
                             </p>
                             <p className="text-xs text-gray-500 dark:text-gray-500">
                               Joined {formatDistanceToNow(new Date(member.joined_at), { addSuffix: true })}
@@ -448,6 +481,11 @@ const SimpleMembers: React.FC = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => navigate(`/community/${id}/members/${member.id}`)}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Profile
+                              </DropdownMenuItem>
+                              
                               <DropdownMenuItem onClick={() => {
                                 toast({
                                   title: "Coming soon",
