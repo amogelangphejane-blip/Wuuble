@@ -22,7 +22,7 @@ import Auth from '@/pages/Auth';
 import EnhancedCommunities from '@/pages/EnhancedCommunities';
 import { SimpleCommunities } from '@/components/SimpleCommunities';
 import SkoolStyleCommunityDetail from '@/pages/SkoolStyleCommunityDetail';
-import CommunityMembersSimple from '@/pages/CommunityMembersSimple';
+import CommunityMembersFixed from '@/pages/CommunityMembersFixed';
 import SimpleCommunityCalendar from '@/pages/SimpleCommunityCalendar';
 import CommunityClassroom from '@/pages/CommunityClassroom';
 import CommunityLeaderboard from '@/pages/CommunityLeaderboard';
@@ -87,7 +87,7 @@ function App() {
             } />
               <Route path="/community/:id/members" element={
                 <ProtectedRoute>
-                  <CommunityMembersSimple />
+                  <CommunityMembersFixed />
                 </ProtectedRoute>
               } />
               <Route path="/community/:id/calendar" element={
