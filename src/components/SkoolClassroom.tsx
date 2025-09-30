@@ -75,6 +75,45 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
         throw new Error("Authentication session expired. Please log in again.");
       }
 
+      console.log('Creating resource with user ID:', session.user.id);
+      console.log('Community ID:', communityId);
+
+      // First, ensure the user has a profile (this might be missing)
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileError && profileError.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        console.log('Profile not found, creating...');
+        const { error: createProfileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: session.user.id,
+            email: session.user.email,
+            display_name: session.user.email?.split('@')[0] || 'User',
+            created_at: new Date().toISOString()
+          });
+
+        if (createProfileError) {
+          console.error('Failed to create profile:', createProfileError);
+        }
+      }
+
+      // Verify community membership
+      const { data: membership, error: membershipError } = await supabase
+        .from('community_members')
+        .select('id')
+        .eq('community_id', communityId)
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (membershipError || !membership) {
+        throw new Error("You must be a member of this community to add resources. Please join the community first.");
+      }
+
       // Insert the resource with the authenticated user's ID
       const { data: resource, error } = await supabase
         .from('community_resources')
@@ -93,7 +132,8 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
 
       if (error) {
         console.error('Database error:', error);
-        throw new Error(error.message || "Failed to create resource");
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        throw error;
       }
 
       toast({
@@ -106,19 +146,26 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
 
     } catch (error: any) {
       console.error('Error creating resource:', error);
+      console.error('Error details:', error);
       
       let errorMessage = "Failed to create resource";
+      let errorTitle = "Error";
       
-      if (error.message?.includes('foreign key')) {
-        errorMessage = "Authentication error. Please log out and log back in.";
+      if (error.message?.includes('member of this community')) {
+        errorTitle = "Access Denied";
+        errorMessage = error.message;
+      } else if (error.message?.includes('foreign key constraint') || error.code === '23503') {
+        errorTitle = "Database Error";
+        errorMessage = "There's an issue with your account setup. Please contact support with this info: User ID - " + user.id;
       } else if (error.message?.includes('violates')) {
-        errorMessage = "Database constraint error. Please check your input.";
+        errorTitle = "Validation Error";
+        errorMessage = "Please check all fields are filled correctly.";
       } else if (error.message) {
         errorMessage = error.message;
       }
       
       toast({
-        title: "Error",
+        title: errorTitle,
         description: errorMessage,
         variant: "destructive"
       });
