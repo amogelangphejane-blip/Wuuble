@@ -4,8 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CreateCommunityDialog } from '@/components/CreateCommunityDialog';
@@ -21,7 +19,6 @@ import {
   Loader2,
   RefreshCw
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface Community {
   id: string;
@@ -159,13 +156,13 @@ export const SimpleCommunities: React.FC = () => {
           
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-lg border-2 overflow-hidden">
-                <div className="h-32 bg-gray-200 dark:bg-gray-700 animate-pulse" />
-                <div className="p-6 pt-14">
-                  <div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-3" />
-                  <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
-                  <div className="h-4 w-2/3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4" />
-                  <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+              <div key={i} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+                <div className="h-48 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse" />
+                <div className="p-6 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md">
+                  <div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+                  <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1" />
+                  <div className="h-3 w-2/3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4" />
+                  <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse mt-6" />
                 </div>
               </div>
             ))}
@@ -284,110 +281,113 @@ export const SimpleCommunities: React.FC = () => {
                 {filteredCommunities.map((community) => (
                   <Card 
                     key={community.id} 
-                    className="group overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border-2 hover:border-blue-500/20 bg-white dark:bg-gray-800"
+                    className="group overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl"
                     onClick={() => navigate(`/community/${community.id}`)}
                   >
-                    {/* Cover/Header Image Area */}
-                    <div className="relative h-32 overflow-hidden">
-                      {community.cover_image_url ? (
+                    {/* Profile Picture - Large Hero Image */}
+                    <div className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10">
+                      {community.avatar_url ? (
                         <>
                           <img 
-                            src={community.cover_image_url} 
-                            alt={`${community.name} cover`}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            src={community.avatar_url} 
+                            alt={community.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent group-hover:from-black/10 transition-colors" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent group-hover:from-black/20 transition-colors" />
                         </>
                       ) : (
-                        <>
-                          <div className="w-full h-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500" />
-                          <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition-colors" />
-                        </>
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500">
+                          <span className="text-6xl font-bold text-white/90">
+                            {community.name.substring(0, 2).toUpperCase()}
+                          </span>
+                        </div>
                       )}
                       
-                      {/* Privacy Badge - Top Right */}
+                      {/* Glass Badge - Top Right */}
                       <div className="absolute top-3 right-3">
                         {community.is_private ? (
-                          <Badge className="bg-black/40 backdrop-blur-sm border-white/20 text-white text-xs gap-1">
-                            <Lock className="w-3 h-3" />
-                            Private
-                          </Badge>
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 dark:bg-black/30 backdrop-blur-md border border-white/30 dark:border-white/10 shadow-lg">
+                            <Lock className="w-3.5 h-3.5 text-white drop-shadow" />
+                            <span className="text-xs font-semibold text-white drop-shadow">Private</span>
+                          </div>
                         ) : (
-                          <Badge className="bg-black/40 backdrop-blur-sm border-white/20 text-white text-xs gap-1">
-                            <Globe className="w-3 h-3" />
-                            Public
-                          </Badge>
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 dark:bg-black/30 backdrop-blur-md border border-white/30 dark:border-white/10 shadow-lg">
+                            <Globe className="w-3.5 h-3.5 text-white drop-shadow" />
+                            <span className="text-xs font-semibold text-white drop-shadow">Public</span>
+                          </div>
                         )}
                       </div>
 
-                      {/* Avatar - Overlapping */}
-                      <Avatar className="absolute -bottom-10 left-6 w-20 h-20 border-4 border-white dark:border-gray-800 shadow-lg ring-2 ring-blue-500/20">
-                        <AvatarImage src={community.avatar_url} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white text-xl font-bold">
-                          {community.name.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    
-                    {/* Content Area */}
-                    <CardHeader className="pt-14 pb-3">
-                      <div className="space-y-2">
-                        <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {community.name}
-                        </CardTitle>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 min-h-[2.5rem]">
-                          {community.description || 'No description available'}
-                        </p>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="pt-0 pb-6">
-                      {/* Stats Row */}
-                      <div className="flex items-center gap-4 mb-4 text-sm text-gray-600 dark:text-gray-400">
-                        <div className="flex items-center gap-1.5">
-                          <Users className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium text-gray-700 dark:text-gray-300">
+                      {/* Glass Stats Overlay - Bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 via-black/40 to-transparent backdrop-blur-sm">
+                        <div className="flex items-center gap-2 text-white">
+                          <Users className="w-4 h-4 drop-shadow" />
+                          <span className="font-semibold drop-shadow">
                             {community.member_count || 0}
                           </span>
-                          <span className="text-gray-500">
+                          <span className="text-sm text-white/90 drop-shadow">
                             {community.member_count === 1 ? 'member' : 'members'}
                           </span>
                         </div>
-                        
-                        {community.category && (
-                          <Badge variant="secondary" className="text-xs font-medium">
-                            {community.category}
-                          </Badge>
-                        )}
                       </div>
-
-                      {/* Tags if available */}
-                      {community.tags && community.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-4">
-                          {community.tags.slice(0, 3).map((tag, idx) => (
-                            <Badge 
-                              key={idx} 
-                              variant="outline" 
-                              className="text-xs font-normal text-gray-600 dark:text-gray-400"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
+                    </div>
+                    
+                    {/* Content Area with Glass Effect */}
+                    <div className="relative bg-white/60 dark:bg-gray-800/60 backdrop-blur-md">
+                      <CardHeader className="pb-3">
+                        <div className="space-y-2">
+                          <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
+                            {community.name}
+                          </CardTitle>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed min-h-[2rem]">
+                            {community.description || 'No description available'}
+                          </p>
                         </div>
-                      )}
+                      </CardHeader>
                       
-                      {/* Join Button */}
-                      <Button 
-                        className="w-full font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md transition-all group-hover:scale-[1.02]"
-                        size="lg"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleJoinCommunity(community.id);
-                        }}
-                      >
-                        Join Community
-                      </Button>
-                    </CardContent>
+                      <CardContent className="pt-0 pb-4">
+                        {/* Category & Tags */}
+                        <div className="space-y-3">
+                          {community.category && (
+                            <div className="flex items-center gap-2">
+                              <div className="px-2.5 py-1 rounded-full bg-blue-500/10 dark:bg-blue-500/20 backdrop-blur-sm border border-blue-500/20">
+                                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                                  {community.category}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Tags if available */}
+                          {community.tags && community.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {community.tags.slice(0, 3).map((tag, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className="px-2 py-0.5 rounded-full bg-gray-500/10 dark:bg-gray-500/20 backdrop-blur-sm border border-gray-500/20"
+                                >
+                                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                                    {tag}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Join Button with Glass Effect */}
+                        <Button 
+                          className="w-full mt-4 font-semibold bg-blue-600/90 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all group-hover:scale-[1.02] backdrop-blur-sm border border-blue-500/20"
+                          size="lg"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleJoinCommunity(community.id);
+                          }}
+                        >
+                          Join Community
+                        </Button>
+                      </CardContent>
+                    </div>
                   </Card>
                 ))}
               </div>
