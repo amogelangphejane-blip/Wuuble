@@ -19,6 +19,7 @@ const queryClient = new QueryClient({
 // Pages
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
+import Communities from '@/pages/Communities';
 import EnhancedCommunities from '@/pages/EnhancedCommunities';
 import { SimpleCommunities } from '@/components/SimpleCommunities';
 import SkoolStyleCommunityDetail from '@/pages/SkoolStyleCommunityDetail';
@@ -78,7 +79,7 @@ function App() {
             {/* Protected routes */}
             <Route path="/communities" element={
               <ProtectedRoute>
-                <SimpleCommunities />
+                <Communities />
               </ProtectedRoute>
             } />
             <Route path="/community/:id" element={
