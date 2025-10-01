@@ -1,12 +1,19 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { ModernHeader } from '@/components/ModernHeader';
 import LandingPage from '@/components/LandingPage';
-import Home from '@/pages/Home';
 
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect logged-in users to communities page
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/communities');
+    }
+  }, [user, loading, navigate]);
 
   // Show loading state while checking auth
   if (loading) {
@@ -18,11 +25,6 @@ const Index = () => {
         </div>
       </div>
     );
-  }
-
-  // If user is logged in, show the activity-based home page
-  if (user) {
-    return <Home />;
   }
 
   // If user is not logged in, show the landing page

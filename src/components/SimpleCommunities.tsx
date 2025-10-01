@@ -4,8 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CreateCommunityDialog } from '@/components/CreateCommunityDialog';
@@ -21,7 +19,6 @@ import {
   Loader2,
   RefreshCw
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface Community {
   id: string;
@@ -35,6 +32,7 @@ interface Community {
   category?: string;
   tags?: string[];
   created_at: string;
+  cover_image_url?: string;
 }
 
 export const SimpleCommunities: React.FC = () => {
@@ -150,12 +148,24 @@ export const SimpleCommunities: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <ModernHeader />
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-              <p className="text-gray-600 dark:text-gray-400">Loading communities...</p>
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-10">
+            <div className="h-12 w-64 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse mb-3" />
+            <div className="h-6 w-96 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+                <div className="h-48 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse" />
+                <div className="p-6 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md">
+                  <div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+                  <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1" />
+                  <div className="h-3 w-2/3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4" />
+                  <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse mt-6" />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -166,25 +176,28 @@ export const SimpleCommunities: React.FC = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <ModernHeader />
       
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Communities
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Discover and join communities that match your interests
-            </p>
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                Discover Communities
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                Find and join communities that match your interests
+              </p>
+            </div>
+            
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 shadow-lg hover:shadow-xl transition-all"
+              size="lg"
+            >
+              <Plus className="w-5 h-5" />
+              Create Community
+            </Button>
           </div>
-          
-          <Button
-            onClick={() => setShowCreateDialog(true)}
-            className="gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Create Community
-          </Button>
         </div>
 
         {/* Error Display */}
@@ -222,14 +235,14 @@ export const SimpleCommunities: React.FC = () => {
 
         {/* Search */}
         {!error && (
-          <div className="mb-6">
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="mb-8">
+            <div className="relative max-w-lg">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
-                placeholder="Search communities..."
+                placeholder="Search communities by name or description..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-12 h-12 text-base border-2 focus:border-blue-500 rounded-xl shadow-sm"
               />
             </div>
           </div>
@@ -239,92 +252,142 @@ export const SimpleCommunities: React.FC = () => {
         {!error && (
           <>
             {filteredCommunities.length === 0 ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Users className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    {searchQuery ? 'No communities found' : 'No communities yet'}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    {searchQuery 
-                      ? 'Try adjusting your search query.'
-                      : 'Be the first to create a community!'
-                    }
-                  </p>
+              <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700">
+                <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Users className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                  {searchQuery ? 'No communities found' : 'No communities yet'}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
+                  {searchQuery 
+                    ? 'Try adjusting your search query to find what you\'re looking for.'
+                    : 'Be the first to create a community and start building your network!'
+                  }
+                </p>
+                {!searchQuery && (
                   <Button
                     onClick={() => setShowCreateDialog(true)}
-                    className="gap-2"
+                    className="gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 shadow-lg"
+                    size="lg"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-5 h-5" />
                     Create First Community
                   </Button>
-                </CardContent>
-              </Card>
+                )}
+              </div>
             ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredCommunities.map((community) => (
                   <Card 
                     key={community.id} 
-                    className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                    className="group overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-500/30 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl"
                     onClick={() => navigate(`/community/${community.id}`)}
                   >
-                    <CardHeader>
-                      <div className="flex items-start justify-between mb-3">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={community.avatar_url} />
-                          <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                    {/* Profile Picture - Large Hero Image */}
+                    <div className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10">
+                      {community.avatar_url ? (
+                        <>
+                          <img 
+                            src={community.avatar_url} 
+                            alt={community.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent group-hover:from-black/20 transition-colors" />
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500">
+                          <span className="text-6xl font-bold text-white/90">
                             {community.name.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex items-center gap-2">
-                          {community.is_private && (
-                            <Badge variant="secondary" className="text-xs gap-1">
-                              <Lock className="w-3 h-3" />
-                              Private
-                            </Badge>
-                          )}
-                          {!community.is_private && (
-                            <Badge variant="outline" className="text-xs gap-1">
-                              <Globe className="w-3 h-3" />
-                              Public
-                            </Badge>
-                          )}
+                          </span>
                         </div>
-                      </div>
+                      )}
                       
-                      <CardTitle className="text-lg">{community.name}</CardTitle>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                        {community.description || 'No description available'}
-                      </p>
-                    </CardHeader>
-                    
-                    <CardContent>
-                      <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          <span>{community.member_count || 0} members</span>
-                        </div>
-                        
-                        {community.category && (
-                          <Badge variant="secondary" className="text-xs">
-                            {community.category}
-                          </Badge>
+                      {/* Glass Badge - Top Right */}
+                      <div className="absolute top-3 right-3">
+                        {community.is_private ? (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 dark:bg-black/30 backdrop-blur-md border border-white/30 dark:border-white/10 shadow-lg">
+                            <Lock className="w-3.5 h-3.5 text-white drop-shadow" />
+                            <span className="text-xs font-semibold text-white drop-shadow">Private</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 dark:bg-black/30 backdrop-blur-md border border-white/30 dark:border-white/10 shadow-lg">
+                            <Globe className="w-3.5 h-3.5 text-white drop-shadow" />
+                            <span className="text-xs font-semibold text-white drop-shadow">Public</span>
+                          </div>
                         )}
                       </div>
+
+                      {/* Glass Stats Overlay - Bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 via-black/40 to-transparent backdrop-blur-sm">
+                        <div className="flex items-center gap-2 text-white">
+                          <Users className="w-4 h-4 drop-shadow" />
+                          <span className="font-semibold drop-shadow">
+                            {community.member_count || 0}
+                          </span>
+                          <span className="text-sm text-white/90 drop-shadow">
+                            {community.member_count === 1 ? 'member' : 'members'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Content Area with Glass Effect */}
+                    <div className="relative bg-white/60 dark:bg-gray-800/60 backdrop-blur-md">
+                      <CardHeader className="pb-3">
+                        <div className="space-y-2">
+                          <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
+                            {community.name}
+                          </CardTitle>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed min-h-[2rem]">
+                            {community.description || 'No description available'}
+                          </p>
+                        </div>
+                      </CardHeader>
                       
-                      <Button 
-                        className="w-full mt-4"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleJoinCommunity(community.id);
-                        }}
-                      >
-                        Join Community
-                      </Button>
-                    </CardContent>
+                      <CardContent className="pt-0 pb-4">
+                        {/* Category & Tags */}
+                        <div className="space-y-3">
+                          {community.category && (
+                            <div className="flex items-center gap-2">
+                              <div className="px-2.5 py-1 rounded-full bg-blue-500/10 dark:bg-blue-500/20 backdrop-blur-sm border border-blue-500/20">
+                                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                                  {community.category}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Tags if available */}
+                          {community.tags && community.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {community.tags.slice(0, 3).map((tag, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className="px-2 py-0.5 rounded-full bg-gray-500/10 dark:bg-gray-500/20 backdrop-blur-sm border border-gray-500/20"
+                                >
+                                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                                    {tag}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Join Button with Glass Effect */}
+                        <Button 
+                          className="w-full mt-4 font-semibold bg-blue-600/90 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all group-hover:scale-[1.02] backdrop-blur-sm border border-blue-500/20"
+                          size="lg"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleJoinCommunity(community.id);
+                          }}
+                        >
+                          Join Community
+                        </Button>
+                      </CardContent>
+                    </div>
                   </Card>
                 ))}
               </div>
