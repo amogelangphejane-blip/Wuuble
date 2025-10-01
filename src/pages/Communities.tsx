@@ -25,7 +25,19 @@ import {
   ArrowUpDown,
   Sparkles,
   Heart,
-  Eye
+  Eye,
+  Zap,
+  Crown,
+  Award,
+  Flame,
+  Grid3x3,
+  List,
+  ChevronRight,
+  UserPlus,
+  Activity,
+  MapPin,
+  Clock,
+  Check
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { 
@@ -167,110 +179,241 @@ const Communities: React.FC = () => {
 
   return (
     <ResponsiveLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/40">
         <ModernHeader />
         
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-          {/* Hero Header Section with Enhanced Design */}
-          <div className="mb-10 relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-3xl blur-3xl -z-10"></div>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
-                    <Sparkles className="w-6 h-6 text-white" />
+        <div className="container mx-auto px-4 py-6 max-w-[1400px]">
+          {/* Modern Hero Section */}
+          <div className="relative mb-8 overflow-hidden">
+            {/* Animated Background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 opacity-5 animate-gradient"></div>
+            
+            <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-8 border border-white/60 shadow-2xl">
+              {/* Top Row */}
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 blur-lg opacity-50 animate-pulse"></div>
+                      <div className="relative p-3 bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 rounded-2xl shadow-lg">
+                        <Sparkles className="w-7 h-7 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <h1 className="text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-tight">
+                        Discover
+                      </h1>
+                      <p className="text-2xl font-semibold text-gray-700">Amazing Communities</p>
+                    </div>
                   </div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    Discover Communities
-                  </h1>
+                  
+                  <p className="text-gray-600 text-lg max-w-2xl leading-relaxed">
+                    Connect with thousands of passionate members. Find your tribe, share your interests, and grow together.
+                  </p>
                 </div>
-                <p className="text-gray-600 text-lg">
-                  Join vibrant communities and connect with like-minded people worldwide
-                </p>
-                <div className="flex items-center gap-6 mt-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-blue-500" />
-                    <span>{communities.length} Communities</span>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={() => navigate('/communities?create=true')}
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 font-semibold px-8"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Create Community
+                  </Button>
+                  <Button
+                    onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                    size="lg"
+                    variant="outline"
+                    className="border-2 hover:bg-gray-50 font-semibold"
+                  >
+                    {viewMode === 'grid' ? <List className="w-5 h-5 mr-2" /> : <Grid3x3 className="w-5 h-5 mr-2" />}
+                    {viewMode === 'grid' ? 'List View' : 'Grid View'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Stats Row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-4 border border-blue-200/50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500 rounded-xl">
+                      <Users className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-blue-900">{communities.length}</p>
+                      <p className="text-sm text-blue-600">Communities</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-purple-500" />
-                    <span>Global Network</span>
+                </div>
+                
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-2xl p-4 border border-purple-200/50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-500 rounded-xl">
+                      <Globe className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-purple-900">Global</p>
+                      <p className="text-sm text-purple-600">Network</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-pink-50 to-pink-100/50 rounded-2xl p-4 border border-pink-200/50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-pink-500 rounded-xl">
+                      <Activity className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-pink-900">Active</p>
+                      <p className="text-sm text-pink-600">Daily</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-2xl p-4 border border-orange-200/50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-500 rounded-xl">
+                      <Zap className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-orange-900">Fast</p>
+                      <p className="text-sm text-orange-600">Growing</p>
+                    </div>
                   </div>
                 </div>
               </div>
-              
-              <Button
-                onClick={() => navigate('/communities?create=true')}
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Create Community
-              </Button>
             </div>
           </div>
 
-          {/* Advanced Search and Filter Section */}
-          <div className="mb-8 space-y-4">
-            <div className="flex flex-col lg:flex-row gap-4">
-              {/* Search Bar */}
+          {/* Tabs Navigation */}
+          <Tabs defaultValue="all" className="mb-8">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 border border-gray-200 shadow-lg mb-6">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 bg-transparent gap-2">
+                <TabsTrigger 
+                  value="all" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-xl font-semibold"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  All
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="trending" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-pink-500 data-[state=active]:text-white rounded-xl font-semibold"
+                >
+                  <Flame className="w-4 h-4 mr-2" />
+                  Trending
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="new" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white rounded-xl font-semibold"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  New
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="popular" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-500 data-[state=active]:text-white rounded-xl font-semibold"
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Popular
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="featured" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white rounded-xl font-semibold"
+                >
+                  <Award className="w-4 h-4 mr-2" />
+                  Featured
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* Search and Filter Bar */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
                 <Input
-                  placeholder="Search communities by name or description..."
+                  placeholder="Search communities, topics, interests..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 pr-4 py-6 text-base rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors bg-white shadow-sm"
+                  className="pl-12 pr-4 py-7 text-base rounded-2xl border-2 border-gray-200 focus:border-blue-500 transition-all bg-white shadow-md hover:shadow-lg focus:shadow-xl"
                 />
               </div>
               
-              {/* Category Filter */}
               <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="w-full lg:w-[220px] py-6 rounded-xl border-2 bg-white shadow-sm">
+                <SelectTrigger className="w-full lg:w-[220px] py-7 rounded-2xl border-2 bg-white shadow-md hover:shadow-lg transition-all">
                   <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-gray-500" />
-                    <SelectValue placeholder="Select category" />
+                    <Filter className="w-5 h-5 text-gray-600" />
+                    <SelectValue placeholder="Category" />
                   </div>
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   {categories.map((category) => (
-                    <SelectItem key={category.value} value={category.value}>
-                      {category.label}
+                    <SelectItem key={category.value} value={category.value} className="rounded-lg">
+                      <div className="flex items-center gap-2">
+                        {getCategoryIcon(category.value)}
+                        <span>{category.label}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              {/* Sort By */}
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full lg:w-[200px] py-6 rounded-xl border-2 bg-white shadow-sm">
+                <SelectTrigger className="w-full lg:w-[200px] py-7 rounded-2xl border-2 bg-white shadow-md hover:shadow-lg transition-all">
                   <div className="flex items-center gap-2">
-                    <ArrowUpDown className="w-4 h-4 text-gray-500" />
-                    <SelectValue placeholder="Sort by" />
+                    <ArrowUpDown className="w-5 h-5 text-gray-600" />
+                    <SelectValue placeholder="Sort" />
                   </div>
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="members">Most Members</SelectItem>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="name">Alphabetical</SelectItem>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="members" className="rounded-lg">Most Members</SelectItem>
+                  <SelectItem value="newest" className="rounded-lg">Newest First</SelectItem>
+                  <SelectItem value="name" className="rounded-lg">Alphabetical</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Quick Stats Bar */}
+            {/* Results Counter */}
             {!loading && (
-              <div className="flex items-center justify-between px-4 py-3 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200">
-                <div className="text-sm text-gray-600">
-                  Showing <span className="font-semibold text-gray-900">{filteredCommunities.length}</span> {filteredCommunities.length === 1 ? 'community' : 'communities'}
-                </div>
+              <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-2xl border border-blue-100 mb-6">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
-                    {filterCategory === 'all' ? 'All Categories' : categories.find(c => c.value === filterCategory)?.label}
-                  </Badge>
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <span className="text-sm font-medium">Found</span>
+                    <span className="px-3 py-1 bg-white rounded-full text-lg font-bold text-blue-600 shadow-sm">
+                      {filteredCommunities.length}
+                    </span>
+                    <span className="text-sm font-medium">{filteredCommunities.length === 1 ? 'community' : 'communities'}</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {filterCategory !== 'all' && (
+                    <Badge className="bg-blue-500 text-white border-0 shadow-sm px-3 py-1">
+                      {categories.find(c => c.value === filterCategory)?.label}
+                    </Badge>
+                  )}
+                  {searchQuery && (
+                    <Badge className="bg-purple-500 text-white border-0 shadow-sm px-3 py-1">
+                      Search: "{searchQuery}"
+                    </Badge>
+                  )}
+                  {(filterCategory !== 'all' || searchQuery) && (
+                    <Button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setFilterCategory('all');
+                      }}
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-600 hover:text-gray-900"
+                    >
+                      Clear filters
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
-          </div>
+          </Tabs>
 
           {/* Error State */}
           {error && (
@@ -279,32 +422,36 @@ const Communities: React.FC = () => {
             </div>
           )}
 
-          {/* Enhanced Loading State */}
+          {/* Modern Loading State */}
           {loading ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[...Array(6)].map((_, i) => (
-                <Card key={i} className="overflow-hidden bg-white/90">
-                  {/* Cover skeleton */}
-                  <Skeleton className="h-32 w-full rounded-t-lg" />
-                  <CardHeader className="space-y-3 pt-16 relative">
-                    {/* Avatar skeleton */}
-                    <Skeleton className="h-24 w-24 rounded-full absolute -top-12 left-6 border-4 border-white" />
+                <Card key={i} className="overflow-hidden bg-white border-0 shadow-lg">
+                  {/* Cover with centered avatar skeleton */}
+                  <div className="relative h-40 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse flex items-center justify-center">
+                    <Skeleton className="w-28 h-28 rounded-full border-4 border-white shadow-2xl" />
+                  </div>
+                  
+                  <CardHeader className="space-y-3 pb-3">
                     <Skeleton className="h-6 w-3/4" />
                     <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-4 w-5/6" />
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-16" />
+                  
+                  <CardContent className="space-y-4 pb-4">
+                    <div className="flex gap-3">
+                      <Skeleton className="h-8 w-32 rounded-xl" />
+                      <Skeleton className="h-8 w-24 rounded-xl" />
                     </div>
                     <div className="flex gap-2">
-                      <Skeleton className="h-6 w-16 rounded-full" />
-                      <Skeleton className="h-6 w-16 rounded-full" />
+                      <Skeleton className="h-6 w-16 rounded-lg" />
+                      <Skeleton className="h-6 w-16 rounded-lg" />
+                      <Skeleton className="h-6 w-16 rounded-lg" />
                     </div>
                   </CardContent>
-                  <CardFooter>
-                    <Skeleton className="h-10 w-full rounded-lg" />
+                  
+                  <CardFooter className="pt-0 pb-5">
+                    <Skeleton className="h-11 w-full rounded-xl" />
                   </CardFooter>
                 </Card>
               ))}
@@ -350,217 +497,256 @@ const Communities: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            // Enhanced Communities Grid with Profile Pictures
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredCommunities.map((community) => (
+            // Redesigned Modern Community Cards
+            <div className={viewMode === 'grid' ? 'grid gap-6 md:grid-cols-2 lg:grid-cols-3' : 'space-y-4'}>
+              {filteredCommunities.map((community, index) => (
                 <Card 
                   key={community.id} 
-                  className="group overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer border-2 border-transparent hover:border-blue-200 bg-white/90 backdrop-blur-sm"
+                  className={`group relative overflow-hidden hover:shadow-2xl transition-all duration-500 cursor-pointer border-0 bg-white ${viewMode === 'list' ? 'flex flex-row' : ''}`}
                   onClick={() => navigate(`/community/${community.id}`)}
+                  style={{animationDelay: `${index * 50}ms`}}
                 >
-                  {/* Community Cover with Large Profile Picture */}
-                  <div className="relative h-32 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 overflow-hidden">
-                    <div className="absolute inset-0 bg-black/10"></div>
-                    <div className="absolute -bottom-12 left-6 z-10">
-                      <div className="relative">
-                        <Avatar className="w-24 h-24 border-4 border-white shadow-xl ring-2 ring-blue-200 group-hover:ring-4 group-hover:ring-blue-300 transition-all duration-300">
-                          <AvatarImage 
-                            src={community.avatar_url} 
-                            className="object-cover"
-                          />
-                          <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white text-2xl font-bold">
-                            {community.name.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        {!community.is_private && (
-                          <div className="absolute -top-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center shadow-lg">
-                            <Globe className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Badges on Cover */}
-                    <div className="absolute top-3 right-3 flex items-center gap-2">
-                      {community.is_private && (
-                        <Badge className="bg-black/60 backdrop-blur-sm text-white border-0 shadow-lg">
-                          <Lock className="w-3 h-3 mr-1" />
-                          Private
-                        </Badge>
-                      )}
-                      {community.category && (
-                        <Badge className="bg-white/90 backdrop-blur-sm text-gray-700 border-0 shadow-lg">
-                          {getCategoryIcon(community.category)}
-                          <span className="ml-1 capitalize">{community.category}</span>
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Card Content */}
-                  <CardHeader className="pt-16 pb-4">
-                    <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
-                      {community.name}
-                    </CardTitle>
-                    <CardDescription className="line-clamp-2 text-gray-600 mt-2 min-h-[2.5rem]">
-                      {community.description || 'Join this community to connect with others'}
-                    </CardDescription>
-                  </CardHeader>
+                  {/* Animated Border Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl blur-xl -z-10"></div>
                   
-                  <CardContent className="space-y-3 pb-4">
-                    {/* Stats Row */}
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <div className="p-1.5 bg-blue-50 rounded-lg">
-                          <Users className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <span className="font-semibold text-gray-900">{community.member_count || 0}</span>
-                        <span>members</span>
+                  <div className={`relative ${viewMode === 'list' ? 'flex flex-row w-full' : ''}`}>
+                    {/* Cover Section with Avatar */}
+                    <div className={`relative ${viewMode === 'list' ? 'w-48 flex-shrink-0' : 'h-40'} bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 overflow-hidden`}>
+                      {/* Animated Background Pattern */}
+                      <div className="absolute inset-0 opacity-20">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent"></div>
                       </div>
                       
-                      <div className="flex items-center gap-1 text-gray-500">
-                        <Eye className="w-4 h-4" />
-                        <span className="text-xs">Active</span>
+                      {/* Profile Picture - Centered */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-white rounded-full blur-md opacity-50"></div>
+                          <Avatar className="relative w-28 h-28 border-4 border-white shadow-2xl ring-4 ring-white/50 group-hover:ring-8 group-hover:scale-110 transition-all duration-500">
+                            <AvatarImage 
+                              src={community.avatar_url} 
+                              className="object-cover"
+                            />
+                            <AvatarFallback className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white text-3xl font-black">
+                              {community.name.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          {/* Status Badge */}
+                          {!community.is_private && (
+                            <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-green-400 to-emerald-500 w-8 h-8 rounded-full border-3 border-white flex items-center justify-center shadow-lg animate-pulse">
+                              <Check className="w-4 h-4 text-white font-bold" />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Tags */}
-                    {community.tags && community.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {community.tags.slice(0, 3).map((tag, index) => (
-                          <Badge 
-                            key={index} 
-                            variant="secondary" 
-                            className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                          >
-                            #{tag}
+                      
+                      {/* Top Corner Badges */}
+                      <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
+                        {community.is_private ? (
+                          <Badge className="bg-black/80 backdrop-blur-md text-white border-0 shadow-xl font-semibold">
+                            <Lock className="w-3 h-3 mr-1" />
+                            Private
                           </Badge>
-                        ))}
-                        {community.tags.length > 3 && (
-                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
-                            +{community.tags.length - 3}
+                        ) : (
+                          <Badge className="bg-green-500/90 backdrop-blur-md text-white border-0 shadow-xl font-semibold">
+                            <Globe className="w-3 h-3 mr-1" />
+                            Public
+                          </Badge>
+                        )}
+                        
+                        {community.category && (
+                          <Badge className="bg-white/95 backdrop-blur-md text-gray-800 border-0 shadow-xl font-semibold">
+                            {getCategoryIcon(community.category)}
+                            <span className="ml-1.5 capitalize">{community.category}</span>
                           </Badge>
                         )}
                       </div>
-                    )}
-                  </CardContent>
-                  
-                  <CardFooter className="pt-0 pb-4">
-                    <Button 
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-300 group-hover:scale-[1.02]"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleJoinCommunity(community.id);
-                      }}
-                    >
-                      <Heart className="w-4 h-4 mr-2" />
-                      Join Community
-                    </Button>
-                  </CardFooter>
+                    </div>
+
+                    {/* Content Section */}
+                    <div className={`${viewMode === 'list' ? 'flex-1' : ''}`}>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-xl font-black text-gray-900 group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text group-hover:text-transparent transition-all line-clamp-1">
+                          {community.name}
+                        </CardTitle>
+                        <CardDescription className="line-clamp-2 text-gray-600 text-sm leading-relaxed mt-2">
+                          {community.description || 'Discover amazing content and connect with members'}
+                        </CardDescription>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-4 pb-4">
+                        {/* Enhanced Stats */}
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
+                            <Users className="w-4 h-4 text-blue-600" />
+                            <span className="font-bold text-blue-900">{community.member_count || 0}</span>
+                            <span className="text-xs text-blue-600 font-medium">members</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                            <Activity className="w-4 h-4 text-green-600" />
+                            <span className="text-xs text-green-600 font-semibold">Active</span>
+                          </div>
+                        </div>
+
+                        {/* Tags */}
+                        {community.tags && community.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {community.tags.slice(0, 3).map((tag, tagIndex) => (
+                              <Badge 
+                                key={tagIndex} 
+                                variant="secondary" 
+                                className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors border border-gray-200 font-medium px-2.5 py-1"
+                              >
+                                #{tag}
+                              </Badge>
+                            ))}
+                            {community.tags.length > 3 && (
+                              <Badge variant="secondary" className="text-xs bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border-0 font-semibold">
+                                +{community.tags.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                      
+                      <CardFooter className="pt-0 pb-5 gap-2">
+                        <Button 
+                          className="flex-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-2xl transition-all duration-300 font-bold rounded-xl group-hover:scale-[1.03] h-11"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleJoinCommunity(community.id);
+                          }}
+                        >
+                          <UserPlus className="w-5 h-5 mr-2" />
+                          Join Now
+                          <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                      </CardFooter>
+                    </div>
+                  </div>
                 </Card>
               ))}
             </div>
           )}
 
-          {/* Enhanced Popular Communities Section */}
+          {/* Redesigned Trending Communities Section */}
           {!loading && communities.length > 0 && (
-            <div className="mt-16">
-              <div className="mb-8 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl">
-                    <Star className="w-6 h-6 text-white" />
+            <div className="mt-20">
+              <div className="relative mb-10">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 opacity-10 blur-3xl"></div>
+                <div className="relative flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-500 blur-xl opacity-50 animate-pulse"></div>
+                      <div className="relative p-4 bg-gradient-to-br from-orange-500 via-pink-500 to-purple-500 rounded-2xl shadow-2xl">
+                        <Flame className="w-8 h-8 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <h2 className="text-4xl font-black bg-gradient-to-r from-orange-600 via-pink-600 to-purple-600 bg-clip-text text-transparent">
+                        Trending Now
+                      </h2>
+                      <p className="text-gray-600 text-lg font-medium mt-1">Most active communities this week</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-3xl font-bold text-gray-900">
-                      Popular Communities
-                    </h2>
-                    <p className="text-gray-600 text-sm">Most active and engaging communities</p>
-                  </div>
+                  
+                  <Button variant="outline" className="border-2 hover:bg-gray-50 font-semibold">
+                    View All
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
                 </div>
-                <TrendingUp className="w-6 h-6 text-orange-500" />
               </div>
               
-              <div className="grid gap-4">
+              <div className="grid gap-5">
                 {communities.slice(0, 5).map((community, index) => (
                   <Card 
                     key={community.id}
-                    className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-2 border-transparent hover:border-orange-200 bg-white/90 backdrop-blur-sm overflow-hidden"
+                    className="group relative overflow-hidden hover:shadow-2xl transition-all duration-500 cursor-pointer border-0 bg-white"
                     onClick={() => navigate(`/community/${community.id}`)}
                   >
-                    <CardContent className="flex items-center justify-between p-5">
-                      <div className="flex items-center gap-5 flex-1">
-                        {/* Ranking Badge */}
-                        <div className="relative">
-                          <div className={`flex items-center justify-center w-12 h-12 rounded-xl shadow-lg font-bold text-lg ${
-                            index === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-white' :
-                            index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' :
-                            index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' :
-                            'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700'
-                          }`}>
-                            {index + 1}
+                    {/* Gradient Border Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl blur-xl -z-10"></div>
+                    
+                    <CardContent className="flex items-center gap-6 p-6">
+                      {/* Rank Medal */}
+                      <div className="relative flex-shrink-0">
+                        <div className={`flex items-center justify-center w-16 h-16 rounded-2xl shadow-2xl font-black text-2xl transition-all duration-300 group-hover:scale-110 ${
+                          index === 0 ? 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-500 text-white animate-pulse' :
+                          index === 1 ? 'bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500 text-white' :
+                          index === 2 ? 'bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 text-white' :
+                          'bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 text-blue-700'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        {index < 3 && (
+                          <div className="absolute -top-2 -right-2 animate-bounce">
+                            <Crown className="w-6 h-6 text-yellow-500 fill-yellow-500 drop-shadow-lg" />
                           </div>
-                          {index < 3 && (
-                            <div className="absolute -top-1 -right-1">
-                              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                            </div>
+                        )}
+                      </div>
+                      
+                      {/* Community Avatar */}
+                      <Avatar className="w-20 h-20 border-4 border-white shadow-2xl ring-4 ring-orange-200/50 group-hover:ring-8 group-hover:ring-orange-300/70 group-hover:scale-110 transition-all duration-500 flex-shrink-0">
+                        <AvatarImage 
+                          src={community.avatar_url}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-orange-500 via-pink-500 to-purple-500 text-white text-2xl font-black">
+                          {community.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      {/* Community Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-black text-2xl text-gray-900 truncate group-hover:bg-gradient-to-r group-hover:from-orange-600 group-hover:to-pink-600 group-hover:bg-clip-text group-hover:text-transparent transition-all">
+                            {community.name}
+                          </h3>
+                          {community.category && (
+                            <Badge className="bg-gradient-to-r from-orange-100 to-pink-100 text-orange-700 border-0 font-semibold">
+                              {getCategoryIcon(community.category)}
+                              <span className="ml-1.5 capitalize">{community.category}</span>
+                            </Badge>
                           )}
                         </div>
                         
-                        {/* Community Avatar with Enhanced Styling */}
-                        <Avatar className="w-16 h-16 border-3 border-white shadow-lg ring-2 ring-orange-200 group-hover:ring-4 group-hover:ring-orange-300 transition-all duration-300">
-                          <AvatarImage 
-                            src={community.avatar_url}
-                            className="object-cover"
-                          />
-                          <AvatarFallback className="bg-gradient-to-br from-orange-500 to-pink-500 text-white text-lg font-bold">
-                            {community.name.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-1">
+                          {community.description || 'Join this amazing community'}
+                        </p>
                         
-                        {/* Community Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-bold text-lg text-gray-900 truncate group-hover:text-orange-600 transition-colors">
-                              {community.name}
-                            </p>
-                            {community.category && (
-                              <Badge variant="outline" className="text-xs border-orange-300 text-orange-700">
-                                {community.category}
-                              </Badge>
-                            )}
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border border-orange-100">
+                            <Users className="w-4 h-4 text-orange-600" />
+                            <span className="font-bold text-orange-900">{community.member_count || 0}</span>
+                            <span className="text-xs text-orange-600 font-medium">members</span>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-1.5">
-                              <Users className="w-4 h-4 text-orange-500" />
-                              <span className="font-semibold text-gray-900">{community.member_count || 0}</span>
-                              <span>members</span>
-                            </div>
-                            {community.is_private ? (
-                              <Badge variant="secondary" className="text-xs bg-gray-100">
-                                <Lock className="w-3 h-3 mr-1" />
-                                Private
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                                <Globe className="w-3 h-3 mr-1" />
-                                Public
-                              </Badge>
-                            )}
+                          
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                            <Activity className="w-4 h-4 text-green-600" />
+                            <span className="text-xs text-green-600 font-semibold">Highly Active</span>
                           </div>
+                          
+                          {!community.is_private && (
+                            <Badge className="bg-green-500/90 text-white border-0 shadow-sm font-semibold">
+                              <Globe className="w-3 h-3 mr-1" />
+                              Public
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       
                       {/* Join Button */}
                       <Button 
-                        size="default"
-                        className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-md hover:shadow-lg transition-all duration-300"
+                        size="lg"
+                        className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 hover:from-orange-600 hover:via-pink-600 hover:to-purple-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 font-bold px-8 group-hover:scale-110"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleJoinCommunity(community.id);
                         }}
                       >
-                        <Heart className="w-4 h-4 mr-2" />
-                        Join
+                        <UserPlus className="w-5 h-5 mr-2" />
+                        Join Now
                       </Button>
                     </CardContent>
                   </Card>
