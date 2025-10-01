@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Avatar Storage Diagnostic & Fix</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .config-section {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #007bff;
+    }
+    .input-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #555;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin-right: 10px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    button.success {
+      background: #28a745;
+    }
+    button.success:hover {
+      background: #218838;
+    }
+    button.danger {
+      background: #dc3545;
+    }
+    button.danger:hover {
+      background: #c82333;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 13px;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border-left: 4px solid #28a745;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border-left: 4px solid #17a2b8;
+    }
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+      border-left: 4px solid #ffc107;
+    }
+    .step {
+      margin: 15px 0;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border-left: 3px solid #6c757d;
+    }
+    .step-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    .step-status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+    .step-status.pass {
+      background: #d4edda;
+      color: #155724;
+    }
+    .step-status.fail {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Community Avatar Storage Diagnostic & Fix</h1>
+    <p class="subtitle">Test and repair the community avatar upload functionality</p>
+
+    <div class="config-section">
+      <h3>Supabase Configuration</h3>
+      <div class="input-group">
+        <label>Supabase Project URL:</label>
+        <input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co">
+      </div>
+      <div class="input-group">
+        <label>Supabase Anon Key:</label>
+        <input type="text" id="supabaseKey" placeholder="Your anon public key">
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button onclick="runDiagnostic()">🔍 Run Diagnostic</button>
+      <button onclick="attemptAutoFix()" class="success">🔧 Auto Fix</button>
+      <button onclick="testUpload()" class="info" style="background: #17a2b8;">📤 Test Upload</button>
+      <button onclick="clearResults()" class="danger">🗑️ Clear Results</button>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+  <script>
+    let supabase = null;
+
+    function initSupabase() {
+      const url = document.getElementById('supabaseUrl').value;
+      const key = document.getElementById('supabaseKey').value;
+
+      if (!url || !key) {
+        showResult('Please enter both Supabase URL and Anon Key', 'error');
+        return false;
+      }
+
+      try {
+        supabase = window.supabase.createClient(url, key);
+        return true;
+      } catch (error) {
+        showResult(`Failed to initialize Supabase: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    function showResult(message, type = 'info') {
+      const resultsDiv = document.getElementById('results');
+      const resultElement = document.createElement('div');
+      resultElement.className = `result ${type}`;
+      resultElement.textContent = message;
+      resultsDiv.appendChild(resultElement);
+      resultsDiv.scrollTop = resultsDiv.scrollHeight;
+    }
+
+    function clearResults() {
+      document.getElementById('results').innerHTML = '';
+    }
+
+    async function runDiagnostic() {
+      clearResults();
+      if (!initSupabase()) return;
+
+      showResult('=== STARTING DIAGNOSTIC ===\n', 'info');
+
+      try {
+        // Test 1: Check authentication
+        showResult('Test 1: Checking authentication status...', 'info');
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        
+        if (authError) {
+          showResult(`❌ Auth Error: ${authError.message}`, 'error');
+        } else if (session) {
+          showResult(`✅ Authenticated as: ${session.user.email}`, 'success');
+        } else {
+          showResult(`⚠️ Not authenticated. Some tests may fail.`, 'warning');
+        }
+
+        // Test 2: List all storage buckets
+        showResult('\nTest 2: Listing storage buckets...', 'info');
+        const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+        
+        if (listError) {
+          showResult(`❌ Cannot list buckets: ${listError.message}`, 'error');
+          return;
+        }
+
+        showResult(`✅ Found ${buckets.length} storage buckets:`, 'success');
+        buckets.forEach(bucket => {
+          showResult(`  - ${bucket.id} (public: ${bucket.public})`, 'info');
+        });
+
+        // Test 3: Check for community-avatars bucket
+        showResult('\nTest 3: Checking for community-avatars bucket...', 'info');
+        const communityBucket = buckets.find(b => b.id === 'community-avatars');
+        
+        if (communityBucket) {
+          showResult(`✅ community-avatars bucket exists!`, 'success');
+          showResult(`   Public: ${communityBucket.public}`, 'info');
+          showResult(`   File size limit: ${communityBucket.file_size_limit || 'not set'} bytes`, 'info');
+          showResult(`   Allowed MIME types: ${communityBucket.allowed_mime_types?.join(', ') || 'not set'}`, 'info');
+        } else {
+          showResult(`❌ community-avatars bucket NOT FOUND!`, 'error');
+          showResult(`   This is why the Choose Image button is disabled.`, 'error');
+        }
+
+        // Test 4: Try to list files in community-avatars bucket
+        if (communityBucket) {
+          showResult('\nTest 4: Testing bucket access...', 'info');
+          const { data: files, error: filesError } = await supabase.storage
+            .from('community-avatars')
+            .list('', { limit: 5 });
+          
+          if (filesError) {
+            showResult(`⚠️ Cannot list files: ${filesError.message}`, 'warning');
+          } else {
+            showResult(`✅ Bucket accessible. Contains ${files.length} items.`, 'success');
+          }
+        }
+
+        // Test 5: Check communities table
+        showResult('\nTest 5: Checking communities table...', 'info');
+        const { data: communities, error: commError } = await supabase
+          .from('communities')
+          .select('id, name, avatar_url')
+          .limit(5);
+        
+        if (commError) {
+          showResult(`⚠️ Cannot query communities: ${commError.message}`, 'warning');
+        } else {
+          showResult(`✅ Communities table accessible. Found ${communities.length} communities.`, 'success');
+          communities.forEach(comm => {
+            showResult(`   ${comm.name}: avatar_url = ${comm.avatar_url ? 'set' : 'null'}`, 'info');
+          });
+        }
+
+        showResult('\n=== DIAGNOSTIC COMPLETE ===', 'info');
+        
+        if (!communityBucket) {
+          showResult('\n⚠️ ACTION REQUIRED: Click "Auto Fix" to create the missing bucket.', 'warning');
+        }
+
+      } catch (error) {
+        showResult(`❌ Diagnostic failed: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+
+    async function attemptAutoFix() {
+      clearResults();
+      if (!initSupabase()) return;
+
+      showResult('=== STARTING AUTO FIX ===\n', 'info');
+
+      try {
+        // Check if bucket exists
+        showResult('Step 1: Checking existing buckets...', 'info');
+        const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+        
+        if (listError) {
+          showResult(`❌ Cannot list buckets: ${listError.message}`, 'error');
+          showResult('\n⚠️ You may need to create the bucket manually using the SQL script.', 'warning');
+          return;
+        }
+
+        const communityBucket = buckets.find(b => b.id === 'community-avatars');
+        
+        if (communityBucket) {
+          showResult('✅ Bucket already exists. No fix needed!', 'success');
+          return;
+        }
+
+        // Try to create bucket
+        showResult('\nStep 2: Creating community-avatars bucket...', 'info');
+        const { data: createData, error: createError } = await supabase.storage.createBucket('community-avatars', {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+        });
+
+        if (createError) {
+          showResult(`❌ Cannot create bucket: ${createError.message}`, 'error');
+          showResult('\n⚠️ This usually means you need admin/service role access.', 'warning');
+          showResult('   Please run the SQL script in your Supabase dashboard:', 'warning');
+          showResult('   File: setup-community-avatars-storage.sql', 'warning');
+          return;
+        }
+
+        showResult('✅ Bucket created successfully!', 'success');
+        showResult('\n⚠️ Note: You still need to set up RLS policies using the SQL script.', 'warning');
+        showResult('   Run setup-community-avatars-storage.sql in your Supabase SQL Editor.', 'warning');
+
+        showResult('\n=== AUTO FIX COMPLETE ===', 'success');
+        showResult('Run diagnostic again to verify the fix.', 'info');
+
+      } catch (error) {
+        showResult(`❌ Auto fix failed: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+
+    async function testUpload() {
+      clearResults();
+      if (!initSupabase()) return;
+
+      showResult('=== TEST UPLOAD ===\n', 'info');
+
+      try {
+        // Check authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          showResult('❌ You must be logged in to test upload.', 'error');
+          showResult('Please log in to your app first, then return here.', 'warning');
+          return;
+        }
+
+        // Create a test file
+        showResult('Creating test image...', 'info');
+        const canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 200;
+        const ctx = canvas.getContext('2d');
+        
+        // Draw a simple test pattern
+        ctx.fillStyle = '#4CAF50';
+        ctx.fillRect(0, 0, 200, 200);
+        ctx.fillStyle = '#fff';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('TEST', 100, 100);
+
+        // Convert to blob
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        const file = new File([blob], 'test-avatar.png', { type: 'image/png' });
+        
+        showResult('✅ Test image created (200x200px)', 'success');
+
+        // Try to upload
+        showResult('\nAttempting upload...', 'info');
+        const fileName = `test/test-${session.user.id}-${Date.now()}.png`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('community-avatars')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (uploadError) {
+          showResult(`❌ Upload failed: ${uploadError.message}`, 'error');
+          return;
+        }
+
+        showResult('✅ Upload successful!', 'success');
+        showResult(`   Path: ${uploadData.path}`, 'info');
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('community-avatars')
+          .getPublicUrl(fileName);
+
+        showResult(`   Public URL: ${publicUrl}`, 'success');
+
+        // Clean up test file
+        showResult('\nCleaning up test file...', 'info');
+        const { error: deleteError } = await supabase.storage
+          .from('community-avatars')
+          .remove([fileName]);
+
+        if (deleteError) {
+          showResult(`⚠️ Could not delete test file: ${deleteError.message}`, 'warning');
+        } else {
+          showResult('✅ Test file cleaned up', 'success');
+        }
+
+        showResult('\n=== TEST COMPLETE ===', 'success');
+        showResult('✅ Upload functionality is working correctly!', 'success');
+
+      } catch (error) {
+        showResult(`❌ Test failed: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+
+    // Load config from localStorage if available
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedUrl = localStorage.getItem('supabaseUrl');
+      const savedKey = localStorage.getItem('supabaseKey');
+      
+      if (savedUrl) document.getElementById('supabaseUrl').value = savedUrl;
+      if (savedKey) document.getElementById('supabaseKey').value = savedKey;
+
+      // Save config when changed
+      document.getElementById('supabaseUrl').addEventListener('change', (e) => {
+        localStorage.setItem('supabaseUrl', e.target.value);
+      });
+      document.getElementById('supabaseKey').addEventListener('change', (e) => {
+        localStorage.setItem('supabaseKey', e.target.value);
+      });
+    });
+  </script>
+</body>
+</html>

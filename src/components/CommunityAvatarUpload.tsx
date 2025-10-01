@@ -42,18 +42,26 @@ export const CommunityAvatarUpload = ({
   // Check if storage is properly configured
   useEffect(() => {
     const checkStorageSetup = async () => {
-      if (!user) return;
+      if (!user) {
+        setStorageReady(null);
+        return;
+      }
       
       const isReady = await checkCommunityStorageReady();
       setStorageReady(isReady);
       
       if (!isReady) {
         console.warn('Community avatars storage bucket is missing');
+        toast({
+          title: "Storage Not Ready",
+          description: "The storage bucket needs to be set up. Please contact an administrator.",
+          variant: "destructive",
+        });
       }
     };
 
     checkStorageSetup();
-  }, [user]);
+  }, [user, toast]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -274,6 +282,27 @@ export const CommunityAvatarUpload = ({
     }
   };
 
+  const handleChooseImage = () => {
+    console.log('Choose Image clicked', {
+      hasRef: !!fileInputRef.current,
+      isUploading: uploading,
+      storageReady,
+      communityId
+    });
+    
+    if (!fileInputRef.current) {
+      console.error('File input ref is null');
+      toast({
+        title: "Error",
+        description: "File input not available. Please refresh the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    fileInputRef.current.click();
+  };
+
   return (
     <div className="space-y-4">
       {showLabel && (
@@ -317,7 +346,7 @@ export const CommunityAvatarUpload = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleChooseImage}
               disabled={uploading || (communityId && storageReady === false)}
             >
               <Upload className="w-4 h-4 mr-2" />
@@ -359,9 +388,16 @@ export const CommunityAvatarUpload = ({
             </div>
           )}
           
-          <p className="text-xs text-muted-foreground">
-            Recommended: Square image, at least 200x200px. Max 5MB.
-          </p>
+          {communityId && storageReady === false ? (
+            <p className="text-xs text-red-500 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Storage not configured. Upload disabled.
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Recommended: Square image, at least 200x200px. Max 5MB.
+            </p>
+          )}
         </div>
       </div>
     </div>
