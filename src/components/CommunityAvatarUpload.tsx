@@ -6,9 +6,9 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, Users, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import { X, Users, Image as ImageIcon } from 'lucide-react';
 import { validateAvatarUrl } from '@/lib/utils';
-import { checkCommunityStorageReady, setupStorageBuckets } from '@/utils/setupStorage';
+import { checkCommunityStorageReady } from '@/utils/setupStorage';
 
 interface CommunityAvatarUploadProps {
   communityId?: string;
@@ -29,7 +29,6 @@ export const CommunityAvatarUpload = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [storageReady, setStorageReady] = useState<boolean | null>(null);
-  const [settingUpStorage, setSettingUpStorage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -40,7 +39,7 @@ export const CommunityAvatarUpload = ({
     lg: 'w-32 h-32'
   };
 
-  // Check if storage is properly configured and auto-setup if needed
+  // Check if storage is properly configured
   useEffect(() => {
     const checkStorageSetup = async () => {
       if (!user) return;
@@ -49,48 +48,12 @@ export const CommunityAvatarUpload = ({
       setStorageReady(isReady);
       
       if (!isReady) {
-        console.warn('Community avatars storage bucket is missing - attempting auto-setup');
-        // Attempt to auto-create buckets
-        await handleSetupStorage();
+        console.warn('Community avatars storage bucket is missing');
       }
     };
 
     checkStorageSetup();
   }, [user]);
-
-  const handleSetupStorage = async () => {
-    setSettingUpStorage(true);
-    try {
-      console.log('Setting up storage buckets...');
-      const results = await setupStorageBuckets();
-      
-      const allSuccessful = results.every(r => r.success);
-      if (allSuccessful) {
-        setStorageReady(true);
-        toast({
-          title: "Storage Ready",
-          description: "Storage buckets have been set up successfully!",
-        });
-      } else {
-        const failedSteps = results.filter(r => !r.success);
-        console.error('Storage setup failed:', failedSteps);
-        toast({
-          title: "Storage Setup Issue",
-          description: "Some storage buckets could not be created. Please contact support.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error setting up storage:', error);
-      toast({
-        title: "Setup Failed",
-        description: "Could not set up storage automatically. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setSettingUpStorage(false);
-    }
-  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -322,34 +285,6 @@ export const CommunityAvatarUpload = ({
         </div>
       )}
       
-      {/* Storage setup warning */}
-      {storageReady === false && !settingUpStorage && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm text-yellow-800 font-medium">Storage Setup Required</p>
-            <p className="text-xs text-yellow-700 mt-1">
-              Storage buckets need to be configured before you can upload images.
-            </p>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleSetupStorage}
-              className="mt-2 bg-white"
-            >
-              Setup Storage Now
-            </Button>
-          </div>
-        </div>
-      )}
-      
-      {settingUpStorage && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-          <p className="text-sm text-blue-800">Setting up storage buckets...</p>
-        </div>
-      )}
-      
       <div className="flex items-center space-x-4">
         <Avatar className={sizeClasses[size]}>
           <AvatarImage 
@@ -375,7 +310,7 @@ export const CommunityAvatarUpload = ({
               type="file"
               accept="image/*"
               onChange={handleFileSelect}
-              disabled={uploading || settingUpStorage}
+              disabled={uploading}
               className="hidden"
             />
             <Button
@@ -383,7 +318,7 @@ export const CommunityAvatarUpload = ({
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              disabled={uploading || settingUpStorage || (communityId && storageReady === false)}
+              disabled={uploading}
               className="hover:bg-primary/10 hover:text-primary transition-colors"
             >
               <ImageIcon className="w-4 h-4 mr-2" />
@@ -396,7 +331,7 @@ export const CommunityAvatarUpload = ({
                 variant="outline"
                 size="sm"
                 onClick={handleRemove}
-                disabled={uploading || settingUpStorage}
+                disabled={uploading}
                 className="hover:bg-destructive/10 hover:text-destructive transition-colors"
               >
                 <X className="w-4 h-4 mr-2" />
@@ -410,7 +345,7 @@ export const CommunityAvatarUpload = ({
               <Button
                 size="sm"
                 onClick={handleUpload}
-                disabled={uploading || settingUpStorage || (communityId && storageReady === false)}
+                disabled={uploading}
                 className="bg-green-600 hover:bg-green-700"
               >
                 {uploading ? (
@@ -419,17 +354,14 @@ export const CommunityAvatarUpload = ({
                     Uploading...
                   </>
                 ) : (
-                  <>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload
-                  </>
+                  'Upload'
                 )}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleCancel}
-                disabled={uploading || settingUpStorage}
+                disabled={uploading}
               >
                 Cancel
               </Button>
