@@ -342,9 +342,8 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
     setPosting(true);
     try {
       // Ensure content is never empty string for database NOT NULL constraint
-      const content = newPost.trim() || 
-        (newPostImage ? '[Image]' : '') ||
-        (newPostLink ? '[Link]' : '');
+      // Use empty string for image/link-only posts instead of placeholder text
+      const content = newPost.trim() || '';
       
       const { error } = await supabase
         .from('community_posts')

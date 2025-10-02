@@ -366,7 +366,8 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
           created_at,
           updated_at,
           user_id,
-          community_id
+          community_id,
+          image_url
         `)
         .eq('community_id', communityId)
         .order('created_at', { ascending: false });
@@ -478,7 +479,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
             community_id: post.community_id,
             user_id: post.user_id,
             content: post.content,
-            image_url: null, // Will be null until schema is updated
+            image_url: post.image_url || null,
             link_url: null,
             link_title: null,
             link_description: null,
@@ -610,13 +611,38 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
   const uploadImage = async (file: File): Promise<string> => {
     setUploadingImage(true);
     try {
-      // Simulate image upload (in real app, this would upload to Supabase storage)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Return a mock URL (in real app, this would be the actual uploaded file URL)
-      return URL.createObjectURL(file);
+      if (!user) throw new Error('User not authenticated');
+
+      // Create a unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('community-post-images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Error uploading to storage:', error);
+        throw error;
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('community-post-images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
+      toast({
+        title: "Upload failed",
+        description: "Could not upload image. Please try again.",
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setUploadingImage(false);
@@ -634,20 +660,25 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
       }
 
       // Ensure content is never empty for database NOT NULL constraint
+      // If there's an image but no text, use empty string instead of placeholder text
       const content = newPostContent.trim() || 
-        (selectedImage ? '[Image Post]' : '') ||
-        (linkUrl ? '[Link Post]' : '[Post]');
+        (linkUrl ? '[Link Post]' : '');
 
-      // Create the post in the database - use only basic columns that should exist
+      // Create the post in the database with image_url if available
+      const postData: any = {
+        community_id: communityId,
+        user_id: user.id,
+        content: content
+      };
+
+      // Only add image_url if we have one
+      if (imageUrl) {
+        postData.image_url = imageUrl;
+      }
+
       const { data, error } = await supabase
         .from('community_posts')
-        .insert([
-          {
-            community_id: communityId,
-            user_id: user.id,
-            content: content
-          }
-        ])
+        .insert([postData])
         .select()
         .single();
 
