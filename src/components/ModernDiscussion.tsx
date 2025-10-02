@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useActivityTracker } from '@/hooks/useActivityTracker';
+import { useGamification } from '@/hooks/useGamification';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -230,7 +230,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { trackPostCreated, trackCommentPosted, trackLikeGiven } = useActivityTracker(communityId);
+  const { trackPostCreated, trackCommentPosted, trackLikeGiven } = useGamification(communityId);
   
   // Debug current user data
   useEffect(() => {
@@ -694,13 +694,9 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         return;
       }
 
-      // Track post creation for leaderboard
+      // Track post creation for gamification
       try {
-        trackPostCreated({
-          content: content,
-          has_image: !!imageUrl,
-          category: 'discussion'
-        });
+        trackPostCreated(data.id);
       } catch (trackError) {
         console.error('Error tracking post creation:', trackError);
         // Don't fail the post creation if tracking fails
@@ -784,9 +780,9 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
 
         if (error) throw error;
 
-        // Track like action for leaderboard (only when adding a like)
+        // Track like action for gamification (only when adding a like)
         try {
-          trackLikeGiven('post', postId);
+          trackLikeGiven(postId);
         } catch (trackError) {
           console.error('Error tracking like:', trackError);
         }
@@ -895,9 +891,9 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         replies: []
       };
 
-      // Track comment creation for leaderboard
+      // Track comment creation for gamification
       try {
-        trackCommentPosted(content.trim(), postId);
+        trackCommentPosted(data.id);
       } catch (trackError) {
         console.error('Error tracking comment creation:', trackError);
       }
