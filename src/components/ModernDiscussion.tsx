@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useActivityTracker } from '@/hooks/useActivityTracker';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -229,6 +230,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { trackPostCreated, trackCommentPosted, trackLikeGiven } = useActivityTracker(communityId);
   
   // Debug current user data
   useEffect(() => {
@@ -692,6 +694,18 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         return;
       }
 
+      // Track post creation for leaderboard
+      try {
+        trackPostCreated({
+          content: content,
+          has_image: !!imageUrl,
+          category: 'discussion'
+        });
+      } catch (trackError) {
+        console.error('Error tracking post creation:', trackError);
+        // Don't fail the post creation if tracking fails
+      }
+
       // Clear the form
       setNewPostContent('');
       setSelectedImage(null);
@@ -769,6 +783,13 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
           ]);
 
         if (error) throw error;
+
+        // Track like action for leaderboard (only when adding a like)
+        try {
+          trackLikeGiven('post', postId);
+        } catch (trackError) {
+          console.error('Error tracking like:', trackError);
+        }
       }
 
       // Update local state optimistically
@@ -873,6 +894,13 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         },
         replies: []
       };
+
+      // Track comment creation for leaderboard
+      try {
+        trackCommentPosted(content.trim(), postId);
+      } catch (trackError) {
+        console.error('Error tracking comment creation:', trackError);
+      }
 
       // Update posts state optimistically without refetching everything
       setPosts(prevPosts => 
