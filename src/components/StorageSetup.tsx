@@ -1,142 +1,176 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, CheckCircle, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
-import { setupStorageBuckets, type SetupResult } from '@/scripts/setupStorageBuckets';
+import { setupStorageBuckets, SetupResult } from '@/utils/setupStorage';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  Database, 
+  CheckCircle2, 
+  XCircle, 
+  AlertTriangle, 
+  RefreshCw,
+  Loader2
+} from 'lucide-react';
 
 export const StorageSetup = () => {
-  const [setting, setSetting] = useState(false);
-  const [results, setResults] = useState<SetupResult[]>([]);
-  const { user } = useAuth();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [setupResults, setSetupResults] = useState<SetupResult[]>([]);
+  const [bucketStatus, setBucketStatus] = useState<{
+    profilePictures: boolean;
+    communityAvatars: boolean;
+    postImages: boolean;
+  } | null>(null);
 
-  const handleSetupStorage = async () => {
-    if (!user) {
+  const checkBuckets = async () => {
+    setLoading(true);
+    try {
+      const { data: buckets, error } = await supabase.storage.listBuckets();
+      
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to check storage buckets",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setBucketStatus({
+        profilePictures: buckets.some(b => b.id === 'profile-pictures'),
+        communityAvatars: buckets.some(b => b.id === 'community-avatars'),
+        postImages: buckets.some(b => b.id === 'community-post-images'),
+      });
+    } catch (error) {
+      console.error('Error checking buckets:', error);
       toast({
         title: "Error",
-        description: "Please log in first",
+        description: "Failed to check storage buckets",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setLoading(false);
     }
+  };
 
-    setSetting(true);
-    setResults([]);
-
+  const handleSetup = async () => {
+    setLoading(true);
     try {
-      console.log('🔧 Starting storage setup...');
-      const setupResults = await setupStorageBuckets();
-      setResults(setupResults);
-
-      const allSuccessful = setupResults.every(r => r.success);
+      const results = await setupStorageBuckets();
+      setSetupResults(results);
       
+      const allSuccessful = results.every(r => r.success);
       if (allSuccessful) {
         toast({
           title: "Success",
-          description: "Storage buckets set up successfully! You can now upload avatars.",
+          description: "Storage buckets have been set up successfully!",
         });
+        // Re-check bucket status
+        await checkBuckets();
       } else {
-        const errorCount = setupResults.filter(r => !r.success).length;
         toast({
-          title: "Setup Issues",
-          description: `${errorCount} issue(s) encountered during setup. Check the details below.`,
+          title: "Partial Success",
+          description: "Some buckets were created, but there were issues. Check details below.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error('Storage setup failed:', error);
+      console.error('Error setting up storage:', error);
       toast({
         title: "Setup Failed",
-        description: "Failed to set up storage buckets. Please try again or check your permissions.",
+        description: "Could not set up storage. Please try again.",
         variant: "destructive",
       });
-      setResults([{
-        step: 'Setup Error',
-        success: false,
-        message: `Unexpected error: ${error}`,
-        details: error
-      }]);
     } finally {
-      setSetting(false);
+      setLoading(false);
     }
   };
 
-  const getStatusIcon = (status: boolean) => {
-    return status ? (
-      <CheckCircle className="w-4 h-4 text-green-500" />
-    ) : (
-      <XCircle className="w-4 h-4 text-red-500" />
-    );
-  };
-
-  const getWarningIcon = () => <AlertTriangle className="w-4 h-4 text-yellow-500" />;
-
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Settings className="w-5 h-5" />
-          Storage Setup
+          <Database className="w-5 h-5" />
+          Storage Bucket Setup
         </CardTitle>
         <CardDescription>
-          Set up storage buckets for profile pictures and community avatars
+          Configure Supabase storage buckets for image uploads (profile pictures, community avatars, and post images)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Button 
-            onClick={handleSetupStorage} 
-            disabled={setting}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {setting ? (
+        <div className="flex gap-2">
+          <Button onClick={checkBuckets} disabled={loading} variant="outline">
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Check Status
+          </Button>
+          <Button onClick={handleSetup} disabled={loading}>
+            {loading ? (
               <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Setting Up...
               </>
             ) : (
-              'Set Up Storage Buckets'
+              <>
+                <Database className="w-4 h-4 mr-2" />
+                Setup Buckets
+              </>
             )}
           </Button>
-          
-          {results.length > 0 && (
-            <div className="text-sm text-muted-foreground">
-              {results.filter(r => r.success).length}/{results.length} steps completed
-            </div>
-          )}
         </div>
 
-        {results.length > 0 && (
+        {bucketStatus && (
           <div className="space-y-2">
-            <h4 className="font-semibold">Setup Results</h4>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {results.map((result, index) => (
-                <div 
-                  key={index} 
-                  className={`flex items-start gap-3 p-3 rounded-lg border ${
-                    result.success 
-                      ? 'bg-green-50 border-green-200' 
-                      : 'bg-red-50 border-red-200'
-                  }`}
-                >
-                  {getStatusIcon(result.success)}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{result.step}</p>
-                    <p className="text-xs text-muted-foreground break-words">
-                      {result.message}
-                    </p>
-                    {result.details && (
-                      <details className="mt-1">
-                        <summary className="text-xs cursor-pointer text-blue-600">
-                          View Details
-                        </summary>
-                        <pre className="text-xs mt-1 p-2 bg-gray-100 rounded overflow-x-auto">
-                          {JSON.stringify(result.details, null, 2)}
-                        </pre>
-                      </details>
-                    )}
+            <h4 className="font-semibold text-sm">Bucket Status:</h4>
+            <div className="grid gap-2">
+              <div className="flex items-center gap-2">
+                {bucketStatus.profilePictures ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-red-600" />
+                )}
+                <span className="text-sm">
+                  Profile Pictures: {bucketStatus.profilePictures ? 'Configured' : 'Missing'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {bucketStatus.communityAvatars ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-red-600" />
+                )}
+                <span className="text-sm">
+                  Community Avatars: {bucketStatus.communityAvatars ? 'Configured' : 'Missing'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {bucketStatus.postImages ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-red-600" />
+                )}
+                <span className="text-sm">
+                  Post Images: {bucketStatus.postImages ? 'Configured' : 'Missing'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {setupResults.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="font-semibold text-sm">Setup Results:</h4>
+            <div className="space-y-1">
+              {setupResults.map((result, index) => (
+                <div key={index} className="flex items-start gap-2 text-sm">
+                  {result.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red-600 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <span className="font-medium">{result.step}:</span> {result.message}
                   </div>
                 </div>
               ))}
@@ -144,16 +178,20 @@ export const StorageSetup = () => {
           </div>
         )}
 
-        <div className="text-sm text-muted-foreground space-y-1">
-          <p><strong>What this does:</strong></p>
-          <ul className="list-disc list-inside space-y-1 text-xs">
-            <li>Creates <code>profile-pictures</code> bucket for user avatars</li>
-            <li>Creates <code>community-avatars</code> bucket for community images</li>
-            <li>Sets up proper permissions and file size limits (5MB)</li>
-            <li>Enables public access for image display</li>
-            <li>Tests upload permissions to verify everything works</li>
-          </ul>
-        </div>
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Important</AlertTitle>
+          <AlertDescription>
+            Storage buckets need to be configured before users can upload profile pictures, 
+            community avatars, or post images. The setup process will:
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>Create 'profile-pictures' bucket (5MB limit)</li>
+              <li>Create 'community-avatars' bucket (5MB limit)</li>
+              <li>Create 'community-post-images' bucket (10MB limit)</li>
+              <li>Set appropriate permissions for public access</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
       </CardContent>
     </Card>
   );

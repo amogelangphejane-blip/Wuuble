@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, Users, AlertTriangle } from 'lucide-react';
+import { X, Users, Image as ImageIcon } from 'lucide-react';
 import { validateAvatarUrl } from '@/lib/utils';
 import { checkCommunityStorageReady } from '@/utils/setupStorage';
 
@@ -318,9 +318,10 @@ export const CommunityAvatarUpload = ({
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              disabled={uploading || (communityId && storageReady === false)}
+              disabled={uploading}
+              className="hover:bg-primary/10 hover:text-primary transition-colors"
             >
-              <Upload className="w-4 h-4 mr-2" />
+              <ImageIcon className="w-4 h-4 mr-2" />
               Choose Image
             </Button>
             
@@ -331,6 +332,7 @@ export const CommunityAvatarUpload = ({
                 size="sm"
                 onClick={handleRemove}
                 disabled={uploading}
+                className="hover:bg-destructive/10 hover:text-destructive transition-colors"
               >
                 <X className="w-4 h-4 mr-2" />
                 Remove
@@ -343,10 +345,17 @@ export const CommunityAvatarUpload = ({
               <Button
                 size="sm"
                 onClick={handleUpload}
-                disabled={uploading || (communityId && storageReady === false)}
+                disabled={uploading}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {uploading ? 'Uploading...' : 'Upload'}
+                {uploading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Uploading...
+                  </>
+                ) : (
+                  'Upload'
+                )}
               </Button>
               <Button
                 variant="outline"
@@ -356,6 +365,11 @@ export const CommunityAvatarUpload = ({
               >
                 Cancel
               </Button>
+              {selectedFile && (
+                <span className="text-xs text-muted-foreground">
+                  {selectedFile.name}
+                </span>
+              )}
             </div>
           )}
           
