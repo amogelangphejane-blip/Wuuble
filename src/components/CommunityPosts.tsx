@@ -1018,8 +1018,20 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
 
                         {post.link_url && (
                           <div className="mb-4">
-                            <div className="bg-background rounded-lg border border-border overflow-hidden hover:border-primary/20 transition-all duration-200 cursor-pointer"
-                                 onClick={() => window.open(post.link_url!, '_blank')}>
+                            <a 
+                              href={(() => {
+                                const url = post.link_url!;
+                                return url.startsWith('http://') || url.startsWith('https://') 
+                                  ? url 
+                                  : `https://${url}`;
+                              })()}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block bg-background rounded-lg border border-border overflow-hidden hover:border-primary/20 transition-all duration-200 cursor-pointer no-underline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                            >
                               {post.link_image_url && (
                                 <div className="aspect-video bg-muted relative overflow-hidden">
                                   <img
@@ -1065,7 +1077,7 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
                                   <div className="flex items-center gap-2">
                                     <Badge variant="secondary" className="text-xs">
                                       <Globe className="h-3 w-3 mr-1" />
-                                      {post.link_domain || 'External Link'}
+                                      {post.link_domain || new URL(post.link_url.startsWith('http') ? post.link_url : `https://${post.link_url}`).hostname}
                                     </Badge>
                                   </div>
                                   
@@ -1075,7 +1087,7 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
                                   </div>
                                 </div>
                               </div>
-                            </div>
+                            </a>
                           </div>
                         )}
 

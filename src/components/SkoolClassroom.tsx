@@ -14,7 +14,7 @@ interface Resource {
   title: string;
   description?: string;
   resource_type: string;
-  content?: string;
+  content_url?: string;
   created_at: string;
 }
 
@@ -263,46 +263,105 @@ export const SkoolClassroom: React.FC<SkoolClassroomProps> = ({ communityId }) =
         </Card>
       ) : (
         <div className="space-y-4">
-          {resources.map((resource) => (
-            <Card key={resource.id} className="hover:shadow-lg transition-all cursor-pointer group">
-              <div className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    {getResourceIcon(resource.resource_type)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-semibold group-hover:text-blue-600 transition-colors">{resource.title}</h3>
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
+          {resources.map((resource) => {
+            // Normalize the URL to ensure it has a protocol
+            const normalizeUrl = (url: string | undefined | null): string | null => {
+              if (!url) return null;
+              const trimmed = url.trim();
+              if (!trimmed) return null;
+              if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+                return trimmed;
+              }
+              return 'https://' + trimmed;
+            };
+
+            const resourceUrl = normalizeUrl(resource.content_url);
+            const hasUrl = !!resourceUrl;
+
+            const handleResourceClick = () => {
+              if (resourceUrl) {
+                console.log('Opening resource URL:', resourceUrl);
+                window.open(resourceUrl, '_blank', 'noopener,noreferrer');
+              } else {
+                toast({
+                  title: "No URL",
+                  description: "This resource doesn't have a URL link",
+                  variant: "destructive"
+                });
+              }
+            };
+
+            return (
+              <Card 
+                key={resource.id} 
+                className={`hover:shadow-lg transition-all group ${hasUrl ? 'cursor-pointer' : ''}`}
+                onClick={hasUrl ? handleResourceClick : undefined}
+              >
+                <div className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      {getResourceIcon(resource.resource_type)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-lg font-semibold group-hover:text-blue-600 transition-colors">
+                          {resource.title}
+                        </h3>
+                        {hasUrl && (
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleResourceClick();
+                              }}
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      {resource.description && (
+                        <p className="text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                          {resource.description}
+                        </p>
+                      )}
+                      {resourceUrl && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mb-3 truncate">
+                          🔗 {resourceUrl}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          {getResourceIcon(resource.resource_type)}
+                          <span className="capitalize">{resource.resource_type}</span>
+                        </Badge>
+                        <span className="text-sm text-gray-500 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Added {new Date(resource.created_at).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
-                    {resource.description && (
-                      <p className="text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-                        {resource.description}
-                      </p>
+                    {hasUrl && (
+                      <Button 
+                        size="sm" 
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleResourceClick();
+                        }}
+                      >
+                        <BookOpen className="w-4 h-4 mr-2" />
+                        Open
+                      </Button>
                     )}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="secondary" className="flex items-center gap-1">
-                        {getResourceIcon(resource.resource_type)}
-                        <span className="capitalize">{resource.resource_type}</span>
-                      </Badge>
-                      <span className="text-sm text-gray-500 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        Added {new Date(resource.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
                   </div>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    View
-                  </Button>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
 
