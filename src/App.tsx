@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { LoadingProvider } from '@/contexts/LoadingContext';
 import GlobalLoadingOverlay from '@/components/GlobalLoadingOverlay';
+import { ThemeProvider } from '@/components/theme-provider';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -46,10 +47,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -65,12 +66,19 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <LoadingProvider>
-          <TooltipProvider>
-            <Router>
-              <div className="min-h-screen bg-gray-50">
-              <Routes>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+        themes={['light', 'dark', 'system', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-purple']}
+      >
+        <AuthProvider>
+          <LoadingProvider>
+            <TooltipProvider>
+              <Router>
+                <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+                <Routes>
               {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
@@ -168,7 +176,8 @@ function App() {
         </TooltipProvider>
       </LoadingProvider>
     </AuthProvider>
-  </QueryClientProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
