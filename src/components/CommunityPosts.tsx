@@ -1019,18 +1019,17 @@ export const CommunityPosts = ({ communityId, communityName = 'Community', commu
                         {post.link_url && (
                           <div className="mb-4">
                             <a 
-                              href={post.link_url}
+                              href={(() => {
+                                const url = post.link_url!;
+                                return url.startsWith('http://') || url.startsWith('https://') 
+                                  ? url 
+                                  : `https://${url}`;
+                              })()}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="block bg-background rounded-lg border border-border overflow-hidden hover:border-primary/20 transition-all duration-200 cursor-pointer no-underline"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Ensure the URL has a protocol
-                                const url = post.link_url!;
-                                const fullUrl = url.startsWith('http://') || url.startsWith('https://') 
-                                  ? url 
-                                  : `https://${url}`;
-                                window.open(fullUrl, '_blank', 'noopener,noreferrer');
                               }}
                             >
                               {post.link_image_url && (
