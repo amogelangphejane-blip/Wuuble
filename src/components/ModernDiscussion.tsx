@@ -1014,10 +1014,19 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
           {post.link_url && (
             <div className="mb-4">
               <a 
-                href={post.link_url} 
+                href={post.link_url.startsWith('http://') || post.link_url.startsWith('https://') ? post.link_url : `https://${post.link_url}`}
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="block border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 transition-colors"
+                className="block border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 transition-colors no-underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Ensure the URL has a protocol
+                  const url = post.link_url!;
+                  const fullUrl = url.startsWith('http://') || url.startsWith('https://') 
+                    ? url 
+                    : `https://${url}`;
+                  window.open(fullUrl, '_blank', 'noopener,noreferrer');
+                }}
               >
                 {post.link_image_url && (
                   <ResponsiveImage 
@@ -1040,7 +1049,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                       )}
                       <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1">
                         <ExternalLink className="w-3 h-3" />
-                        {new URL(post.link_url).hostname}
+                        {post.link_url.startsWith('http') ? new URL(post.link_url).hostname : post.link_url}
                       </p>
                     </div>
                   </div>

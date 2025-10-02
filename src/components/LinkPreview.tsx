@@ -134,10 +134,16 @@ export const LinkPreview: React.FC<LinkPreviewProps> = ({
       return;
     }
 
-    if (!isValidUrl(linkUrl)) {
+    // Add protocol if missing
+    let normalizedUrl = linkUrl.trim();
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = 'https://' + normalizedUrl;
+    }
+
+    if (!isValidUrl(normalizedUrl)) {
       toast({
         title: "Invalid URL",
-        description: "Please enter a valid URL starting with http:// or https://",
+        description: "Please enter a valid URL (e.g., https://example.com)",
         variant: "destructive"
       });
       return;
@@ -146,7 +152,7 @@ export const LinkPreview: React.FC<LinkPreviewProps> = ({
     setIsLoading(true);
     
     try {
-      const metadata = await fetchLinkMetadata(linkUrl);
+      const metadata = await fetchLinkMetadata(normalizedUrl);
       
       if (metadata) {
         onLinkAdded(metadata);
