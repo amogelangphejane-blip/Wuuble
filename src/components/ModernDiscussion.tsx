@@ -38,7 +38,9 @@ import {
   ExternalLink,
   Copy,
   Flag,
-  Bookmark
+  Bookmark,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,7 +53,9 @@ const CommentInput = React.memo(({
   onChange, 
   onSubmit, 
   disabled,
-  userAvatarUrl 
+  userAvatarUrl,
+  replyingToUser,
+  onCancelReply
 }: {
   postId: string;
   value: string;
@@ -59,35 +63,62 @@ const CommentInput = React.memo(({
   onSubmit: () => void;
   disabled: boolean;
   userAvatarUrl: string;
+  replyingToUser?: string | null;
+  onCancelReply?: () => void;
 }) => {
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onSubmit();
+    } else if (e.key === 'Escape' && onCancelReply) {
+      e.preventDefault();
+      onCancelReply();
     }
-  }, [onSubmit]);
+  }, [onSubmit, onCancelReply]);
 
   return (
-    <div className="flex gap-3 mt-4">
-      <Avatar className="w-8 h-8">
-        <AvatarImage src={userAvatarUrl} className="object-cover" />
-      </Avatar>
-      <div className="flex-1 flex gap-2">
-        <Input
-          placeholder="Write a comment..."
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyPress={handleKeyPress}
-          className="rounded-full border-gray-200 dark:border-gray-800"
-        />
-        <Button
-          size="sm"
-          onClick={onSubmit}
-          disabled={disabled}
-          className="rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-        >
-          <Send className="w-4 h-4" />
-        </Button>
+    <div className="mt-4">
+      {replyingToUser && (
+        <div className="mb-2 flex items-center justify-between bg-blue-50 dark:bg-blue-950/30 px-3 py-2 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Reply className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm text-blue-700 dark:text-blue-300">
+              Replying to <span className="font-semibold">{replyingToUser}</span>
+            </span>
+          </div>
+          {onCancelReply && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCancelReply}
+              className="h-6 px-2 text-blue-600 hover:text-blue-700 dark:text-blue-400"
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          )}
+        </div>
+      )}
+      <div className="flex gap-3">
+        <Avatar className="w-8 h-8">
+          <AvatarImage src={userAvatarUrl} className="object-cover" />
+        </Avatar>
+        <div className="flex-1 flex gap-2">
+          <Input
+            placeholder={replyingToUser ? "Write a reply..." : "Write a comment..."}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="rounded-full border-gray-200 dark:border-gray-800"
+          />
+          <Button
+            size="sm"
+            onClick={onSubmit}
+            disabled={disabled}
+            className="rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -135,6 +166,8 @@ interface Comment {
   content: string;
   created_at: string;
   user: User;
+  parent_comment_id?: string | null;
+  replies?: Comment[];
 }
 
 interface ModernDiscussionProps {
@@ -253,6 +286,8 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
   const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'trending'>('recent');
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
+  const [replyingTo, setReplyingTo] = useState<{ postId: string; commentId: string; userName: string } | null>(null);
+  const [collapsedReplies, setCollapsedReplies] = useState<Set<string>>(new Set());
   
   // Link preview states
   const [linkUrl, setLinkUrl] = useState('');
@@ -846,8 +881,36 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
     }));
   }, []);
 
-  const handleComment = useCallback(async (postId: string) => {
-    const content = commentInputs[postId];
+  const handleReplyClick = useCallback((postId: string, commentId: string, userName: string) => {
+    setReplyingTo({ postId, commentId, userName });
+    // Auto-expand comments if not already expanded
+    setExpandedComments(prev => new Set(prev).add(postId));
+  }, []);
+
+  const handleCancelReply = useCallback(() => {
+    setReplyingTo(null);
+    // Clear the reply input
+    if (replyingTo) {
+      const inputKey = `${replyingTo.postId}-${replyingTo.commentId}`;
+      setCommentInputs(prev => ({ ...prev, [inputKey]: '' }));
+    }
+  }, [replyingTo]);
+
+  const toggleReplies = useCallback((commentId: string) => {
+    setCollapsedReplies(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(commentId)) {
+        newSet.delete(commentId);
+      } else {
+        newSet.add(commentId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleComment = useCallback(async (postId: string, parentCommentId?: string) => {
+    const inputKey = parentCommentId ? `${postId}-${parentCommentId}` : postId;
+    const content = commentInputs[inputKey];
     if (!user || !content?.trim()) return;
 
     try {
@@ -859,7 +922,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
             post_id: postId,
             user_id: user.id,
             content: content.trim(),
-            parent_comment_id: null
+            parent_comment_id: parentCommentId || null
           }
         ])
         .select(`
@@ -879,7 +942,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         user_id: user.id,
         content: content.trim(),
         created_at: data.created_at,
-        parent_comment_id: null,
+        parent_comment_id: parentCommentId || null,
         user: {
           id: user.id,
           email: '',
@@ -902,22 +965,53 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
       setPosts(prevPosts => 
         prevPosts.map(post => {
           if (post.id === postId) {
-            return {
-              ...post,
-              comments: [...post.comments, newComment],
-              comments_count: post.comments_count + 1
-            };
+            if (parentCommentId) {
+              // Add reply to the parent comment
+              const updateComments = (comments: Comment[]): Comment[] => {
+                return comments.map(comment => {
+                  if (comment.id === parentCommentId) {
+                    return {
+                      ...comment,
+                      replies: [...(comment.replies || []), newComment]
+                    };
+                  }
+                  if (comment.replies && comment.replies.length > 0) {
+                    return {
+                      ...comment,
+                      replies: updateComments(comment.replies)
+                    };
+                  }
+                  return comment;
+                });
+              };
+              
+              return {
+                ...post,
+                comments: updateComments(post.comments),
+                comments_count: post.comments_count + 1
+              };
+            } else {
+              // Add top-level comment
+              return {
+                ...post,
+                comments: [...post.comments, newComment],
+                comments_count: post.comments_count + 1
+              };
+            }
           }
           return post;
         })
       );
 
-      // Clear input AFTER state update to prevent keyboard issues
-      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+      // Clear input and reply state AFTER state update to prevent keyboard issues
+      setCommentInputs(prev => ({ ...prev, [inputKey]: '' }));
+      if (parentCommentId) {
+        setReplyingTo(null);
+      }
       
       toast({
-        title: "Comment added",
-        description: "Your comment has been posted",
+        title: parentCommentId ? "Reply added" : "Comment added",
+        description: parentCommentId ? "Your reply has been posted" : "Your comment has been posted",
       });
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -1177,22 +1271,83 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4"
               >
                 {post.comments?.map((comment) => (
-                  <div key={comment.id} className="flex gap-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={getUserAvatarUrl(comment.user, user)} className="object-cover" />
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl px-4 py-3">
-                        <p className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                          {getUserDisplayName(comment.user)}
-                        </p>
-                        <p className="text-sm text-gray-800 dark:text-gray-200 mt-1">
-                          {comment.content}
-                        </p>
+                  <div key={comment.id}>
+                    <div className="flex gap-3">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={getUserAvatarUrl(comment.user, user)} className="object-cover" />
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl px-4 py-3">
+                          <p className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                            {getUserDisplayName(comment.user)}
+                          </p>
+                          <p className="text-sm text-gray-800 dark:text-gray-200 mt-1">
+                            {comment.content}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3 mt-2 px-2">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                          </p>
+                          {user && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReplyClick(post.id, comment.id, getUserDisplayName(comment.user))}
+                              className="h-6 px-2 text-xs text-gray-600 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400"
+                            >
+                              <Reply className="w-3 h-3 mr-1" />
+                              Reply
+                            </Button>
+                          )}
+                          {comment.replies && comment.replies.length > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleReplies(comment.id)}
+                              className="h-6 px-2 text-xs text-gray-600 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400"
+                            >
+                              {collapsedReplies.has(comment.id) ? (
+                                <>
+                                  <MessageSquare className="w-3 h-3 mr-1" />
+                                  Show {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
+                                </>
+                              ) : (
+                                <>
+                                  <MessageSquare className="w-3 h-3 mr-1 fill-current" />
+                                  Hide {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                        
+                        {/* Nested Replies */}
+                        {comment.replies && comment.replies.length > 0 && !collapsedReplies.has(comment.id) && (
+                          <div className="mt-3 ml-6 space-y-3 pl-4 border-l-2 border-gray-200 dark:border-gray-800">
+                            {comment.replies.map((reply) => (
+                              <div key={reply.id} className="flex gap-2">
+                                <Avatar className="w-6 h-6">
+                                  <AvatarImage src={getUserAvatarUrl(reply.user, user)} className="object-cover" />
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="bg-gray-50 dark:bg-gray-900 rounded-xl px-3 py-2">
+                                    <p className="font-medium text-xs text-gray-900 dark:text-gray-100">
+                                      {getUserDisplayName(reply.user)}
+                                    </p>
+                                    <p className="text-xs text-gray-800 dark:text-gray-200 mt-1">
+                                      {reply.content}
+                                    </p>
+                                  </div>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 px-2">
+                                    {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 px-2">
-                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                      </p>
                     </div>
                   </div>
                 ))}
@@ -1200,11 +1355,32 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 {user && (
                   <CommentInput
                     postId={post.id}
-                    value={commentInputs[post.id] || ''}
-                    onChange={(value) => handleCommentInputChange(post.id, value)}
-                    onSubmit={() => handleComment(post.id)}
-                    disabled={!commentInputs[post.id]?.trim()}
+                    value={
+                      replyingTo?.postId === post.id && replyingTo.commentId
+                        ? commentInputs[`${post.id}-${replyingTo.commentId}`] || ''
+                        : commentInputs[post.id] || ''
+                    }
+                    onChange={(value) => {
+                      const key = replyingTo?.postId === post.id && replyingTo.commentId
+                        ? `${post.id}-${replyingTo.commentId}`
+                        : post.id;
+                      handleCommentInputChange(key, value);
+                    }}
+                    onSubmit={() => {
+                      if (replyingTo?.postId === post.id && replyingTo.commentId) {
+                        handleComment(post.id, replyingTo.commentId);
+                      } else {
+                        handleComment(post.id);
+                      }
+                    }}
+                    disabled={
+                      replyingTo?.postId === post.id && replyingTo.commentId
+                        ? !commentInputs[`${post.id}-${replyingTo.commentId}`]?.trim()
+                        : !commentInputs[post.id]?.trim()
+                    }
                     userAvatarUrl={getUserAvatarUrl(user, user)}
+                    replyingToUser={replyingTo?.postId === post.id ? replyingTo.userName : null}
+                    onCancelReply={replyingTo?.postId === post.id ? handleCancelReply : undefined}
                   />
                 )}
               </motion.div>
