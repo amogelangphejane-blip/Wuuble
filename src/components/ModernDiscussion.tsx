@@ -76,6 +76,10 @@ const CommentInput = React.memo(({
     }
   }, [onSubmit, onCancelReply]);
 
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+  }, [onChange]);
+
   return (
     <div className="mt-4">
       {replyingToUser && (
@@ -106,7 +110,7 @@ const CommentInput = React.memo(({
           <Input
             placeholder={replyingToUser ? "Write a reply..." : "Write a comment..."}
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={handleChange}
             onKeyPress={handleKeyPress}
             className="rounded-full border-gray-200 dark:border-gray-800"
           />
@@ -121,6 +125,68 @@ const CommentInput = React.memo(({
         </div>
       </div>
     </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  return (
+    prevProps.postId === nextProps.postId &&
+    prevProps.value === nextProps.value &&
+    prevProps.disabled === nextProps.disabled &&
+    prevProps.userAvatarUrl === nextProps.userAvatarUrl &&
+    prevProps.replyingToUser === nextProps.replyingToUser &&
+    prevProps.onChange === nextProps.onChange &&
+    prevProps.onSubmit === nextProps.onSubmit &&
+    prevProps.onCancelReply === nextProps.onCancelReply
+  );
+});
+
+// Wrapper component to provide stable callback references
+const CommentInputWrapper = React.memo(({
+  post,
+  user,
+  replyingTo,
+  commentInputs,
+  onCommentInputChange,
+  onComment,
+  onCancelReply
+}: {
+  post: any;
+  user: any;
+  replyingTo: { postId: string; commentId: string; userName: string } | null;
+  commentInputs: { [key: string]: string };
+  onCommentInputChange: (key: string, value: string) => void;
+  onComment: (postId: string, parentCommentId?: string) => Promise<void>;
+  onCancelReply: () => void;
+}) => {
+  const isReplyingToThisPost = replyingTo?.postId === post.id;
+  const inputKey = isReplyingToThisPost && replyingTo.commentId
+    ? `${post.id}-${replyingTo.commentId}`
+    : post.id;
+  const inputValue = commentInputs[inputKey] || '';
+
+  const handleChange = useCallback((value: string) => {
+    onCommentInputChange(inputKey, value);
+  }, [inputKey, onCommentInputChange]);
+
+  const handleSubmit = useCallback(() => {
+    if (isReplyingToThisPost && replyingTo.commentId) {
+      onComment(post.id, replyingTo.commentId);
+    } else {
+      onComment(post.id);
+    }
+  }, [isReplyingToThisPost, replyingTo, post.id, onComment]);
+
+  return (
+    <CommentInput
+      postId={post.id}
+      value={inputValue}
+      onChange={handleChange}
+      onSubmit={handleSubmit}
+      disabled={!inputValue.trim()}
+      userAvatarUrl={getUserAvatarUrl(user, user)}
+      replyingToUser={isReplyingToThisPost ? replyingTo.userName : null}
+      onCancelReply={isReplyingToThisPost ? onCancelReply : undefined}
+    />
   );
 });
 
@@ -874,10 +940,10 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
     }
   };
 
-  const handleCommentInputChange = useCallback((postId: string, value: string) => {
+  const handleCommentInputChange = useCallback((key: string, value: string) => {
     setCommentInputs(prev => ({
       ...prev,
-      [postId]: value
+      [key]: value
     }));
   }, []);
 
@@ -1353,34 +1419,14 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
                 ))}
                 
                 {user && (
-                  <CommentInput
-                    postId={post.id}
-                    value={
-                      replyingTo?.postId === post.id && replyingTo.commentId
-                        ? commentInputs[`${post.id}-${replyingTo.commentId}`] || ''
-                        : commentInputs[post.id] || ''
-                    }
-                    onChange={(value) => {
-                      const key = replyingTo?.postId === post.id && replyingTo.commentId
-                        ? `${post.id}-${replyingTo.commentId}`
-                        : post.id;
-                      handleCommentInputChange(key, value);
-                    }}
-                    onSubmit={() => {
-                      if (replyingTo?.postId === post.id && replyingTo.commentId) {
-                        handleComment(post.id, replyingTo.commentId);
-                      } else {
-                        handleComment(post.id);
-                      }
-                    }}
-                    disabled={
-                      replyingTo?.postId === post.id && replyingTo.commentId
-                        ? !commentInputs[`${post.id}-${replyingTo.commentId}`]?.trim()
-                        : !commentInputs[post.id]?.trim()
-                    }
-                    userAvatarUrl={getUserAvatarUrl(user, user)}
-                    replyingToUser={replyingTo?.postId === post.id ? replyingTo.userName : null}
-                    onCancelReply={replyingTo?.postId === post.id ? handleCancelReply : undefined}
+                  <CommentInputWrapper
+                    post={post}
+                    user={user}
+                    replyingTo={replyingTo}
+                    commentInputs={commentInputs}
+                    onCommentInputChange={handleCommentInputChange}
+                    onComment={handleComment}
+                    onCancelReply={handleCancelReply}
                   />
                 )}
               </motion.div>
