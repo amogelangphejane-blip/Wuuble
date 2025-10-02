@@ -322,6 +322,356 @@ const getDefaultAvatarUrl = (userId?: string): string => {
   return defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
 };
 
+// PostCard component - extracted outside to prevent re-creation on every render
+interface PostCardProps {
+  post: Post;
+  user: any;
+  isOwner: boolean;
+  isModerator: boolean;
+  expandedComments: Set<string>;
+  collapsedReplies: Set<string>;
+  replyingTo: { postId: string; commentId: string; userName: string } | null;
+  commentInputs: { [key: string]: string };
+  onLikePost: (postId: string) => void;
+  onBookmarkPost: (postId: string) => void;
+  onToggleComments: (postId: string) => void;
+  onShare: (post: Post) => void;
+  onReplyClick: (postId: string, commentId: string, userName: string) => void;
+  onToggleReplies: (commentId: string) => void;
+  onCommentInputChange: (key: string, value: string) => void;
+  onComment: (postId: string, parentCommentId?: string) => Promise<void>;
+  onCancelReply: () => void;
+}
+
+const PostCard = React.memo<PostCardProps>(({
+  post,
+  user,
+  isOwner,
+  isModerator,
+  expandedComments,
+  collapsedReplies,
+  replyingTo,
+  commentInputs,
+  onLikePost,
+  onBookmarkPost,
+  onToggleComments,
+  onShare,
+  onReplyClick,
+  onToggleReplies,
+  onCommentInputChange,
+  onComment,
+  onCancelReply
+}) => (
+  <motion.div
+    layout
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -20 }}
+    id={`post-${post.id}`}
+  >
+    <Card className={cn(
+      "overflow-hidden hover:shadow-md transition-all duration-300 border-0 shadow-sm bg-white dark:bg-gray-950",
+      post.is_pinned && "ring-2 ring-blue-100 dark:ring-blue-900"
+    )}>
+      {post.is_pinned && (
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 px-4 py-2 flex items-center gap-2 border-b">
+          <Pin className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <span className="text-sm font-medium text-blue-700 dark:text-blue-400">Pinned Post</span>
+        </div>
+      )}
+      
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3">
+            <Avatar className="w-12 h-12 ring-2 ring-gray-100 dark:ring-gray-800">
+              <AvatarImage src={getUserAvatarUrl(post.user, user)} className="object-cover" />
+            </Avatar>
+            
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                  {getUserDisplayName(post.user)}
+                </h4>
+                {post.user.username && (
+                  <span className="text-sm text-gray-500">@{post.user.username}</span>
+                )}
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+              </p>
+            </div>
+          </div>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {(isOwner || isModerator) && !post.is_pinned && (
+                <DropdownMenuItem>
+                  <Pin className="w-4 h-4 mr-2" />
+                  Pin Post
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => onBookmarkPost(post.id)}>
+                <Bookmark className="w-4 h-4 mr-2" />
+                {post.bookmarked_by_user ? 'Remove Bookmark' : 'Bookmark'}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Flag className="w-4 h-4 mr-2" />
+                Report
+              </DropdownMenuItem>
+              {post.user_id === user?.id && (
+                <>
+                  <DropdownMenuItem>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-red-600 dark:text-red-400">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="pt-0">
+        {/* Post Content */}
+        <div className="mb-4">
+          <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">
+            {post.content}
+          </p>
+        </div>
+        
+        {/* Image Attachment */}
+        {post.image_url && (
+          <div className="mb-4">
+            <ResponsiveImage 
+              src={post.image_url} 
+              alt="Post attachment" 
+              className="rounded-xl w-full max-h-96 border border-gray-200 dark:border-gray-800"
+              objectFit="cover"
+            />
+          </div>
+        )}
+        
+        {/* Link Preview */}
+        {post.link_url && (
+          <div className="mb-4">
+            <a 
+              href={(() => {
+                const url = post.link_url!;
+                return url.startsWith('http://') || url.startsWith('https://') 
+                  ? url 
+                  : `https://${url}`;
+              })()}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 transition-colors no-underline"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              {post.link_image_url && (
+                <ResponsiveImage 
+                  src={post.link_image_url} 
+                  alt="" 
+                  className="w-full h-48"
+                  objectFit="cover"
+                />
+              )}
+              <div className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 line-clamp-2">
+                      {post.link_title || post.link_url}
+                    </h5>
+                    {post.link_description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                        {post.link_description}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" />
+                      {post.link_url.startsWith('http') ? new URL(post.link_url).hostname : post.link_url}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        )}
+        
+        {/* Actions */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "gap-2 text-gray-600 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400",
+                post.liked_by_user && "text-red-500 dark:text-red-400"
+              )}
+              onClick={() => onLikePost(post.id)}
+            >
+              <Heart className={cn(
+                "w-4 h-4",
+                post.liked_by_user && "fill-current"
+              )} />
+              <span className="text-sm font-medium">{post.likes_count}</span>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-gray-600 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400"
+              onClick={() => onToggleComments(post.id)}
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span className="text-sm font-medium">{post.comments_count}</span>
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="gap-2 text-gray-600 hover:text-green-500 dark:text-gray-400 dark:hover:text-green-400"
+              onClick={() => onShare(post)}
+            >
+              <Share2 className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "text-gray-600 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400",
+              post.bookmarked_by_user && "text-blue-500 dark:text-blue-400"
+            )}
+            onClick={() => onBookmarkPost(post.id)}
+          >
+            <Bookmark className={cn(
+              "w-4 h-4",
+              post.bookmarked_by_user && "fill-current"
+            )} />
+          </Button>
+        </div>
+        
+        {/* Comments Section */}
+        <AnimatePresence>
+          {expandedComments.has(post.id) && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4"
+            >
+              {post.comments?.map((comment) => (
+                <div key={comment.id}>
+                  <div className="flex gap-3">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={getUserAvatarUrl(comment.user, user)} className="object-cover" />
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl px-4 py-3">
+                        <p className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                          {getUserDisplayName(comment.user)}
+                        </p>
+                        <p className="text-sm text-gray-800 dark:text-gray-200 mt-1">
+                          {comment.content}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 mt-2 px-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                        </p>
+                        {user && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onReplyClick(post.id, comment.id, getUserDisplayName(comment.user))}
+                            className="h-6 px-2 text-xs text-gray-600 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400"
+                          >
+                            <Reply className="w-3 h-3 mr-1" />
+                            Reply
+                          </Button>
+                        )}
+                        {comment.replies && comment.replies.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onToggleReplies(comment.id)}
+                            className="h-6 px-2 text-xs text-gray-600 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400"
+                          >
+                            {collapsedReplies.has(comment.id) ? (
+                              <>
+                                <MessageSquare className="w-3 h-3 mr-1" />
+                                Show {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
+                              </>
+                            ) : (
+                              <>
+                                <MessageSquare className="w-3 h-3 mr-1 fill-current" />
+                                Hide {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {/* Nested Replies */}
+                      {comment.replies && comment.replies.length > 0 && !collapsedReplies.has(comment.id) && (
+                        <div className="mt-3 ml-6 space-y-3 pl-4 border-l-2 border-gray-200 dark:border-gray-800">
+                          {comment.replies.map((reply) => (
+                            <div key={reply.id} className="flex gap-2">
+                              <Avatar className="w-6 h-6">
+                                <AvatarImage src={getUserAvatarUrl(reply.user, user)} className="object-cover" />
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="bg-gray-50 dark:bg-gray-900 rounded-xl px-3 py-2">
+                                  <p className="font-medium text-xs text-gray-900 dark:text-gray-100">
+                                    {getUserDisplayName(reply.user)}
+                                  </p>
+                                  <p className="text-xs text-gray-800 dark:text-gray-200 mt-1">
+                                    {reply.content}
+                                  </p>
+                                </div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 px-2">
+                                  {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {user && (
+                <CommentInputWrapper
+                  post={post}
+                  user={user}
+                  replyingTo={replyingTo}
+                  commentInputs={commentInputs}
+                  onCommentInputChange={onCommentInputChange}
+                  onComment={onComment}
+                  onCancelReply={onCancelReply}
+                />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CardContent>
+    </Card>
+  </motion.div>
+));
+
 const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
   communityId,
   isOwner,
@@ -1702,7 +2052,26 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
         <AnimatePresence mode="popLayout">
           <div className="space-y-6">
             {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
+              <PostCard 
+                key={post.id} 
+                post={post}
+                user={user}
+                isOwner={isOwner}
+                isModerator={isModerator}
+                expandedComments={expandedComments}
+                collapsedReplies={collapsedReplies}
+                replyingTo={replyingTo}
+                commentInputs={commentInputs}
+                onLikePost={handleLikePost}
+                onBookmarkPost={handleBookmarkPost}
+                onToggleComments={toggleComments}
+                onShare={handleShare}
+                onReplyClick={handleReplyClick}
+                onToggleReplies={toggleReplies}
+                onCommentInputChange={handleCommentInputChange}
+                onComment={handleComment}
+                onCancelReply={handleCancelReply}
+              />
             ))}
           </div>
         </AnimatePresence>
