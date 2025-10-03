@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGamification } from '@/hooks/useGamification';
 import { supabase } from '@/integrations/supabase/client';
@@ -152,9 +152,12 @@ const CommentInputWrapper = React.memo(({
   onCancelReply: () => void;
 }) => {
   const isReplyingToThisPost = replyingTo?.postId === post.id;
-  const inputKey = isReplyingToThisPost && replyingTo.commentId
-    ? `${post.id}-${replyingTo.commentId}`
-    : post.id;
+  const inputKey = useMemo(() => {
+    return isReplyingToThisPost && replyingTo.commentId
+      ? `${post.id}-${replyingTo.commentId}`
+      : post.id;
+  }, [isReplyingToThisPost, replyingTo?.commentId, post.id]);
+  
   const inputValue = commentInputs[inputKey] || '';
 
   const handleChange = useCallback((value: string) => {
@@ -167,11 +170,11 @@ const CommentInputWrapper = React.memo(({
     } else {
       onComment(post.id);
     }
-  }, [isReplyingToThisPost, replyingTo, post.id, onComment]);
+  }, [isReplyingToThisPost, replyingTo?.commentId, post.id, onComment]);
 
   return (
     <CommentInput
-      postId={post.id}
+      postId={inputKey}
       value={inputValue}
       onChange={handleChange}
       onSubmit={handleSubmit}
@@ -180,6 +183,24 @@ const CommentInputWrapper = React.memo(({
       replyingToUser={isReplyingToThisPost ? replyingTo.userName : null}
       onCancelReply={isReplyingToThisPost ? onCancelReply : undefined}
     />
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison to prevent re-renders when nothing important changes
+  const prevKey = prevProps.replyingTo?.postId === prevProps.post.id && prevProps.replyingTo.commentId
+    ? `${prevProps.post.id}-${prevProps.replyingTo.commentId}`
+    : prevProps.post.id;
+  const nextKey = nextProps.replyingTo?.postId === nextProps.post.id && nextProps.replyingTo.commentId
+    ? `${nextProps.post.id}-${nextProps.replyingTo.commentId}`
+    : nextProps.post.id;
+  
+  return (
+    prevProps.post.id === nextProps.post.id &&
+    prevKey === nextKey &&
+    prevProps.commentInputs[prevKey] === nextProps.commentInputs[nextKey] &&
+    prevProps.user?.id === nextProps.user?.id &&
+    prevProps.onCommentInputChange === nextProps.onCommentInputChange &&
+    prevProps.onComment === nextProps.onComment &&
+    prevProps.onCancelReply === nextProps.onCancelReply
   );
 });
 
@@ -556,12 +577,14 @@ const PostCard = React.memo<PostCardProps>(({
         </div>
         
         {/* Comments Section */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {expandedComments.has(post.id) && (
             <motion.div
+              key={`comments-${post.id}`}
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
               className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4"
             >
               {post.comments?.map((comment) => (
@@ -1233,7 +1256,7 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
       }
 
       // Update local state optimistically
-      setPosts(posts.map(p => {
+      setPosts(prevPosts => prevPosts.map(p => {
         if (p.id === postId) {
           return {
             ...p,
@@ -1264,8 +1287,11 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
       return;
     }
 
-    setPosts(posts.map(post => {
+    let wasBookmarked = false;
+    
+    setPosts(prevPosts => prevPosts.map(post => {
       if (post.id === postId) {
+        wasBookmarked = post.bookmarked_by_user || false;
         return {
           ...post,
           bookmarked_by_user: !post.bookmarked_by_user
@@ -1274,13 +1300,10 @@ const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
       return post;
     }));
 
-    const post = posts.find(p => p.id === postId);
-    if (post) {
-      toast({
-        title: post.bookmarked_by_user ? "Bookmark removed" : "Bookmarked",
-        description: post.bookmarked_by_user ? "Post removed from bookmarks" : "Post saved to bookmarks",
-      });
-    }
+    toast({
+      title: wasBookmarked ? "Bookmark removed" : "Bookmarked",
+      description: wasBookmarked ? "Post removed from bookmarks" : "Post saved to bookmarks",
+    });
   };
 
   const handleCommentInputChange = useCallback((key: string, value: string) => {
