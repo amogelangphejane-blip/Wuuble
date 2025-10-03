@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import ModernDiscussion from '@/components/ModernDiscussion';
+import SimpleDiscussion from '@/components/SimpleDiscussion';
 import { SkoolMembers } from '@/components/SkoolMembers';
 import { SkoolClassroom } from '@/components/SkoolClassroom';
 import { SkoolCalendar } from '@/components/SkoolCalendar';
@@ -410,7 +410,7 @@ const SkoolStyleCommunityDetail: React.FC = () => {
               className="p-6"
             >
               {activeSection === 'discussions' && (
-                <ModernDiscussion 
+                <SimpleDiscussion 
                   communityId={community.id} 
                   isOwner={user?.id === community.owner_id}
                   isModerator={false}
