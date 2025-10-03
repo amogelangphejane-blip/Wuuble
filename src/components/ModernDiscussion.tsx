@@ -67,20 +67,13 @@ const CommentInput = ({
   onCancelReply?: () => void;
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  
-  console.log('🔵 CommentInput render', { postId, value, timestamp: Date.now() });
 
   // Use uncontrolled input with ref
   useEffect(() => {
-    console.log('🟢 CommentInput mounted/updated', { postId });
     if (inputRef.current) {
       inputRef.current.value = value;
     }
-    
-    return () => {
-      console.log('🔴 CommentInput UNMOUNTING!', { postId });
-    };
-  }, [value, postId]);
+  }, [value]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -173,8 +166,6 @@ const CommentInputWrapper = React.memo(({
   onComment: (postId: string, parentCommentId?: string) => Promise<void>;
   onCancelReply: () => void;
 }) => {
-  console.log('🟡 CommentInputWrapper render', { postId: post.id });
-  
   const isReplyingToThisPost = replyingTo?.postId === post.id;
   const inputKey = useMemo(() => {
     return isReplyingToThisPost && replyingTo.commentId
@@ -399,10 +390,7 @@ const PostCard = React.memo<PostCardProps>(({
   onCommentInputChange,
   onComment,
   onCancelReply
-}) => {
-  console.log('🔴 PostCard render', { postId: post.id });
-  
-  return (
+}) => (
   <motion.div
     layout
     initial={{ opacity: 0, y: 20 }}
@@ -713,8 +701,7 @@ const PostCard = React.memo<PostCardProps>(({
       </CardContent>
     </Card>
   </motion.div>
-  );
-});
+));
 
 const ModernDiscussion: React.FC<ModernDiscussionProps> = ({
   communityId,
