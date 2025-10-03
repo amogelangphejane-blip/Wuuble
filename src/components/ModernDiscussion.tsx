@@ -46,8 +46,8 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import ResponsiveImage from './ResponsiveImage';
 
-// Memoized comment input component to prevent keyboard issues
-const CommentInput = React.memo(({ 
+// Simple uncontrolled input to prevent keyboard issues
+const CommentInput = ({ 
   postId, 
   value, 
   onChange, 
@@ -68,20 +68,29 @@ const CommentInput = React.memo(({
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Use uncontrolled input with ref
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.value = value;
+    }
+  }, [value]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      onSubmit();
+      if (inputRef.current?.value.trim()) {
+        onSubmit();
+        inputRef.current.value = '';
+      }
     } else if (e.key === 'Escape' && onCancelReply) {
       e.preventDefault();
       onCancelReply();
     }
-  }, [onSubmit, onCancelReply]);
+  };
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e.target.value);
-  }, [onChange]);
+  };
 
   return (
     <div className="mt-4">
@@ -114,14 +123,20 @@ const CommentInput = React.memo(({
             ref={inputRef}
             type="text"
             placeholder={replyingToUser ? "Write a reply..." : "Write a comment..."}
-            value={value}
+            defaultValue={value}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            autoComplete="off"
             className="flex h-10 w-full rounded-full border border-gray-200 dark:border-gray-800 bg-background px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           />
           <Button
             size="sm"
-            onClick={onSubmit}
+            onClick={() => {
+              if (inputRef.current?.value.trim()) {
+                onSubmit();
+                inputRef.current.value = '';
+              }
+            }}
             disabled={disabled}
             className="rounded-full bg-blue-500 hover:bg-blue-600 text-white"
           >
@@ -131,7 +146,7 @@ const CommentInput = React.memo(({
       </div>
     </div>
   );
-});
+};
 
 // Wrapper component to provide stable callback references
 const CommentInputWrapper = React.memo(({
