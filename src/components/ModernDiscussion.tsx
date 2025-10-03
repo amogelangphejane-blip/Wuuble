@@ -66,7 +66,9 @@ const CommentInput = React.memo(({
   replyingToUser?: string | null;
   onCancelReply?: () => void;
 }) => {
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onSubmit();
@@ -77,6 +79,7 @@ const CommentInput = React.memo(({
   }, [onSubmit, onCancelReply]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     onChange(e.target.value);
   }, [onChange]);
 
@@ -107,12 +110,14 @@ const CommentInput = React.memo(({
           <AvatarImage src={userAvatarUrl} className="object-cover" />
         </Avatar>
         <div className="flex-1 flex gap-2">
-          <Input
+          <input
+            ref={inputRef}
+            type="text"
             placeholder={replyingToUser ? "Write a reply..." : "Write a comment..."}
             value={value}
             onChange={handleChange}
-            onKeyPress={handleKeyPress}
-            className="rounded-full border-gray-200 dark:border-gray-800"
+            onKeyDown={handleKeyDown}
+            className="flex h-10 w-full rounded-full border border-gray-200 dark:border-gray-800 bg-background px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           />
           <Button
             size="sm"
@@ -125,18 +130,6 @@ const CommentInput = React.memo(({
         </div>
       </div>
     </div>
-  );
-}, (prevProps, nextProps) => {
-  // Custom comparison function to prevent unnecessary re-renders
-  return (
-    prevProps.postId === nextProps.postId &&
-    prevProps.value === nextProps.value &&
-    prevProps.disabled === nextProps.disabled &&
-    prevProps.userAvatarUrl === nextProps.userAvatarUrl &&
-    prevProps.replyingToUser === nextProps.replyingToUser &&
-    prevProps.onChange === nextProps.onChange &&
-    prevProps.onSubmit === nextProps.onSubmit &&
-    prevProps.onCancelReply === nextProps.onCancelReply
   );
 });
 
