@@ -344,21 +344,21 @@ export const SimplifiedSkoolDiscussions: React.FC<SimplifiedSkoolDiscussionsProp
                   </div>
                   
                   <div className="flex items-center gap-4 mt-4">
-                    <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600">
+                    <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
                       <ThumbsUp className="w-4 h-4 mr-2" />
-                      Like
+                      <span className="text-sm">Like</span>
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600">
+                    <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
                       <MessageSquare className="w-4 h-4 mr-2" />
-                      Reply
+                      <span className="text-sm">Reply</span>
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600">
+                    <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
                       <Share2 className="w-4 h-4 mr-2" />
-                      Share
+                      <span className="text-sm">Share</span>
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600">
+                    <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
                       <Bookmark className="w-4 h-4 mr-2" />
-                      Save
+                      <span className="text-sm">Save</span>
                     </Button>
                   </div>
                 </div>

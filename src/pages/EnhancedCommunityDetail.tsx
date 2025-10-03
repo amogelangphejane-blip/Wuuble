@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ModernHeader } from '@/components/ModernHeader';
-import ModernDiscussion from '@/components/ModernDiscussion';
+import SimpleDiscussion from '@/components/SimpleDiscussion';
 import { CommunityMemberCards } from '@/components/CommunityMemberCards';
 import { CommunityEvents } from '@/components/CommunityEvents';
 import { CommunityLeaderboard as LeaderboardComponent } from '@/components/CommunityLeaderboardComponent';
@@ -448,7 +448,7 @@ const EnhancedCommunityDetail: React.FC = () => {
             </TabsList>
 
             <TabsContent value="discussions" className="space-y-6">
-              <ModernDiscussion 
+              <SimpleDiscussion 
                 communityId={community.id}
                 isOwner={isOwner}
                 isModerator={isModerator}
