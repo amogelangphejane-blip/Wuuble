@@ -321,7 +321,19 @@ const SimpleDiscussion: React.FC<SimpleDiscussionProps> = ({ communityId, isOwne
 
       input.value = '';
       setReplyingTo(null);
+      
+      // Reload comments to show the new one
       loadComments(postId);
+      
+      // Update the comments count in the post
+      setPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === postId 
+            ? { ...post, comments_count: post.comments_count + 1 }
+            : post
+        )
+      );
+      
       toast({ title: parentCommentId ? "Reply added!" : "Comment added!" });
     } catch (error) {
       console.error('Error adding comment:', error);
