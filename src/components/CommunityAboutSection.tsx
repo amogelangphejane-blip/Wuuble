@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,9 +14,16 @@ import {
   Twitter,
   Github,
   MessageSquare,
-  Edit
+  Edit,
+  CreditCard,
+  Heart,
+  Wallet
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { PatreonStyleMembership } from './PatreonStyleMembership';
+import { CreatorEarningsDashboard } from './CreatorEarningsDashboard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface CommunityAboutSectionProps {
   community: {
@@ -34,24 +41,37 @@ interface CommunityAboutSectionProps {
       discord?: string;
       github?: string;
     };
+    creator_id?: string;
   };
   isOwner: boolean;
+  creatorName?: string;
 }
 
 export const CommunityAboutSection: React.FC<CommunityAboutSectionProps> = ({
   community,
-  isOwner
+  isOwner,
+  creatorName
 }) => {
+  const [showBillingDialog, setShowBillingDialog] = useState(false);
+  const [billingTab, setBillingTab] = useState<'membership' | 'earnings'>('membership');
+
+  const handleOpenBilling = (tab: 'membership' | 'earnings') => {
+    setBillingTab(tab);
+    setShowBillingDialog(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">About {community.name}</h2>
-        {isOwner && (
-          <Button variant="outline">
-            <Edit className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {isOwner && (
+            <Button variant="outline">
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -183,6 +203,44 @@ export const CommunityAboutSection: React.FC<CommunityAboutSectionProps> = ({
           </CardContent>
         </Card>
 
+        {/* Subscription & Billing */}
+        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-purple-600" />
+              Subscription & Billing
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Support this community and get exclusive benefits
+            </p>
+            
+            <Button 
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              onClick={() => handleOpenBilling('membership')}
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              Become a Patron
+            </Button>
+
+            {isOwner && (
+              <Button 
+                className="w-full" 
+                variant="outline"
+                onClick={() => handleOpenBilling('earnings')}
+              >
+                <Wallet className="w-4 h-4 mr-2" />
+                View Earnings
+              </Button>
+            )}
+
+            <div className="pt-3 border-t text-xs text-gray-500 text-center">
+              70% to creator • 30% platform fee
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Contact */}
         <Card>
           <CardHeader>
@@ -240,6 +298,50 @@ export const CommunityAboutSection: React.FC<CommunityAboutSectionProps> = ({
           </ul>
         </CardContent>
       </Card>
+
+      {/* Subscription & Billing Dialog */}
+      <Dialog open={showBillingDialog} onOpenChange={setShowBillingDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              {billingTab === 'membership' ? 'Support This Community' : 'Creator Earnings'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {isOwner ? (
+            <Tabs value={billingTab} onValueChange={(v: any) => setBillingTab(v)}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="membership">
+                  <Heart className="w-4 h-4 mr-2" />
+                  Membership
+                </TabsTrigger>
+                <TabsTrigger value="earnings">
+                  <Wallet className="w-4 h-4 mr-2" />
+                  Earnings
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="membership" className="mt-6">
+                <PatreonStyleMembership
+                  communityId={community.id}
+                  communityName={community.name}
+                  creatorName={creatorName}
+                />
+              </TabsContent>
+
+              <TabsContent value="earnings" className="mt-6">
+                <CreatorEarningsDashboard />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <PatreonStyleMembership
+              communityId={community.id}
+              communityName={community.name}
+              creatorName={creatorName}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
