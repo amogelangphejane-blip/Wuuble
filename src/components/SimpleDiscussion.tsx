@@ -86,38 +86,85 @@ const SimpleDiscussion: React.FC<SimpleDiscussionProps> = ({ communityId, isOwne
       const { data, error } = await supabase
         .from('community_posts')
         .select(`
-          *,
-          profiles!community_posts_user_id_fkey(display_name, avatar_url)
+          id,
+          content,
+          created_at,
+          updated_at,
+          user_id,
+          community_id,
+          image_url,
+          is_pinned
         `)
         .eq('community_id', communityId)
+        .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading posts:', error);
+        throw error;
+      }
 
-      // Get likes for each post
-      const postsWithLikes = await Promise.all((data || []).map(async (post) => {
-        const { data: likes } = await supabase
-          .from('community_post_likes')
-          .select('user_id')
-          .eq('post_id', post.id);
+      // Get user profiles and interaction counts separately
+      const postsWithUserInfo = await Promise.all(
+        (data || []).map(async (post) => {
+          // Get user profile
+          let userProfile = null;
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('display_name, avatar_url')
+              .eq('user_id', post.user_id)
+              .single();
+            userProfile = profile;
+          } catch (profileError) {
+            console.log('Could not fetch profile for user:', post.user_id);
+          }
 
-        const { count } = await supabase
-          .from('community_post_comments')
-          .select('*', { count: 'exact', head: true })
-          .eq('post_id', post.id);
+          // Get likes count and user's like status
+          let likesCount = 0;
+          let userLiked = false;
+          try {
+            const { data: likes } = await supabase
+              .from('community_post_likes')
+              .select('user_id')
+              .eq('post_id', post.id);
+            
+            likesCount = likes?.length || 0;
+            userLiked = user ? (likes || []).some(l => l.user_id === user.id) : false;
+          } catch (likesError) {
+            console.log('Likes table not available:', likesError);
+          }
 
-        return {
-          ...post,
-          likes_count: likes?.length || 0,
-          comments_count: count || 0,
-          user_liked: user ? likes?.some(l => l.user_id === user.id) : false
-        };
-      }));
+          // Get comments count
+          let commentsCount = 0;
+          try {
+            const { count } = await supabase
+              .from('community_post_comments')
+              .select('*', { count: 'exact', head: true })
+              .eq('post_id', post.id);
+            commentsCount = count || 0;
+          } catch (commentsError) {
+            console.log('Comments table not available:', commentsError);
+          }
 
-      setPosts(postsWithLikes);
+          return {
+            ...post,
+            profiles: userProfile,
+            likes_count: likesCount,
+            comments_count: commentsCount,
+            user_liked: userLiked
+          };
+        })
+      );
+
+      setPosts(postsWithUserInfo);
     } catch (error) {
       console.error('Error loading posts:', error);
-      toast({ title: "Error loading posts", variant: "destructive" });
+      toast({ 
+        title: "Error loading posts", 
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }
@@ -128,17 +175,42 @@ const SimpleDiscussion: React.FC<SimpleDiscussionProps> = ({ communityId, isOwne
       const { data, error } = await supabase
         .from('community_post_comments')
         .select(`
-          *,
-          profiles!community_post_comments_user_id_fkey(display_name, avatar_url)
+          id,
+          content,
+          created_at,
+          user_id,
+          parent_comment_id
         `)
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
+      // Get user profiles for comments
+      const commentsWithProfiles = await Promise.all(
+        (data || []).map(async (comment) => {
+          let userProfile = null;
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('display_name, avatar_url')
+              .eq('user_id', comment.user_id)
+              .single();
+            userProfile = profile;
+          } catch (profileError) {
+            console.log('Could not fetch profile for comment user:', comment.user_id);
+          }
+
+          return {
+            ...comment,
+            profiles: userProfile
+          };
+        })
+      );
+
       // Organize into parent/child structure
-      const topLevel = (data || []).filter(c => !c.parent_comment_id);
-      const replies = (data || []).filter(c => c.parent_comment_id);
+      const topLevel = commentsWithProfiles.filter(c => !c.parent_comment_id);
+      const replies = commentsWithProfiles.filter(c => c.parent_comment_id);
       
       const commentsWithReplies = topLevel.map(comment => ({
         ...comment,
@@ -148,6 +220,11 @@ const SimpleDiscussion: React.FC<SimpleDiscussionProps> = ({ communityId, isOwne
       setComments(prev => ({ ...prev, [postId]: commentsWithReplies }));
     } catch (error) {
       console.error('Error loading comments:', error);
+      toast({
+        title: "Error loading comments",
+        description: "Please try again",
+        variant: "destructive"
+      });
     }
   };
 
