@@ -350,15 +350,58 @@ const SimpleDiscussion: React.FC<SimpleDiscussionProps> = ({ communityId, isOwne
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
+    // Optimistic update - update UI immediately
+    const wasLiked = post.user_liked;
+    setPosts(prevPosts =>
+      prevPosts.map(p =>
+        p.id === postId
+          ? {
+              ...p,
+              user_liked: !wasLiked,
+              likes_count: wasLiked ? p.likes_count - 1 : p.likes_count + 1
+            }
+          : p
+      )
+    );
+
     try {
-      if (post.user_liked) {
-        await supabase.from('community_post_likes').delete().eq('post_id', postId).eq('user_id', user.id);
+      // Then update database in background
+      if (wasLiked) {
+        const { error } = await supabase
+          .from('community_post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
       } else {
-        await supabase.from('community_post_likes').insert([{ post_id: postId, user_id: user.id }]);
+        const { error } = await supabase
+          .from('community_post_likes')
+          .insert([{ post_id: postId, user_id: user.id }]);
+        
+        if (error) throw error;
       }
-      loadPosts();
     } catch (error) {
       console.error('Error toggling like:', error);
+      
+      // Revert optimistic update on error
+      setPosts(prevPosts =>
+        prevPosts.map(p =>
+          p.id === postId
+            ? {
+                ...p,
+                user_liked: wasLiked,
+                likes_count: wasLiked ? p.likes_count + 1 : p.likes_count - 1
+              }
+            : p
+        )
+      );
+      
+      toast({ 
+        title: "Failed to update like", 
+        description: "Please try again",
+        variant: "destructive" 
+      });
     }
   };
 
