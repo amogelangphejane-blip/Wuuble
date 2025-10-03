@@ -22,6 +22,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { PatreonStyleMembership } from './PatreonStyleMembership';
 import { CreatorEarningsDashboard } from './CreatorEarningsDashboard';
+import { MembershipTierManager } from './MembershipTierManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -53,11 +54,16 @@ export const CommunityAboutSection: React.FC<CommunityAboutSectionProps> = ({
   creatorName
 }) => {
   const [showBillingDialog, setShowBillingDialog] = useState(false);
-  const [billingTab, setBillingTab] = useState<'membership' | 'earnings'>('membership');
+  const [billingTab, setBillingTab] = useState<'membership' | 'earnings' | 'manage'>('membership');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleOpenBilling = (tab: 'membership' | 'earnings') => {
+  const handleOpenBilling = (tab: 'membership' | 'earnings' | 'manage') => {
     setBillingTab(tab);
     setShowBillingDialog(true);
+  };
+
+  const handleTiersUpdated = () => {
+    setRefreshKey(prev => prev + 1);
   };
 
   return (
@@ -225,14 +231,24 @@ export const CommunityAboutSection: React.FC<CommunityAboutSectionProps> = ({
             </Button>
 
             {isOwner && (
-              <Button 
-                className="w-full" 
-                variant="outline"
-                onClick={() => handleOpenBilling('earnings')}
-              >
-                <Wallet className="w-4 h-4 mr-2" />
-                View Earnings
-              </Button>
+              <>
+                <Button 
+                  className="w-full" 
+                  variant="outline"
+                  onClick={() => handleOpenBilling('manage')}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Manage Tiers
+                </Button>
+                <Button 
+                  className="w-full" 
+                  variant="outline"
+                  onClick={() => handleOpenBilling('earnings')}
+                >
+                  <Wallet className="w-4 h-4 mr-2" />
+                  View Earnings
+                </Button>
+              </>
             )}
 
             <div className="pt-3 border-t text-xs text-gray-500 text-center">
@@ -310,10 +326,14 @@ export const CommunityAboutSection: React.FC<CommunityAboutSectionProps> = ({
           
           {isOwner ? (
             <Tabs value={billingTab} onValueChange={(v: any) => setBillingTab(v)}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="membership">
                   <Heart className="w-4 h-4 mr-2" />
                   Membership
+                </TabsTrigger>
+                <TabsTrigger value="manage">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Manage Tiers
                 </TabsTrigger>
                 <TabsTrigger value="earnings">
                   <Wallet className="w-4 h-4 mr-2" />
@@ -323,9 +343,17 @@ export const CommunityAboutSection: React.FC<CommunityAboutSectionProps> = ({
 
               <TabsContent value="membership" className="mt-6">
                 <PatreonStyleMembership
+                  key={refreshKey}
                   communityId={community.id}
                   communityName={community.name}
                   creatorName={creatorName}
+                />
+              </TabsContent>
+
+              <TabsContent value="manage" className="mt-6">
+                <MembershipTierManager
+                  communityId={community.id}
+                  onTiersUpdated={handleTiersUpdated}
                 />
               </TabsContent>
 
@@ -335,6 +363,7 @@ export const CommunityAboutSection: React.FC<CommunityAboutSectionProps> = ({
             </Tabs>
           ) : (
             <PatreonStyleMembership
+              key={refreshKey}
               communityId={community.id}
               communityName={community.name}
               creatorName={creatorName}
