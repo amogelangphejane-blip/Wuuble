@@ -9,7 +9,8 @@ import {
   EventFormData, 
   EventFilters,
   UserEventPreferences,
-  LocationSuggestion
+  LocationSuggestion,
+  EventShare
 } from '@/types/events';
 import { format } from 'date-fns';
 
@@ -22,14 +23,44 @@ export const useEvents = (communityId?: string) => {
   const [userPreferences, setUserPreferences] = useState<UserEventPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [eventsLoading, setEventsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const EVENTS_PER_PAGE = 10;
 
-  // Fetch events with enhanced data
-  const fetchEvents = useCallback(async (filters?: EventFilters) => {
+  // Fetch events with enhanced data and pagination
+  const fetchEvents = useCallback(async (filters?: EventFilters, pageNum: number = 0, append: boolean = false) => {
     if (!communityId) return;
 
     try {
       setEventsLoading(true);
       
+      // First, get total count
+      let countQuery = supabase
+        .from('community_events')
+        .select('*', { count: 'exact', head: true })
+        .eq('community_id', communityId);
+
+      // Apply filters to count query
+      if (filters?.categories?.length) {
+        countQuery = countQuery.in('category_id', filters.categories);
+      }
+      if (filters?.dateRange) {
+        countQuery = countQuery
+          .gte('event_date', format(filters.dateRange.start, 'yyyy-MM-dd'))
+          .lte('event_date', format(filters.dateRange.end, 'yyyy-MM-dd'));
+      }
+      if (filters?.tags?.length) {
+        countQuery = countQuery.overlaps('tags', filters.tags);
+      }
+      if (filters?.visibility) {
+        countQuery = countQuery.eq('visibility', filters.visibility);
+      }
+
+      const { count } = await countQuery;
+      setTotalCount(count || 0);
+      
+      // Fetch paginated events
       let query = supabase
         .from('community_events')
         .select(`
@@ -39,7 +70,8 @@ export const useEvents = (communityId?: string) => {
           rsvp_count:event_rsvps(count)
         `)
         .eq('community_id', communityId)
-        .order('event_date', { ascending: true });
+        .order('event_date', { ascending: true })
+        .range(pageNum * EVENTS_PER_PAGE, (pageNum + 1) * EVENTS_PER_PAGE - 1);
 
       // Apply filters
       if (filters?.categories?.length) {
@@ -73,6 +105,7 @@ export const useEvents = (communityId?: string) => {
       }
 
       // Fetch user's RSVP status for each event
+      let processedEvents: CommunityEvent[] = [];
       if (user && eventsData) {
         const eventIds = eventsData.map(event => event.id);
         const { data: rsvpData } = await supabase
@@ -82,16 +115,25 @@ export const useEvents = (communityId?: string) => {
           .eq('user_id', user.id);
 
         // Merge RSVP data with events
-        const eventsWithRSVP = eventsData.map(event => ({
+        processedEvents = eventsData.map(event => ({
           ...event,
           user_rsvp: rsvpData?.find(rsvp => rsvp.event_id === event.id),
           rsvp_count: Array.isArray(event.rsvp_count) ? event.rsvp_count.length : 0
         }));
-
-        setEvents(eventsWithRSVP);
       } else {
-        setEvents(eventsData || []);
+        processedEvents = eventsData || [];
       }
+
+      // Update events state (append or replace)
+      if (append) {
+        setEvents(prev => [...prev, ...processedEvents]);
+      } else {
+        setEvents(processedEvents);
+      }
+
+      // Update hasMore state
+      setHasMore((pageNum + 1) * EVENTS_PER_PAGE < (count || 0));
+      setPage(pageNum);
     } catch (error) {
       console.error('Error fetching events:', error);
       toast({
@@ -102,7 +144,7 @@ export const useEvents = (communityId?: string) => {
     } finally {
       setEventsLoading(false);
     }
-  }, [communityId, user, toast]);
+  }, [communityId, user, toast, EVENTS_PER_PAGE]);
 
   // Fetch event categories
   const fetchCategories = useCallback(async () => {
@@ -193,7 +235,7 @@ export const useEvents = (communityId?: string) => {
         description: "Event created successfully",
       });
 
-      await fetchEvents();
+      await fetchEvents(undefined, 0, false);
       return true;
     } catch (error) {
       console.error('Error creating event:', error);
@@ -237,7 +279,7 @@ export const useEvents = (communityId?: string) => {
         description: "RSVP updated successfully",
       });
 
-      await fetchEvents();
+      await fetchEvents(undefined, 0, false);
       return true;
     } catch (error) {
       console.error('Error updating RSVP:', error);
@@ -444,16 +486,29 @@ END:VCALENDAR`;
     URL.revokeObjectURL(url);
   };
 
+  // Load more events (for infinite scroll)
+  const loadMoreEvents = useCallback(async (filters?: EventFilters) => {
+    if (!hasMore || eventsLoading) return;
+    await fetchEvents(filters, page + 1, true);
+  }, [hasMore, eventsLoading, page, fetchEvents]);
+
+  // Reset and fetch events (for filters change)
+  const resetAndFetchEvents = useCallback(async (filters?: EventFilters) => {
+    setPage(0);
+    setHasMore(true);
+    await fetchEvents(filters, 0, false);
+  }, [fetchEvents]);
+
   // Initialize data
   useEffect(() => {
     if (user && communityId) {
       Promise.all([
-        fetchEvents(),
+        fetchEvents(undefined, 0, false),
         fetchCategories(),
         fetchUserPreferences(),
       ]).finally(() => setLoading(false));
     }
-  }, [user, communityId, fetchEvents, fetchCategories, fetchUserPreferences]);
+  }, [user, communityId, fetchCategories, fetchUserPreferences]);
 
   return {
     events,
@@ -461,7 +516,12 @@ END:VCALENDAR`;
     userPreferences,
     loading,
     eventsLoading,
+    hasMore,
+    totalCount,
+    page,
     fetchEvents,
+    loadMoreEvents,
+    resetAndFetchEvents,
     fetchCategories,
     fetchUserPreferences,
     createEvent,

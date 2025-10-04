@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -321,8 +322,8 @@ export const ResourceForm = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <Plus className="w-5 h-5" />
             {editingResource ? 'Edit Resource' : 'Add New Resource'}
@@ -332,7 +333,8 @@ export const ResourceForm = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <ScrollArea className="max-h-[calc(90vh-180px)] px-6">
+          <form onSubmit={handleSubmit} className="space-y-6 pb-4">
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title">Title *</Label>
@@ -592,13 +594,17 @@ export const ResourceForm = ({
               )}
             </div>
           </div>
+          </form>
+        </ScrollArea>
 
-          {/* Submit Buttons */}
-          <div className="flex gap-3 pt-4">
+        {/* Fixed Footer with Submit Buttons */}
+        <div className="px-6 py-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
+          <div className="flex gap-3">
             <Button
               type="submit"
               disabled={loading}
               className="flex-1"
+              onClick={handleSubmit}
             >
               {loading ? (
                 <>
@@ -622,7 +628,7 @@ export const ResourceForm = ({
               Cancel
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

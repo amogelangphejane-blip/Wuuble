@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Form,
   FormControl,
@@ -194,16 +195,17 @@ export const EnhancedEventForm = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>Create New Event</DialogTitle>
           <DialogDescription>
             Schedule a new event for your community with advanced options and customization.
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <ScrollArea className="max-h-[calc(90vh-180px)] px-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 pb-4">
             <Tabs defaultValue="basic" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
@@ -820,19 +822,24 @@ export const EnhancedEventForm = ({
                 </div>
               </TabsContent>
             </Tabs>
+            </form>
+          </Form>
+        </ScrollArea>
 
-            <Separator />
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Creating...' : 'Create Event'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        <div className="px-6 py-4 border-t bg-gray-50/50 dark:bg-gray-900/50">
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              onClick={form.handleSubmit(handleSubmit)}
+            >
+              {isLoading ? 'Creating...' : 'Create Event'}
+            </Button>
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

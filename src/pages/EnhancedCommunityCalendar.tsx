@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,8 @@ import {
   CalendarDays,
   Filter,
   TrendingUp,
-  Lock
+  Lock,
+  Loader2
 } from 'lucide-react';
 import { EnhancedEventForm } from '@/components/EnhancedEventForm';
 import { EventCard } from '@/components/EventCard';
@@ -54,12 +55,16 @@ const EnhancedCommunityCalendar = () => {
   const [viewMode, setViewMode] = useState<EventViewMode>({ type: 'list' });
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Use the enhanced events hook
+  // Use the enhanced events hook with pagination
   const {
     events,
     categories,
     userPreferences,
     eventsLoading,
+    hasMore,
+    totalCount,
+    loadMoreEvents,
+    resetAndFetchEvents,
     createEvent,
     rsvpToEvent,
     createCategory,
@@ -68,6 +73,9 @@ const EnhancedCommunityCalendar = () => {
     getLocationSuggestions,
     downloadCalendarFile,
   } = useEvents(id);
+
+  // Infinite scroll ref
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -92,6 +100,29 @@ const EnhancedCommunityCalendar = () => {
       }
     }
   }, [searchParams, events]);
+
+  // Infinite scroll implementation
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !eventsLoading && viewMode.type !== 'calendar') {
+          loadMoreEvents(filters);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, eventsLoading, filters, loadMoreEvents, viewMode.type]);
 
   const fetchCommunityDetails = async () => {
     if (!id || !user) return;
@@ -383,7 +414,43 @@ const EnhancedCommunityCalendar = () => {
 
     if (viewMode.type === 'grid') {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredEvents.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                onRSVP={rsvpToEvent}
+                onShare={shareEvent}
+                onDownloadCalendar={downloadCalendarFile}
+                userCanManageEvent={user?.id === event.user_id || isCreator}
+                viewMode="card"
+              />
+            ))}
+          </div>
+          
+          {/* Infinite scroll trigger */}
+          <div ref={observerTarget} className="py-4 flex justify-center">
+            {eventsLoading && (
+              <div className="flex items-center gap-2 text-gray-600">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Loading more events...</span>
+              </div>
+            )}
+            {!hasMore && filteredEvents.length > 0 && (
+              <p className="text-gray-500 text-sm">
+                You've reached the end of the events list
+              </p>
+            )}
+          </div>
+        </>
+      );
+    }
+
+    // List view (default)
+    return (
+      <>
+        <div className="space-y-4">
           {filteredEvents.map((event) => (
             <EventCard
               key={event.id}
@@ -392,28 +459,26 @@ const EnhancedCommunityCalendar = () => {
               onShare={shareEvent}
               onDownloadCalendar={downloadCalendarFile}
               userCanManageEvent={user?.id === event.user_id || isCreator}
-              viewMode="card"
+              viewMode="list"
             />
           ))}
         </div>
-      );
-    }
-
-    // List view (default)
-    return (
-      <div className="space-y-4">
-        {filteredEvents.map((event) => (
-          <EventCard
-            key={event.id}
-            event={event}
-            onRSVP={rsvpToEvent}
-            onShare={shareEvent}
-            onDownloadCalendar={downloadCalendarFile}
-            userCanManageEvent={user?.id === event.user_id || isCreator}
-            viewMode="list"
-          />
-        ))}
-      </div>
+        
+        {/* Infinite scroll trigger */}
+        <div ref={observerTarget} className="py-4 flex justify-center">
+          {eventsLoading && (
+            <div className="flex items-center gap-2 text-gray-600">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Loading more events...</span>
+            </div>
+          )}
+          {!hasMore && filteredEvents.length > 0 && (
+            <p className="text-gray-500 text-sm">
+              You've reached the end of the events list
+            </p>
+          )}
+        </div>
+      </>
     );
   };
 
@@ -485,7 +550,7 @@ const EnhancedCommunityCalendar = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">{events.length}</div>
+                <div className="text-2xl font-bold text-blue-600">{totalCount}</div>
                 <div className="text-sm text-gray-600">Total Events</div>
               </CardContent>
             </Card>
