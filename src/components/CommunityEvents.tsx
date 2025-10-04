@@ -1,21 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, Users, Plus, Video, Globe } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Plus, Video, Globe, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  location: string;
-  type: 'online' | 'in-person';
-  attendees: number;
-  maxAttendees?: number;
-}
+import { useEvents } from '@/hooks/useEvents';
+import { EventCard } from './EventCard';
+import { EventFilters as EventFiltersType } from '@/types/events';
 
 interface CommunityEventsProps {
   communityId: string;
@@ -28,30 +19,51 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
   isOwner,
   isModerator = false
 }) => {
-  const [events] = useState<Event[]>([
-    {
-      id: '1',
-      title: 'Weekly Tech Talk',
-      description: 'Join us for our weekly discussion on the latest in technology',
-      date: '2024-02-15',
-      time: '18:00',
-      location: 'Virtual Meeting Room',
-      type: 'online',
-      attendees: 45,
-      maxAttendees: 100
-    },
-    {
-      id: '2',
-      title: 'Community Meetup',
-      description: 'Monthly in-person meetup for networking and collaboration',
-      date: '2024-02-20',
-      time: '19:00',
-      location: 'Tech Hub, San Francisco',
-      type: 'in-person',
-      attendees: 32,
-      maxAttendees: 50
+  const {
+    events,
+    loading,
+    eventsLoading,
+    hasMore,
+    totalCount,
+    loadMoreEvents,
+    rsvpToEvent,
+    shareEvent,
+    downloadCalendarFile,
+  } = useEvents(communityId);
+
+  const [filters, setFilters] = useState<EventFiltersType>({});
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  // Infinite scroll implementation
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !eventsLoading) {
+          loadMoreEvents(filters);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
     }
-  ]);
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, eventsLoading, filters, loadMoreEvents]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -60,6 +72,7 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
           <h2 className="text-2xl font-bold">Upcoming Events</h2>
           <p className="text-gray-600 dark:text-gray-400">
             Join community events and connect with members
+            {totalCount > 0 && ` (${totalCount} total events)`}
           </p>
         </div>
         
@@ -71,64 +84,38 @@ export const CommunityEvents: React.FC<CommunityEventsProps> = ({
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {events.map((event) => (
-          <Card key={event.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{event.title}</CardTitle>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {event.description}
-                  </p>
-                </div>
-                <Badge variant={event.type === 'online' ? 'secondary' : 'default'}>
-                  {event.type === 'online' ? (
-                    <>
-                      <Video className="w-3 h-3 mr-1" />
-                      Online
-                    </>
-                  ) : (
-                    <>
-                      <Globe className="w-3 h-3 mr-1" />
-                      In-Person
-                    </>
-                  )}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Calendar className="w-4 h-4" />
-                  <span>{new Date(event.date).toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Clock className="w-4 h-4" />
-                  <span>{event.time}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <MapPin className="w-4 h-4" />
-                  <span>{event.location}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                  <Users className="w-4 h-4" />
-                  <span>
-                    {event.attendees}
-                    {event.maxAttendees && ` / ${event.maxAttendees}`} attending
-                  </span>
-                </div>
-              </div>
-              
-              <Button className="w-full mt-4" variant="outline">
-                RSVP
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {events.length > 0 ? (
+        <>
+          <div className="grid gap-4 md:grid-cols-2">
+            {events.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                onRSVP={rsvpToEvent}
+                onShare={shareEvent}
+                onDownloadCalendar={downloadCalendarFile}
+                userCanManageEvent={isOwner || isModerator}
+                viewMode="card"
+              />
+            ))}
+          </div>
 
-      {events.length === 0 && (
+          {/* Infinite scroll trigger */}
+          <div ref={observerTarget} className="py-4 flex justify-center">
+            {eventsLoading && (
+              <div className="flex items-center gap-2 text-gray-600">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Loading more events...</span>
+              </div>
+            )}
+            {!hasMore && events.length > 0 && (
+              <p className="text-gray-500 text-sm">
+                You've reached the end of the events list
+              </p>
+            )}
+          </div>
+        </>
+      ) : (
         <Card className="text-center py-12">
           <CardContent>
             <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
