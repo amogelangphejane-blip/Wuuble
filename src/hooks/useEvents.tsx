@@ -191,57 +191,103 @@ export const useEvents = (communityId?: string) => {
 
   // Create event
   const createEvent = async (eventData: EventFormData): Promise<boolean> => {
-    if (!communityId || !user) return false;
+    if (!communityId || !user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create an event",
+        variant: "destructive",
+      });
+      return false;
+    }
 
     try {
       setEventsLoading(true);
       
-      const { error } = await supabase
+      // Prepare event data with proper formatting and defaults
+      const eventInsertData: any = {
+        community_id: communityId,
+        user_id: user.id,
+        title: eventData.title,
+        description: eventData.description || null,
+        event_date: format(eventData.eventDate, 'yyyy-MM-dd'),
+        start_time: eventData.startTime || null,
+        end_time: eventData.endTime || null,
+        location: eventData.location || null,
+        is_virtual: eventData.isVirtual || false,
+        max_attendees: eventData.maxAttendees || null,
+      };
+
+      // Add enhanced fields if they exist in the schema
+      if (eventData.categoryId) {
+        eventInsertData.category_id = eventData.categoryId;
+      }
+      if (eventData.recurringType) {
+        eventInsertData.recurring_type = eventData.recurringType || 'none';
+      }
+      if (eventData.recurringEndDate) {
+        eventInsertData.recurring_end_date = format(eventData.recurringEndDate, 'yyyy-MM-dd');
+      }
+      if (eventData.tags && eventData.tags.length > 0) {
+        eventInsertData.tags = eventData.tags;
+      }
+      if (eventData.visibility) {
+        eventInsertData.visibility = eventData.visibility || 'members_only';
+      }
+      if (eventData.requiresApproval !== undefined) {
+        eventInsertData.requires_approval = eventData.requiresApproval;
+      }
+      if (eventData.externalUrl) {
+        eventInsertData.external_url = eventData.externalUrl;
+      }
+      if (eventData.coverImageUrl) {
+        eventInsertData.cover_image_url = eventData.coverImageUrl;
+      }
+      if (eventData.timezone) {
+        eventInsertData.timezone = eventData.timezone || 'UTC';
+      }
+
+      const { data, error } = await supabase
         .from('community_events')
-        .insert({
-          community_id: communityId,
-          user_id: user.id,
-          title: eventData.title,
-          description: eventData.description,
-          event_date: format(eventData.eventDate, 'yyyy-MM-dd'),
-          start_time: eventData.startTime,
-          end_time: eventData.endTime,
-          location: eventData.location,
-          is_virtual: eventData.isVirtual,
-          max_attendees: eventData.maxAttendees,
-          category_id: eventData.categoryId,
-          recurring_type: eventData.recurringType,
-          recurring_end_date: eventData.recurringEndDate ? format(eventData.recurringEndDate, 'yyyy-MM-dd') : null,
-          tags: eventData.tags,
-          visibility: eventData.visibility,
-          requires_approval: eventData.requiresApproval,
-          external_url: eventData.externalUrl,
-          cover_image_url: eventData.coverImageUrl,
-          timezone: eventData.timezone,
-        });
+        .insert(eventInsertData)
+        .select();
 
       if (error) {
         console.error('Error creating event:', error);
+        
+        // Provide more specific error messages
+        let errorMessage = "Failed to create event";
+        
+        if (error.message.includes('violates foreign key')) {
+          errorMessage = "Invalid community or category selected";
+        } else if (error.message.includes('permission denied') || error.message.includes('policy')) {
+          errorMessage = "You don't have permission to create events in this community";
+        } else if (error.message.includes('column') && error.message.includes('does not exist')) {
+          errorMessage = "Database schema error. Please run the events migration SQL script.";
+        } else if (error.code === '23505') {
+          errorMessage = "An event with these details already exists";
+        }
+        
         toast({
-          title: "Error",
-          description: "Failed to create event",
+          title: "Error Creating Event",
+          description: errorMessage,
           variant: "destructive",
         });
         return false;
       }
 
       toast({
-        title: "Success",
+        title: "Success!",
         description: "Event created successfully",
       });
 
+      // Refresh events list
       await fetchEvents(undefined, 0, false);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating event:', error);
       toast({
         title: "Error",
-        description: "Failed to create event",
+        description: error?.message || "An unexpected error occurred while creating the event",
         variant: "destructive",
       });
       return false;
